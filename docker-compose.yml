@@ -8,3 +8,4 @@ services:
       - ./data:/app/data
     environment:
       - NODE_ENV=production
+      - TZ=Europe/Madrid
