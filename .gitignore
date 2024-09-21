@@ -1,3 +1,8 @@
 /uploads
 incidencias.sqlite
 node_modules
+dist
+uploads
+*.log
+.env
+/data
