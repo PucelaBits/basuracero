@@ -78,7 +78,7 @@ router.post('/', upload.single('imagen'), async (req, res) => {
     console.log('Imagen procesada y guardada.');
 
     // Insertar la incidencia en la base de datos
-    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
+    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`;
     
     db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre], function(err) {
       if (err) {
