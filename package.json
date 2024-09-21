@@ -1,14 +1,15 @@
 {
-  "name": "proyecto-reporte-incidencias",
+  "name": "basura-cero",
   "version": "1.0.0",
-  "description": "MVP para reportar incidencias urbanas con Vue.js",
+  "description": "Sistema de reporte de incidencias urbanas",
   "main": "src/server/server.js",
   "scripts": {
     "start": "node src/server/server.js",
     "dev:server": "nodemon src/server/server.js",
     "dev:client": "vite",
     "build": "vite build && npm run copy-index",
-    "copy-index": "cp dist/index.html dist/200.html"
+    "copy-index": "cp dist/index.html dist/200.html",
+    "borrar-incidencia": "node scripts/borrarIncidencia.js"
   },
   "dependencies": {
     "@vue-leaflet/vue-leaflet": "^0.10.1",

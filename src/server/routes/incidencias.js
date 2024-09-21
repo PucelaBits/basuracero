@@ -141,18 +141,4 @@ router.get('/', (req, res) => {
   });
 });
 
-// Eliminar una incidencia
-router.delete('/:id', (req, res) => {
-  const id = req.params.id;
-  const sql = `DELETE FROM incidencias WHERE id = ?`;
-  
-  db.run(sql, id, function(err) {
-    if (err) {
-      res.status(400).json({ error: err.message });
-      return;
-    }
-    res.json({ message: `Incidencia con id ${id} eliminada` });
-  });
-});
-
 module.exports = router;
