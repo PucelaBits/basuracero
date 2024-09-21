@@ -7,7 +7,8 @@
     "start": "node src/server/server.js",
     "dev:server": "nodemon src/server/server.js",
     "dev:client": "vite",
-    "build": "vite build"
+    "build": "vite build && npm run copy-index",
+    "copy-index": "cp dist/index.html dist/200.html"
   },
   "dependencies": {
     "@vue-leaflet/vue-leaflet": "^0.10.1",

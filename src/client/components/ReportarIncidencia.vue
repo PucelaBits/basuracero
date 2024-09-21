@@ -5,7 +5,7 @@
     <form @submit.prevent="enviarIncidencia">
       <div class="form-group">
         <label for="nombre">Tu nombre:</label>
-        <input id="nombre" v-model="incidencia.nombre" required>
+        <input id="nombre" type="text" v-model="incidencia.nombre" required>
       </div>
       <div class="form-group">
         <label for="tipo">Tipo:</label>
@@ -250,6 +250,7 @@ export default {
   border: none;
   font-size: 24px;
   cursor: pointer;
+  color: #34495e;
 }
 
 h2 {
@@ -273,7 +274,7 @@ input[type="text"],
 input[type="number"],
 textarea,
 select {
-  width: 100%;
+  width: 90%;
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;

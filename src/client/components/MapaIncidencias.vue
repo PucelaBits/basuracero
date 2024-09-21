@@ -61,7 +61,10 @@ export default {
         emit('ubicacion-seleccionada', { latitud: lat, longitud: lng })
         emit('abrir-formulario')
       })
-      tempMarker.bindPopup(popupContent).openPopup()
+      tempMarker.bindPopup(popupContent, {
+        closeButton: false,
+        className: 'custom-popup-class'
+      }).openPopup()
     }
 
     const updateMarkers = () => {
@@ -89,7 +92,11 @@ export default {
           })
         })
           .addTo(map)
-          .bindPopup(popupContent, { maxWidth: 300, className: 'custom-popup-class' })
+          .bindPopup(popupContent, { 
+            maxWidth: 300, 
+            minWidth: 300,
+            className: 'custom-popup-class' 
+          })
         markers.push(marker)
       })
 
@@ -232,11 +239,9 @@ export default {
 
 .popup-image {
   width: 100%;
-  height: auto;
+  height: 150px;
   object-fit: cover;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  margin-bottom: 0;
+  display: block;
 }
 
 .popup-content {
@@ -245,11 +250,17 @@ export default {
 
 .leaflet-popup-content-wrapper {
   padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
 }
 
 .leaflet-popup-content {
   margin: 0;
-  width: 100% !important;
+  width: 500px !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none;
 }
 
 .add-incidencia-btn {
@@ -257,11 +268,13 @@ export default {
   color: white;
   border: none;
   padding: 10px 15px;
-  border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   width: 100%;
   text-align: center;
+  box-sizing: border-box;
+  margin: 0;
+  display: block;
 }
 
 .add-incidencia-btn:hover {
@@ -287,7 +300,7 @@ export default {
 }
 
 .popup-image {
-  width: 100%;
+  width: 200px;
   height: 150px;
   object-fit: cover;
   display: block;

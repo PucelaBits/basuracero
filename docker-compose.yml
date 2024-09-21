@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
