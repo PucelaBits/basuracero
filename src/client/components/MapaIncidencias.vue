@@ -29,6 +29,12 @@ export default {
     let markers = []
     let tempMarker = null
 
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      const options = { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return date.toLocaleDateString('es-ES', options).replace(',', '');
+    };
+
     const initMap = () => {
       map = L.map('map').setView([41.652251, -4.724532], 13)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -79,7 +85,7 @@ export default {
               <h3>${incidencia.tipo}</h3>
               <p>${incidencia.descripcion}</p>
               <small>Enviado por: ${incidencia.nombre}</small>
-              <small>Fecha: ${new Date(incidencia.fecha).toLocaleString()}</small>
+              <small>${formatDate(incidencia.fecha)}</small>
             </div>
           </div>
         `
