@@ -42,7 +42,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
           console.error('Error al verificar la tabla incidencias:', err.message);
         } else if (rows.length === 0) {
           // Si la tabla no existe, crearla con todos los campos
-          db.run(`CREATE TABLE incidencias (
+          db.run(`CREATE TABLE IF NOT EXISTS incidencias (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             tipo_id INTEGER NOT NULL,
             descripcion TEXT NOT NULL,
@@ -51,6 +51,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             imagen TEXT,
             nombre TEXT,
             fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+            direccion TEXT,  // Añade esta línea
             FOREIGN KEY (tipo_id) REFERENCES tipos_incidencias(id)
           )`);
         } else {
@@ -61,6 +62,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
           }
           if (!columns.includes('fecha')) {
             db.run("ALTER TABLE incidencias ADD COLUMN fecha DATETIME DEFAULT CURRENT_TIMESTAMP");
+          }
+          if (!columns.includes('direccion')) {
+            db.run("ALTER TABLE incidencias ADD COLUMN direccion TEXT");
           }
         }
       });

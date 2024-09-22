@@ -54,7 +54,7 @@ router.get('/tipos', (req, res) => {
 
 // Crear una nueva incidencia
 router.post('/', upload.single('imagen'), async (req, res) => {
-  const { tipo_id, descripcion, latitud, longitud, nombre } = req.body;
+  const { tipo_id, descripcion, latitud, longitud, nombre, direccion } = req.body;
   
   const errores = validarIncidencia(req.body);
   if (errores.length > 0) {
@@ -79,9 +79,9 @@ router.post('/', upload.single('imagen'), async (req, res) => {
     console.log('Imagen procesada y guardada.');
 
     // Insertar la incidencia en la base de datos
-    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`;
+    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha, direccion) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)`;
     
-    db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre], function(err) {
+    db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre, direccion], function(err) {
       if (err) {
         console.error('Error al insertar en la base de datos:', err);
         res.status(500).json({ error: err.message });
@@ -107,6 +107,7 @@ router.get('/', (req, res) => {
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
   const dataSql = `
     SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+           COALESCE(i.direccion, '') as direccion,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id

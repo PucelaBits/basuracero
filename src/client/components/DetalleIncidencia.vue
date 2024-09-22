@@ -11,6 +11,10 @@
           <p><strong>Fecha:</strong> {{ formatDate(incidencia.fecha) }}</p>
         </div>
         <div id="mapa-detalle" class="mapa-detalle"></div>
+        <!-- Añade esta sección para mostrar la dirección -->
+        <div v-if="incidencia.direccion" class="direccion-info">
+          <p><strong>Dirección:</strong> {{ incidencia.direccion }}</p>
+        </div>
         <div class="estado-incidencia">
           <p><strong>Estado:</strong> {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}</p>
           <p v-if="incidencia.estado === 'solucionada'">
@@ -165,5 +169,17 @@ export default {
   padding: 10px;
   background-color: #f0f0f0;
   border-radius: 5px;
+}
+
+.direccion-info {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+}
+
+.direccion-info p {
+  margin: 0;
+  font-size: 0.9em;
 }
 </style>

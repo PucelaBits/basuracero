@@ -22,11 +22,14 @@
       </div>
       <div class="form-group">
         <label for="latitud">Latitud:</label>
-        <input id="latitud" type="number" v-model="incidencia.latitud" step="any" required>
+        <input id="latitud" type="number" v-model="incidencia.latitud" step="any" required @change="obtenerDireccion">
       </div>
       <div class="form-group">
         <label for="longitud">Longitud:</label>
-        <input id="longitud" type="number" v-model="incidencia.longitud" step="any" required>
+        <input id="longitud" type="number" v-model="incidencia.longitud" step="any" required @change="obtenerDireccion">
+      </div>
+      <div v-if="direccion" class="direccion-container">
+        <p class="direccion">{{ direccion }}</p>
       </div>
       <button type="button" @click="obtenerUbicacion" class="btn-ubicacion">Usar mi ubicación actual</button>
       <div
@@ -92,6 +95,7 @@ export default {
     const honeypot = ref('')
     const errores = ref([])
     const enviando = ref(false)
+    const direccion = ref('')
 
     const onFileSelected = (event) => {
       handleFile(event.target.files[0])
@@ -131,24 +135,41 @@ export default {
       }
     }
 
+    const obtenerDireccion = async () => {
+      if (incidencia.value.latitud && incidencia.value.longitud) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${incidencia.value.latitud}&lon=${incidencia.value.longitud}&zoom=18&addressdetails=1`;
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          direccion.value = data.display_name;
+        } catch (error) {
+          console.error('Error al obtener la dirección:', error);
+          direccion.value = 'No se pudo obtener la dirección';
+        }
+      } else {
+        direccion.value = '';
+      }
+    };
+
     const obtenerUbicacion = () => {
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            incidencia.value.latitud = position.coords.latitude
-            incidencia.value.longitud = position.coords.longitude
+          async (position) => {
+            incidencia.value.latitud = position.coords.latitude;
+            incidencia.value.longitud = position.coords.longitude;
             emit('ubicacion-seleccionada', {
               latitud: position.coords.latitude,
               longitud: position.coords.longitude
-            })
+            });
+            await obtenerDireccion();
           },
           (error) => {
-            console.error("Error al obtener la ubicación:", error.message)
-            errores.value.push("No se pudo obtener la ubicación. Por favor, ingrese las coordenadas manualmente.")
+            console.error("Error al obtener la ubicación:", error.message);
+            errores.value.push("No se pudo obtener la ubicación. Por favor, ingrese las coordenadas manualmente.");
           }
-        )
+        );
       } else {
-        errores.value.push("La geolocalización no está disponible en este navegador.")
+        errores.value.push("La geolocalización no está disponible en este navegador.");
       }
     }
 
@@ -175,6 +196,9 @@ export default {
 
       enviando.value = true
       try {
+        // Obtener la dirección antes de enviar la incidencia
+        await obtenerDireccion()
+
         const formData = new FormData()
         formData.append('tipo_id', incidencia.value.tipo_id)
         formData.append('descripcion', incidencia.value.descripcion)
@@ -182,6 +206,7 @@ export default {
         formData.append('longitud', incidencia.value.longitud)
         formData.append('imagen', incidencia.value.imagen)
         formData.append('nombre', incidencia.value.nombre)
+        formData.append('direccion', direccion.value)  // Añadir la dirección al formData
 
         const response = await axios.post('/api/incidencias', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -190,6 +215,7 @@ export default {
         incidencia.value = { tipo_id: '', descripcion: '', latitud: null, longitud: null, imagen: null, nombre: '' }
         previewUrl.value = null
         formSubmitted.value = false
+        direccion.value = ''  // Limpiar la dirección después de enviar
       } catch (error) {
         console.error('Error al enviar incidencia:', error)
         if (error.response && error.response.data && error.response.data.errores) {
@@ -206,8 +232,9 @@ export default {
 
     watch(() => props.ubicacionSeleccionada, (newUbicacion) => {
       if (newUbicacion.latitud && newUbicacion.longitud) {
-        incidencia.value.latitud = newUbicacion.latitud
-        incidencia.value.longitud = newUbicacion.longitud
+        incidencia.value.latitud = newUbicacion.latitud;
+        incidencia.value.longitud = newUbicacion.longitud;
+        obtenerDireccion();
       }
     }, { immediate: true })
 
@@ -224,7 +251,9 @@ export default {
       obtenerUbicacion,
       errores,
       enviando,
-      honeypot
+      honeypot,
+      direccion,
+      obtenerDireccion
     }
   }
 }
@@ -379,5 +408,28 @@ textarea {
 
 .is-invalid {
   border-color: #e74c3c;
+}
+
+.direccion-container {
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.direccion {
+  font-size: 0.9rem;
+  color: #333;
+  margin: 0;
+}
+
+.btn-ubicacion {
+  background-color: #3498db;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.btn-ubicacion:hover {
+  background-color: #2980b9;
 }
 </style>
