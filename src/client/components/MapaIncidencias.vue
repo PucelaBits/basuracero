@@ -143,7 +143,7 @@ export default {
 
     const updateUbicacion = (lat, lng) => {
       if (map) {
-        map.setView([lat, lng], 15)
+        map.setView([lat, lng], 18)
         addTempMarker(lat, lng)
       }
     }
@@ -407,6 +407,7 @@ export default {
   border: none;
   border-radius: 4px 0 0 4px;
   font-size: 14px;
+  margin: 0;
 }
 
 .search-button {
