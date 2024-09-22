@@ -1,53 +1,75 @@
 <template>
-  <div id="app">
-    <header>
-      <h1>Basura Cero</h1>
-    </header>
-    <main>
-      <MapaIncidencias 
-        :incidencias="incidencias" 
-        :incluirSolucionadas="incluirSolucionadas"
-        @ubicacion-seleccionada="actualizarUbicacion"
-        @abrir-formulario="mostrarFormulario = true"
-        @incidencia-seleccionada="abrirDetalleIncidencia"
-        :ubicacionSeleccionada="ubicacionSeleccionada"
-      />
-      <div class="total-incidencias">{{ textoTotalIncidencias }}</div>
-      <div class="filtros">
-        <label>
-          <input type="checkbox" v-model="incluirSolucionadas" @change="obtenerIncidencias">
-          Incluir incidencias solucionadas
-        </label>
-      </div>
-      <div class="content-wrapper">
+  <v-app>
+    <v-app-bar app color="primary" dark>
+      <v-toolbar-title>Basura Cero</v-toolbar-title>
+    </v-app-bar>
+
+    <v-main>
+      <v-container fluid>
+        <MapaIncidencias 
+          :incidencias="incidencias" 
+          :incluirSolucionadas="incluirSolucionadas"
+          @ubicacion-seleccionada="actualizarUbicacion"
+          @abrir-formulario="mostrarFormulario = true"
+          @incidencia-seleccionada="abrirDetalleIncidencia"
+          :ubicacionSeleccionada="ubicacionSeleccionada"
+        />
+        
+        <v-card class="mt-4">
+          <v-card-text>
+            <div class="text-h6">{{ textoTotalIncidencias }}</div>
+            <v-switch
+              v-model="incluirSolucionadas"
+              label="Incluir incidencias solucionadas"
+              @change="obtenerIncidencias"
+            ></v-switch>
+          </v-card-text>
+        </v-card>
+
         <ListaIncidencias :incidencias="incidenciasPaginadas" />
-        <div class="pagination">
-          <button @click="prevPage" :disabled="currentPage === 1">Anterior</button>
-          <span>{{ currentPage }} / {{ totalPages }}</span>
-          <button @click="nextPage" :disabled="currentPage === totalPages">Siguiente</button>
-        </div>
-      </div>
-    </main>
-    <button @click="mostrarFormulario = true" class="boton-flotante">
-      <i class="fas fa-plus"></i>
-    </button>
-    <div v-if="mostrarFormulario" class="modal-formulario">
+        
+        <v-pagination
+          v-model="currentPage"
+          :length="totalPages"
+          @input="obtenerIncidencias"
+        ></v-pagination>
+      </v-container>
+    </v-main>
+
+    <v-btn
+      fab
+      large
+      color="primary"
+      fixed
+      bottom
+      right
+      @click="mostrarFormulario = true"
+    >
+      <v-icon>mdi-plus</v-icon>
+    </v-btn>
+
+    <v-dialog v-model="mostrarFormulario" max-width="600px">
       <ReportarIncidencia 
         @incidencia-creada="incidenciaCreada" 
         :ubicacionSeleccionada="ubicacionSeleccionada"
         @cerrar="mostrarFormulario = false"
       />
-    </div>
+    </v-dialog>
+
     <ImageModal ref="imageModal" />
-    <div v-if="mensajeExito" class="mensaje-exito">
+
+    <v-snackbar v-model="mostrarMensajeExito" :timeout="3000" color="success">
       {{ mensajeExito }}
-    </div>
-    <DetalleIncidencia 
-      v-if="incidenciaSeleccionada" 
-      :incidencia="incidenciaSeleccionada"
-      @cerrar="incidenciaSeleccionada = null"
-    />
-  </div>
+    </v-snackbar>
+
+    <v-dialog v-model="!!incidenciaSeleccionada" fullscreen>
+      <DetalleIncidencia 
+        v-if="incidenciaSeleccionada" 
+        :incidencia="incidenciaSeleccionada"
+        @cerrar="incidenciaSeleccionada = null"
+      />
+    </v-dialog>
+  </v-app>
 </template>
 
 <script>
@@ -80,7 +102,8 @@ export default {
     const mostrarFormulario = ref(false)
     const incluirSolucionadas = ref(false)
     const incidenciaSeleccionada = ref(null)
-    
+    const mostrarMensajeExito = ref(false)
+
     const totalIncidencias = computed(() => incidencias.value.length)
     const textoTotalIncidencias = computed(() => {
       if (incluirSolucionadas.value) {
@@ -104,6 +127,7 @@ export default {
     const actualizarLista = () => {
       obtenerIncidencias()
       mensajeExito.value = 'Incidencia añadida con éxito'
+      mostrarMensajeExito.value = true
       setTimeout(() => {
         mensajeExito.value = ''
       }, 3000)
@@ -155,6 +179,7 @@ export default {
       obtenerIncidencias()
       mostrarFormulario.value = false
       mensajeExito.value = 'Incidencia añadida con éxito'
+      mostrarMensajeExito.value = true
       setTimeout(() => {
         mensajeExito.value = ''
       }, 3000)
@@ -188,7 +213,8 @@ export default {
       incluirSolucionadas,
       obtenerIncidencias,
       abrirDetalleIncidencia,
-      incidenciaSeleccionada
+      incidenciaSeleccionada,
+      mostrarMensajeExito
     }
   }
 }

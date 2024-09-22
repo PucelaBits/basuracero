@@ -25,14 +25,16 @@
           </p>
         </div>
         <div class="acciones-incidencia">
-          <button 
-            v-if="incidencia.estado === 'activa'" 
-            @click="reportarComoSolucionada" 
+          <v-btn
+            v-if="incidencia.estado === 'activa'"
+            @click="mostrarDialogoConfirmacion = true"
+            :loading="reportando"
             :disabled="reportando"
-            class="btn-accion btn-reportar-solucionada"
+            color="success"
+            class="btn-accion"
           >
             {{ reportando ? 'Reportando...' : 'Reportar como solucionada' }}
-          </button>
+          </v-btn>
           <a 
             href="https://www.valladolid.es/es/sqi#proxia-restful-sqi.1.1/p!/new" 
             target="_blank" 
@@ -44,6 +46,41 @@
         </div>
       </div>
     </div>
+
+    <!-- Diálogo de confirmación -->
+    <v-dialog v-model="mostrarDialogoConfirmacion" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">Confirmar solución</v-card-title>
+        <v-card-text>
+          ¿Has comprobado presencialmente que está solucionada?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="cancelarConfirmacion">
+            No
+          </v-btn>
+          <v-btn color="green darken-1" text @click="confirmarSolucion">
+            Sí
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Diálogo de advertencia -->
+    <v-dialog v-model="mostrarDialogoAdvertencia" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">Advertencia</v-card-title>
+        <v-card-text>
+          Sólo puedes marcarla como solucionada si lo has comprobado presencialmente.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="mostrarDialogoAdvertencia = false">
+            Entendido
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -52,6 +89,7 @@ import { onMounted, ref } from 'vue';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { VBtn, VDialog, VCard, VCardTitle, VCardText, VCardActions, VSpacer } from 'vuetify/components';
 
 export default {
   name: 'DetalleIncidencia',
@@ -78,6 +116,19 @@ export default {
     };
 
     const reportando = ref(false);
+    const mostrarDialogoConfirmacion = ref(false);
+    const mostrarDialogoAdvertencia = ref(false);
+
+    const confirmarSolucion = () => {
+      mostrarDialogoConfirmacion.value = false;
+      reportarComoSolucionada();
+    };
+
+    // Añadir esta nueva función
+    const cancelarConfirmacion = () => {
+      mostrarDialogoConfirmacion.value = false;
+      mostrarDialogoAdvertencia.value = true;
+    };
 
     const reportarComoSolucionada = async () => {
       reportando.value = true;
@@ -119,7 +170,11 @@ export default {
       abrirImagenCompleta,
       formatDate,
       reportarComoSolucionada,
-      reportando
+      reportando,
+      mostrarDialogoConfirmacion,
+      mostrarDialogoAdvertencia,
+      confirmarSolucion,
+      cancelarConfirmacion // Añadir esta nueva función al return
     };
   }
 };
@@ -195,20 +250,21 @@ export default {
 
 .acciones-incidencia {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 20px;
 }
 
 .btn-accion {
-  flex: 1; /* Hace que ambos botones ocupen el mismo espacio */
-  padding: 10px 15px;
+  width: 100%;
+  padding: 10px 0px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
   text-decoration: none;
   text-align: center;
-  margin: 0 5px; /* Añade un pequeño margen entre los botones */
-  white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .btn-reportar-solucionada {
@@ -227,12 +283,22 @@ export default {
 }
 
 .btn-queja-ayuntamiento {
-  background-color: #3498db;
+  background-color: #392763c4;
   color: white;
   border: none;
 }
 
 .btn-queja-ayuntamiento:hover {
-  background-color: #2980b9;
+  background-color: #533d85c4;
+}
+
+@media (min-width: 768px) {
+  .acciones-incidencia {
+    flex-direction: row;
+  }
+
+  .btn-accion {
+    flex: 1;
+  }
 }
 </style>
