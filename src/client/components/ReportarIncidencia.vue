@@ -175,18 +175,34 @@ export default {
 
     const validarFormulario = () => {
       errores.value = []
-      if (!incidencia.value.nombre) errores.value.push('El nombre es requerido')
-      if (!incidencia.value.tipo_id) errores.value.push('El tipo de incidencia es requerido')
-      if (!incidencia.value.descripcion) errores.value.push('La descripción es requerida')
-      if (!incidencia.value.latitud) errores.value.push('La latitud es requerida')
-      if (!incidencia.value.longitud) errores.value.push('La longitud es requerida')
-      if (!incidencia.value.imagen) errores.value.push('La imagen es requerida')
+      if (!incidencia.value.nombre) errores.value.push('Debe rellenar el nombre')
+      if (!incidencia.value.tipo_id) errores.value.push('Debe seleccionar un tipo')
+      if (!incidencia.value.descripcion) errores.value.push('Debe rellenar la descripción')
+      if (!incidencia.value.latitud) errores.value.push('Debe rellenar la latitud')
+      if (!incidencia.value.longitud) errores.value.push('Debe rellenar la longitud')
+      if (!incidencia.value.imagen) errores.value.push('Es necesario subir una foto')
+      
+      // Añadir un console.log para depuración
+      console.log('Errores de validación:', errores.value)
+      
       return errores.value.length === 0
+    }
+
+    const scrollToErrors = () => {
+      if (errores.value.length > 0) {
+        const errorElement = document.querySelector('.error-message');
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
     }
 
     const enviarIncidencia = async () => {
       formSubmitted.value = true
-      if (!validarFormulario()) return
+      if (!validarFormulario()) {
+        scrollToErrors();
+        return
+      }
 
       if (honeypot.value !== '') {
         console.log('Posible envío de bot detectado')
@@ -269,6 +285,7 @@ export default {
   max-height: 80vh;
   overflow-y: auto;
   position: relative;
+  -webkit-overflow-scrolling: touch; /* Para mejor desplazamiento en iOS */
 }
 
 .cerrar-btn {
@@ -395,11 +412,17 @@ textarea {
 .error-message {
   color: #e74c3c;
   margin-bottom: 1rem;
+  border: 1px solid #e74c3c;
+  padding: 10px;
+  background-color: #fde8e8; /* Añadir un fondo para mayor visibilidad */
+  position: relative; /* Asegurar que esté por encima de otros elementos */
+  z-index: 10; /* Aumentar el z-index para mayor visibilidad */
 }
 
 .error-message ul {
   list-style-type: none;
   padding-left: 0;
+  margin: 0;
 }
 
 .error-message li {
