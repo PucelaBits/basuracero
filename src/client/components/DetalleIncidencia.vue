@@ -19,6 +19,7 @@
 <script>
 import { onMounted } from 'vue';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 export default {
   name: 'DetalleIncidencia',
@@ -50,7 +51,16 @@ export default {
         attribution: '© OpenStreetMap contributors © CARTO',
         maxZoom: 19
       }).addTo(map);
-      L.marker([props.incidencia.latitud, props.incidencia.longitud]).addTo(map);
+      
+      // Nuevo código para el marcador personalizado
+      L.marker([props.incidencia.latitud, props.incidencia.longitud], {
+        icon: L.divIcon({
+          className: 'custom-div-icon',
+          html: "<div style='background-color:#c30b82;' class='marker-pin'></div>",
+          iconSize: [30, 42],
+          iconAnchor: [15, 42]
+        })
+      }).addTo(map);
     });
 
     return {
@@ -61,3 +71,33 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+/* Añade estos estilos para el marcador personalizado */
+.custom-div-icon {
+  background: none;
+  border: none;
+}
+
+.marker-pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  background: #c30b82;
+  position: absolute;
+  transform: rotate(-45deg);
+  left: 50%;
+  top: 50%;
+  margin: -15px 0 0 -15px;
+}
+
+.marker-pin::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  margin: 3px 0 0 3px;
+  background: #fff;
+  position: absolute;
+  border-radius: 50%;
+}
+</style>
