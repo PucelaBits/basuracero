@@ -1,6 +1,19 @@
 <template>
   <div class="mapa-container">
     <div id="map" class="mapa-incidencias"></div>
+    <div class="search-container" :class="{ 'active': isSearchActive }">
+      <input 
+        type="text" 
+        id="search-input" 
+        placeholder="Buscar dirección..." 
+        v-model="searchQuery" 
+        v-show="isSearchActive"
+        @keyup.enter="searchAddress"
+      >
+      <button class="search-button" @click="toggleSearch">
+        <i class="fas fa-search"></i>
+      </button>
+    </div>
     <button @click="detectarUbicacion" class="boton-ubicacion">
       <i class="fas fa-crosshairs"></i>
     </button>
@@ -8,7 +21,7 @@
 </template>
 
 <script>
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch, ref } from 'vue'
 import L from 'leaflet'
 
 export default {
@@ -32,6 +45,9 @@ export default {
     let map = null
     let markers = []
     let tempMarker = null
+    const isSearchActive = ref(false)
+    const searchQuery = ref('')
+    const searchResults = ref([])
 
     const formatDate = (dateString) => {
       const date = new Date(dateString);
@@ -92,7 +108,7 @@ export default {
                 <small>Enviado por: ${incidencia.nombre}</small>
                 <small>${formatDate(incidencia.fecha)}</small>
                 <small>Estado: ${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</small>
-                ${incidencia.estado === 'solucionada' ? `<small>Fecha de solución: ${formatDate(incidencia.fecha_solucion)}</small>` : ''}
+                ${incidencia.estado === 'solucionada' ? `<small>Fecha de solucin: ${formatDate(incidencia.fecha_solucion)}</small>` : ''}
               </div>
             </div>
           `
@@ -156,6 +172,31 @@ export default {
       }
     }
 
+    const toggleSearch = () => {
+      if (isSearchActive.value) {
+        searchAddress()
+      } else {
+        isSearchActive.value = true
+      }
+    }
+
+    const searchAddress = async () => {
+      if (searchQuery.value.length < 3) return
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.value)}+Valladolid+España&limit=5`)
+        const data = await response.json()
+        if (Array.isArray(data) && data.length > 0) {
+          const result = data[0]
+          map.setView([result.lat, result.lon], 17)
+          addTempMarker(result.lat, result.lon)
+        } else {
+          console.log('No se encontraron resultados')
+        }
+      } catch (error) {
+        console.error('Error al buscar dirección:', error)
+      }
+    }
+
     onMounted(() => {
       initMap()
       updateMarkers()
@@ -178,7 +219,11 @@ export default {
     return {
       updateUbicacion,
       detectarUbicacion,
-      removeTempMarker
+      removeTempMarker,
+      isSearchActive,
+      searchQuery,
+      toggleSearch,
+      searchAddress
     }
   }
 }
@@ -338,5 +383,41 @@ export default {
 .popup-content small {
   display: block;
   color: #666;
+}
+
+.search-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-container.active {
+  width: 240px;
+}
+
+#search-input {
+  flex-grow: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 4px 0 0 4px;
+  font-size: 14px;
+}
+
+.search-button {
+  background-color: #fff;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.search-button:hover {
+  background-color: #f4f4f4;
 }
 </style>
