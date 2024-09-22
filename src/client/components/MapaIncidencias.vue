@@ -18,6 +18,10 @@ export default {
       type: Array,
       required: true
     },
+    incluirSolucionadas: {
+      type: Boolean,
+      default: false
+    },
     ubicacionSeleccionada: {
       type: Object,
       default: () => ({})
@@ -78,7 +82,7 @@ export default {
       markers = []
 
       props.incidencias.forEach(incidencia => {
-        if (incidencia.estado === 'activa') {
+        if (incidencia.estado === 'activa' || (incidencia.estado === 'solucionada' && props.incluirSolucionadas)) {
           const popupContent = `
             <div class="custom-popup">
               <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image" onclick="window.openImageModal('${incidencia.imagen}')" onerror="this.onerror=null;this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';">
@@ -87,16 +91,13 @@ export default {
                 <p>${incidencia.descripcion}</p>
                 <small>Enviado por: ${incidencia.nombre}</small>
                 <small>${formatDate(incidencia.fecha)}</small>
+                <small>Estado: ${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</small>
+                ${incidencia.estado === 'solucionada' ? `<small>Fecha de solución: ${formatDate(incidencia.fecha_solucion)}</small>` : ''}
               </div>
             </div>
           `
           const marker = L.marker([incidencia.latitud, incidencia.longitud], {
-            icon: L.divIcon({
-              className: 'custom-div-icon',
-              html: "<div style='background-color:#c30b82;' class='marker-pin'></div>",
-              iconSize: [30, 42],
-              iconAnchor: [15, 42]
-            })
+            icon: createCustomIcon(incidencia.estado)
           })
             .addTo(map)
             .bindPopup(popupContent, { 
@@ -108,10 +109,20 @@ export default {
         }
       })
 
-      if (props.incidencias.length > 0) {
-        const bounds = L.latLngBounds(props.incidencias.map(i => [i.latitud, i.longitud]))
+      if (markers.length > 0) {
+        const bounds = L.latLngBounds(markers.map(marker => marker.getLatLng()))
         map.fitBounds(bounds)
       }
+    }
+
+    const createCustomIcon = (estado) => {
+      const color = estado === 'activa' ? '#c30b82' : '#27ae60'
+      return L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style='background-color:${color};' class='marker-pin'></div>`,
+        iconSize: [30, 42],
+        iconAnchor: [15, 42]
+      })
     }
 
     const updateUbicacion = (lat, lng) => {
@@ -156,11 +167,8 @@ export default {
       }
     })
 
-    watch(() => props.incidencias, () => {
-      updateMarkers()
-      removeTempMarker()
-    }, { deep: true })
-
+    watch(() => props.incidencias, updateMarkers, { deep: true })
+    watch(() => props.incluirSolucionadas, updateMarkers)
     watch(() => props.ubicacionSeleccionada, (newUbicacion) => {
       if (newUbicacion.latitud && newUbicacion.longitud) {
         updateUbicacion(newUbicacion.latitud, newUbicacion.longitud)

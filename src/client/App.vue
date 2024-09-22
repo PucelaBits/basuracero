@@ -14,7 +14,7 @@
       <div class="total-incidencias">{{ totalIncidencias }} incidencias reportadas</div>
       <div class="filtros">
         <label>
-          <input type="checkbox" v-model="incluirSolucionadas" @change="toggleIncluirSolucionadas">
+          <input type="checkbox" v-model="incluirSolucionadas" @change="obtenerIncidencias">
           Incluir incidencias solucionadas
         </label>
       </div>
@@ -141,11 +141,6 @@ export default {
       setTimeout(() => {
         mensajeExito.value = ''
       }, 3000)
-    }
-
-    const toggleIncluirSolucionadas = () => {
-      incluirSolucionadas.value = !incluirSolucionadas.value
-      obtenerIncidencias()
     }
 
     onMounted(obtenerIncidencias)
