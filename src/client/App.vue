@@ -11,7 +11,7 @@
         @abrir-formulario="mostrarFormulario = true"
         :ubicacionSeleccionada="ubicacionSeleccionada"
       />
-      <div class="total-incidencias">{{ totalIncidencias }} incidencias reportadas</div>
+      <div class="total-incidencias">{{ textoTotalIncidencias }}</div>
       <div class="filtros">
         <label>
           <input type="checkbox" v-model="incluirSolucionadas" @change="obtenerIncidencias">
@@ -70,8 +70,16 @@ export default {
     const imageModal = ref(null)
     const mensajeExito = ref('')
     const mostrarFormulario = ref(false)
-    const totalIncidencias = computed(() => incidencias.value.length)
     const incluirSolucionadas = ref(false)
+    
+    const totalIncidencias = computed(() => incidencias.value.length)
+    const textoTotalIncidencias = computed(() => {
+      if (incluirSolucionadas.value) {
+        return `${totalIncidencias.value} incidencias reportadas`
+      } else {
+        return `${totalIncidencias.value} incidencias abiertas`
+      }
+    })
 
     const obtenerIncidencias = async () => {
       try {
@@ -162,6 +170,7 @@ export default {
       mostrarFormulario,
       incidenciaCreada,
       totalIncidencias,
+      textoTotalIncidencias,
       incluirSolucionadas,
       obtenerIncidencias
     }
