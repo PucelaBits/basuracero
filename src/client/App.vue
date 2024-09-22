@@ -9,6 +9,7 @@
         :incluirSolucionadas="incluirSolucionadas"
         @ubicacion-seleccionada="actualizarUbicacion"
         @abrir-formulario="mostrarFormulario = true"
+        @incidencia-seleccionada="abrirDetalleIncidencia"
         :ubicacionSeleccionada="ubicacionSeleccionada"
       />
       <div class="total-incidencias">{{ textoTotalIncidencias }}</div>
@@ -41,6 +42,11 @@
     <div v-if="mensajeExito" class="mensaje-exito">
       {{ mensajeExito }}
     </div>
+    <DetalleIncidencia 
+      v-if="incidenciaSeleccionada" 
+      :incidencia="incidenciaSeleccionada"
+      @cerrar="incidenciaSeleccionada = null"
+    />
   </div>
 </template>
 
@@ -51,6 +57,7 @@ import ReportarIncidencia from './components/ReportarIncidencia.vue'
 import ListaIncidencias from './components/ListaIncidencias.vue'
 import MapaIncidencias from './components/MapaIncidencias.vue'
 import ImageModal from './components/ImageModal.vue'
+import DetalleIncidencia from './components/DetalleIncidencia.vue'
 
 export default {
   name: 'App',
@@ -58,7 +65,8 @@ export default {
     ReportarIncidencia,
     ListaIncidencias,
     MapaIncidencias,
-    ImageModal
+    ImageModal,
+    DetalleIncidencia
   },
   setup() {
     const incidencias = ref([])
@@ -71,6 +79,7 @@ export default {
     const mensajeExito = ref('')
     const mostrarFormulario = ref(false)
     const incluirSolucionadas = ref(false)
+    const incidenciaSeleccionada = ref(null)
     
     const totalIncidencias = computed(() => incidencias.value.length)
     const textoTotalIncidencias = computed(() => {
@@ -151,6 +160,11 @@ export default {
       }, 3000)
     }
 
+    const abrirDetalleIncidencia = (incidencia) => {
+      console.log('Abriendo detalle de incidencia:', incidencia);
+      incidenciaSeleccionada.value = incidencia;
+    }
+
     onMounted(obtenerIncidencias)
 
     return {
@@ -172,7 +186,9 @@ export default {
       totalIncidencias,
       textoTotalIncidencias,
       incluirSolucionadas,
-      obtenerIncidencias
+      obtenerIncidencias,
+      abrirDetalleIncidencia,
+      incidenciaSeleccionada
     }
   }
 }

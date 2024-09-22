@@ -40,7 +40,7 @@ export default {
       default: () => ({})
     }
   },
-  emits: ['ubicacion-seleccionada', 'abrir-formulario'],
+  emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada'],
   setup(props, { emit }) {
     let map = null
     let markers = []
@@ -48,10 +48,18 @@ export default {
     const isSearchActive = ref(false)
     const searchQuery = ref('')
     const searchResults = ref([])
+    
+    const incidenciaSeleccionada = ref(null);
 
-    const formatDate = (dateString) => {
+    const abrirDetalle = (incidencia) => {
+      emit('incidencia-seleccionada', incidencia);
+    };
+
+    const formatDate = (dateString, onlyDate = false) => {
       const date = new Date(dateString);
-      const options = { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+      const options = onlyDate 
+        ? { day: 'numeric', month: 'short', year: 'numeric' }
+        : { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
@@ -99,28 +107,35 @@ export default {
 
       props.incidencias.forEach(incidencia => {
         if (incidencia.estado === 'activa' || (incidencia.estado === 'solucionada' && props.incluirSolucionadas)) {
-          const popupContent = `
-            <div class="custom-popup">
-              <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image" onclick="window.openImageModal('${incidencia.imagen}')" onerror="this.onerror=null;this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';">
-              <div class="popup-content">
-                <h3>${incidencia.tipo}</h3>
-                <p>${incidencia.descripcion}</p>
-                <small>Enviado por: ${incidencia.nombre}</small>
-                <small>${formatDate(incidencia.fecha)}</small>
-                <small>Estado: ${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</small>
-                ${incidencia.estado === 'solucionada' ? `<small>Fecha de solucin: ${formatDate(incidencia.fecha_solucion)}</small>` : ''}
-              </div>
-            </div>
+          const popupContent = L.DomUtil.create('div', 'custom-popup')
+          const img = L.DomUtil.create('img', 'popup-image', popupContent)
+          img.src = incidencia.imagen
+          img.alt = incidencia.tipo
+          img.onerror = "this.onerror=null;this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';"
+          
+          const content = L.DomUtil.create('div', 'popup-content', popupContent)
+          content.innerHTML = `
+            <h3>${incidencia.tipo}</h3>
+            <p>${incidencia.descripcion}</p>
+            <small>${incidencia.nombre} - ${formatDate(incidencia.fecha, true)}</small>
+            <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
           `
+
           const marker = L.marker([incidencia.latitud, incidencia.longitud], {
             icon: createCustomIcon(incidencia.estado)
+          }).addTo(map)
+
+          marker.bindPopup(popupContent, { 
+            maxWidth: 300, 
+            minWidth: 300,
+            className: 'custom-popup-class' 
           })
-            .addTo(map)
-            .bindPopup(popupContent, { 
-              maxWidth: 300, 
-              minWidth: 300,
-              className: 'custom-popup-class' 
-            })
+
+          L.DomEvent.on(img, 'click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            abrirDetalle(incidencia);
+          })
+
           markers.push(marker)
         }
       })
@@ -140,7 +155,7 @@ export default {
         iconAnchor: [15, 42]
       })
     }
-
+    
     const updateUbicacion = (lat, lng) => {
       if (map) {
         map.setView([lat, lng], 18)
@@ -223,7 +238,8 @@ export default {
       isSearchActive,
       searchQuery,
       toggleSearch,
-      searchAddress
+      searchAddress,
+      abrirDetalle
     }
   }
 }
@@ -420,5 +436,34 @@ export default {
 
 .search-button:hover {
   background-color: #f4f4f4;
+}
+
+.estado-pastilla {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.estado-pastilla.activa {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.estado-pastilla.solucionada {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.custom-popup .popup-image {
+  cursor: pointer;
+}
+
+.custom-popup .popup-content {
+  position: relative;
+  padding-bottom: 20px;
 }
 </style>
