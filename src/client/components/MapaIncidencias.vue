@@ -228,8 +228,8 @@ export default {
 }
 
 .marker-pin {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
   border-radius: 50% 50% 50% 0;
   background: #c30b82;
   position: absolute;
@@ -241,8 +241,8 @@ export default {
 
 .marker-pin::after {
   content: '';
-  width: 24px;
-  height: 24px;
+  width: 14px;
+  height: 14px;
   margin: 3px 0 0 3px;
   background: #fff;
   position: absolute;
