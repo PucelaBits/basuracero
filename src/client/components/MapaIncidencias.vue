@@ -78,32 +78,34 @@ export default {
       markers = []
 
       props.incidencias.forEach(incidencia => {
-        const popupContent = `
-          <div class="custom-popup">
-            <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image" onclick="window.openImageModal('${incidencia.imagen}')" onerror="this.onerror=null;this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';">
-            <div class="popup-content">
-              <h3>${incidencia.tipo}</h3>
-              <p>${incidencia.descripcion}</p>
-              <small>Enviado por: ${incidencia.nombre}</small>
-              <small>${formatDate(incidencia.fecha)}</small>
+        if (incidencia.estado === 'activa') {
+          const popupContent = `
+            <div class="custom-popup">
+              <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image" onclick="window.openImageModal('${incidencia.imagen}')" onerror="this.onerror=null;this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';">
+              <div class="popup-content">
+                <h3>${incidencia.tipo}</h3>
+                <p>${incidencia.descripcion}</p>
+                <small>Enviado por: ${incidencia.nombre}</small>
+                <small>${formatDate(incidencia.fecha)}</small>
+              </div>
             </div>
-          </div>
-        `
-        const marker = L.marker([incidencia.latitud, incidencia.longitud], {
-          icon: L.divIcon({
-            className: 'custom-div-icon',
-            html: "<div style='background-color:#c30b82;' class='marker-pin'></div>",
-            iconSize: [30, 42],
-            iconAnchor: [15, 42]
+          `
+          const marker = L.marker([incidencia.latitud, incidencia.longitud], {
+            icon: L.divIcon({
+              className: 'custom-div-icon',
+              html: "<div style='background-color:#c30b82;' class='marker-pin'></div>",
+              iconSize: [30, 42],
+              iconAnchor: [15, 42]
+            })
           })
-        })
-          .addTo(map)
-          .bindPopup(popupContent, { 
-            maxWidth: 300, 
-            minWidth: 300,
-            className: 'custom-popup-class' 
-          })
-        markers.push(marker)
+            .addTo(map)
+            .bindPopup(popupContent, { 
+              maxWidth: 300, 
+              minWidth: 300,
+              className: 'custom-popup-class' 
+            })
+          markers.push(marker)
+        }
       })
 
       if (props.incidencias.length > 0) {

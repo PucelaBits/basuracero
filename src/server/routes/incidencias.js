@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { obtenerIP } = require('../utils/ip');
 
 // Asegurarse de que la carpeta uploads existe
 const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
@@ -99,12 +100,17 @@ router.get('/', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
+  const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
 
-  const countSql = `SELECT COUNT(*) as total FROM incidencias`;
+  const whereClause = incluirSolucionadas ? '' : 'WHERE i.estado = "activa"';
+
+  const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
   const dataSql = `
-    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha
+    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
+    ${whereClause}
     ORDER BY i.fecha DESC
     LIMIT ? OFFSET ?
   `;
@@ -139,6 +145,57 @@ router.get('/', (req, res) => {
       });
     });
   });
+});
+
+// Reportar incidencia como solucionada
+router.post('/:id/solucionada', async (req, res) => {
+  const incidenciaId = req.params.id;
+  const ip = obtenerIP(req);
+
+  try {
+    // Verificar si el usuario ya ha reportado esta incidencia
+    const reporteExistente = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (reporteExistente) {
+      return res.status(400).json({ error: 'Ya has reportado esta incidencia como solucionada' });
+    }
+
+    // Insertar el nuevo reporte
+    await new Promise((resolve, reject) => {
+      db.run('INSERT INTO reportes_solucion (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Contar el número de reportes para esta incidencia
+    const { count } = await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM reportes_solucion WHERE incidencia_id = ?', [incidenciaId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    // Si hay 3 o más reportes, marcar la incidencia como solucionada
+    if (count >= 3) {
+      await new Promise((resolve, reject) => {
+        db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
+
+    res.json({ mensaje: 'Reporte de solución registrado', reportes: count });
+  } catch (error) {
+    console.error('Error al reportar incidencia como solucionada:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 module.exports = router;

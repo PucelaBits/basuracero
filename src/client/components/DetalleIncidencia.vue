@@ -11,13 +11,31 @@
           <p><strong>Fecha:</strong> {{ formatDate(incidencia.fecha) }}</p>
         </div>
         <div id="mapa-detalle" class="mapa-detalle"></div>
+        <div class="estado-incidencia">
+          <p><strong>Estado:</strong> {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}</p>
+          <p v-if="incidencia.estado === 'solucionada'">
+            <strong>Fecha de solución:</strong> {{ formatDate(incidencia.fecha_solucion) }}
+          </p>
+          <p v-if="incidencia.reportes_solucion > 0">
+            {{ incidencia.reportes_solucion }} personas han indicado que está solucionado
+          </p>
+        </div>
+        <button 
+          v-if="incidencia.estado === 'activa'" 
+          @click="reportarComoSolucionada" 
+          :disabled="reportando"
+          class="btn-reportar-solucionada"
+        >
+          {{ reportando ? 'Reportando...' : 'Reportar como solucionada' }}
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
+import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -45,6 +63,25 @@ export default {
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
+    const reportando = ref(false);
+
+    const reportarComoSolucionada = async () => {
+      reportando.value = true;
+      try {
+        const response = await axios.post(`/api/incidencias/${props.incidencia.id}/solucionada`);
+        props.incidencia.reportes_solucion = response.data.reportes;
+        if (response.data.reportes >= 3) {
+          props.incidencia.estado = 'solucionada';
+          props.incidencia.fecha_solucion = new Date().toISOString();
+        }
+      } catch (error) {
+        console.error('Error al reportar como solucionada:', error);
+        alert(error.response?.data?.error || 'Error al reportar como solucionada');
+      } finally {
+        reportando.value = false;
+      }
+    };
+
     onMounted(() => {
       const map = L.map('mapa-detalle').setView([props.incidencia.latitud, props.incidencia.longitud], 15);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -66,7 +103,9 @@ export default {
     return {
       cerrar,
       abrirImagenCompleta,
-      formatDate
+      formatDate,
+      reportarComoSolucionada,
+      reportando
     };
   }
 };
@@ -99,5 +138,32 @@ export default {
   background: #fff;
   position: absolute;
   border-radius: 50%;
+}
+
+.btn-reportar-solucionada {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.btn-reportar-solucionada:hover {
+  background-color: #2ecc71;
+}
+
+.btn-reportar-solucionada:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.estado-incidencia {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
 }
 </style>

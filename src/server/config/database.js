@@ -64,6 +64,34 @@ const db = new sqlite3.Database(dbPath, (err) => {
           }
         }
       });
+
+      // Modificar la tabla de incidencias para incluir el estado y la fecha de solución
+      db.all("PRAGMA table_info(incidencias)", (err, rows) => {
+        if (err) {
+          console.error('Error al verificar la estructura de la tabla incidencias:', err.message);
+        } else {
+          if (Array.isArray(rows)) {
+            const columns = rows.map(row => row.name);
+            if (!columns.includes('estado')) {
+              db.run(`ALTER TABLE incidencias ADD COLUMN estado TEXT DEFAULT 'activa'`);
+            }
+            if (!columns.includes('fecha_solucion')) {
+              db.run(`ALTER TABLE incidencias ADD COLUMN fecha_solucion DATETIME`);
+            }
+          } else {
+            console.error('La estructura de la tabla incidencias no es la esperada:', rows);
+          }
+        }
+      });
+
+      // Crear una nueva tabla para los reportes de solución
+      db.run(`CREATE TABLE IF NOT EXISTS reportes_solucion (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        incidencia_id INTEGER,
+        ip TEXT,
+        fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (incidencia_id) REFERENCES incidencias(id)
+      )`);
     });
   }
 });

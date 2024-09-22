@@ -11,6 +11,12 @@
         :ubicacionSeleccionada="ubicacionSeleccionada"
       />
       <div class="total-incidencias">{{ totalIncidencias }} incidencias reportadas</div>
+      <div class="filtros">
+        <label>
+          <input type="checkbox" v-model="incluirSolucionadas" @change="obtenerIncidencias">
+          Incluir incidencias solucionadas
+        </label>
+      </div>
       <div class="content-wrapper">
         <ListaIncidencias :incidencias="incidenciasPaginadas" />
         <div class="pagination">
@@ -64,10 +70,11 @@ export default {
     const mensajeExito = ref('')
     const mostrarFormulario = ref(false)
     const totalIncidencias = computed(() => incidencias.value.length)
+    const incluirSolucionadas = ref(false)
 
     const obtenerIncidencias = async () => {
       try {
-        const response = await axios.get(`/api/incidencias?page=${currentPage.value}&limit=${itemsPerPage}`)
+        const response = await axios.get(`/api/incidencias?page=${currentPage.value}&limit=${itemsPerPage}&incluirSolucionadas=${incluirSolucionadas.value}`)
         incidencias.value = response.data.incidencias
         currentPage.value = response.data.currentPage
         totalPages.value = response.data.totalPages
@@ -153,7 +160,9 @@ export default {
       mensajeExito,
       mostrarFormulario,
       incidenciaCreada,
-      totalIncidencias
+      totalIncidencias,
+      incluirSolucionadas,
+      obtenerIncidencias
     }
   }
 }
@@ -180,5 +189,14 @@ export default {
 @keyframes fadeInOut {
   0%, 100% { opacity: 0; }
   10%, 90% { opacity: 1; }
+}
+
+.filtros {
+  margin: 10px 0;
+  text-align: center;
+}
+
+.filtros label {
+  cursor: pointer;
 }
 </style>
