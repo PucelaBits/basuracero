@@ -24,14 +24,24 @@
             {{ incidencia.reportes_solucion }} personas han indicado que está solucionado
           </p>
         </div>
-        <button 
-          v-if="incidencia.estado === 'activa'" 
-          @click="reportarComoSolucionada" 
-          :disabled="reportando"
-          class="btn-reportar-solucionada"
-        >
-          {{ reportando ? 'Reportando...' : 'Reportar como solucionada' }}
-        </button>
+        <div class="acciones-incidencia">
+          <button 
+            v-if="incidencia.estado === 'activa'" 
+            @click="reportarComoSolucionada" 
+            :disabled="reportando"
+            class="btn-accion btn-reportar-solucionada"
+          >
+            {{ reportando ? 'Reportando...' : 'Reportar como solucionada' }}
+          </button>
+          <a 
+            href="https://www.valladolid.es/es/sqi#proxia-restful-sqi.1.1/p!/new" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="btn-accion btn-queja-ayuntamiento"
+          >
+            Enviar queja al ayuntamiento
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -181,5 +191,48 @@ export default {
 .direccion-info p {
   margin: 0;
   font-size: 0.9em;
+}
+
+.acciones-incidencia {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.btn-accion {
+  flex: 1; /* Hace que ambos botones ocupen el mismo espacio */
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  text-align: center;
+  margin: 0 5px; /* Añade un pequeño margen entre los botones */
+  white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+}
+
+.btn-reportar-solucionada {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+}
+
+.btn-reportar-solucionada:hover {
+  background-color: #2ecc71;
+}
+
+.btn-reportar-solucionada:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.btn-queja-ayuntamiento {
+  background-color: #3498db;
+  color: white;
+  border: none;
+}
+
+.btn-queja-ayuntamiento:hover {
+  background-color: #2980b9;
 }
 </style>
