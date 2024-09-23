@@ -81,6 +81,7 @@
         v-model="mostrarFormulario"
         :ubicacionSeleccionada="ubicacionSeleccionada"
         @incidencia-creada="incidenciaCreada"
+        @seleccionar-en-mapa="seleccionarEnMapa"
       />
     </v-dialog>
 
@@ -248,6 +249,11 @@ export default {
       mostrarDetalleIncidencia.value = false;
     }
 
+    const seleccionarEnMapa = () => {
+      mostrarFormulario.value = false
+      // Aquí puedes agregar lógica adicional si es necesario
+    }
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -275,6 +281,7 @@ export default {
       theme: computed(() => theme.current.value),
       todasLasIncidencias,
       obtenerTodasLasIncidencias,
+      seleccionarEnMapa
     }
   }
 }

@@ -77,7 +77,14 @@
           <v-row justify="center" class="mb-4">
             <v-col cols="12" class="text-center">
               <v-btn @click="obtenerUbicacion" color="primary">
-                Usar tu ubicación actual
+                <v-icon left>mdi-map-marker</v-icon>
+                &nbsp;Usar tu ubicación
+              </v-btn>
+            </v-col>
+            <v-col cols="12" class="text-center">
+              <v-btn @click="seleccionarEnMapa" color="secondary">
+                <v-icon left>mdi-map</v-icon>
+                &nbsp;Seleccionar en mapa
               </v-btn>
             </v-col>
           </v-row>
@@ -135,7 +142,7 @@ export default {
       default: () => ({})
     }
   },
-  emits: ['update:modelValue', 'incidencia-creada'],
+  emits: ['update:modelValue', 'incidencia-creada', 'seleccionar-en-mapa'],
   setup(props, { emit }) {
     const { smAndDown, xs } = useDisplay()
     const dialog = ref(props.modelValue)
@@ -158,6 +165,9 @@ export default {
     const captchaWidget = ref(null)
 
     const validarCoordenadas = () => {
+      if (!incidencia.value.latitud || !incidencia.value.longitud) {
+        return true; // No mostrar error si los campos están vacíos
+      }
       const lat = parseFloat(incidencia.value.latitud);
       const lon = parseFloat(incidencia.value.longitud);
       if (isNaN(lat) || isNaN(lon) || 
@@ -286,6 +296,11 @@ export default {
       }
     }
 
+    const seleccionarEnMapa = () => {
+      emit('seleccionar-en-mapa')
+      cerrar()
+    }
+
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal
     })
@@ -342,7 +357,8 @@ export default {
       captchaContainer,
       smAndDown,
       xs,
-      validarCoordenadas
+      validarCoordenadas,
+      seleccionarEnMapa
     }
   }
 }
