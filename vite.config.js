@@ -26,5 +26,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['vue']
+  },
+  define: {
+    'import.meta.env.VITE_CIUDAD_LAT_MIN': JSON.stringify(process.env.CIUDAD_LAT_MIN),
+    'import.meta.env.VITE_CIUDAD_LAT_MAX': JSON.stringify(process.env.CIUDAD_LAT_MAX),
+    'import.meta.env.VITE_CIUDAD_LON_MIN': JSON.stringify(process.env.CIUDAD_LON_MIN),
+    'import.meta.env.VITE_CIUDAD_LON_MAX': JSON.stringify(process.env.CIUDAD_LON_MAX),
   }
 })

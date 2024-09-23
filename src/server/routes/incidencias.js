@@ -11,6 +11,10 @@ const { obtenerIP } = require('../utils/ip');
 const axios = require('axios');
 
 const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
+const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
+const CIUDAD_LAT_MAX = parseFloat(process.env.CIUDAD_LAT_MAX);
+const CIUDAD_LON_MIN = parseFloat(process.env.CIUDAD_LON_MIN);
+const CIUDAD_LON_MAX = parseFloat(process.env.CIUDAD_LON_MAX);
 
 // Asegurarse de que la carpeta uploads existe
 const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
@@ -39,6 +43,11 @@ const validarIncidencia = (incidencia) => {
     errores.push('La latitud debe estar entre -90 y 90');
   if (incidencia.longitud && (incidencia.longitud < -180 || incidencia.longitud > 180)) 
     errores.push('La longitud debe estar entre -180 y 180');
+
+  if (incidencia.latitud < CIUDAD_LAT_MIN || incidencia.latitud > CIUDAD_LAT_MAX ||
+      incidencia.longitud < CIUDAD_LON_MIN || incidencia.longitud > CIUDAD_LON_MAX) {
+    errores.push('La ubicación está fuera de los límites de la ciudad');
+  }
 
   return errores;
 };

@@ -66,7 +66,8 @@
             rows="2"
             row-height="18"
             class="mb-4"
-            hide-details
+            :rules="[validarCoordenadas]"
+            :error-messages="validarCoordenadas() !== true ? [validarCoordenadas()] : []"
           >
             <template v-slot:prepend>
               <v-icon>mdi-map-marker</v-icon>
@@ -120,6 +121,11 @@ import { useDisplay } from 'vuetify'
 import axios from 'axios'
 import { WidgetInstance } from 'friendly-challenge'
 
+const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
+const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
+const CIUDAD_LON_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LON_MIN);
+const CIUDAD_LON_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LON_MAX);
+
 export default {
   name: 'ReportarIncidencia',
   props: {
@@ -150,6 +156,17 @@ export default {
     const captchaContainer = ref(null)
     const captchaSolution = ref(null)
     const captchaWidget = ref(null)
+
+    const validarCoordenadas = () => {
+      const lat = parseFloat(incidencia.value.latitud);
+      const lon = parseFloat(incidencia.value.longitud);
+      if (isNaN(lat) || isNaN(lon) || 
+          lat < CIUDAD_LAT_MIN || lat > CIUDAD_LAT_MAX ||
+          lon < CIUDAD_LON_MIN || lon > CIUDAD_LON_MAX) {
+        return 'Ubicación fuera de los límites de la ciudad';
+      }
+      return true;
+    };
 
     const cerrar = () => {
       dialog.value = false
@@ -182,17 +199,26 @@ export default {
 
     const obtenerDireccion = async () => {
       if (incidencia.value.latitud && incidencia.value.longitud) {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${incidencia.value.latitud}&lon=${incidencia.value.longitud}&zoom=18&addressdetails=1`
-        try {
-          const response = await fetch(url)
-          const data = await response.json()
-          direccion.value = data.display_name
-        } catch (error) {
-          console.error('Error al obtener la dirección:', error)
-          direccion.value = 'No se pudo obtener la dirección'
+        const validacionResult = validarCoordenadas();
+        if (validacionResult === true) {
+          const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${incidencia.value.latitud}&lon=${incidencia.value.longitud}&zoom=18&addressdetails=1`
+          try {
+            const response = await fetch(url)
+            const data = await response.json()
+            direccion.value = data.display_name
+          } catch (error) {
+            console.error('Error al obtener la dirección:', error)
+            direccion.value = 'No se pudo obtener la dirección'
+          }
+        } else {
+          // No cambiamos el valor de direccion.value aquí
         }
       } else {
         direccion.value = ''
+      }
+      // Forzar la validación del formulario después de actualizar la dirección
+      if (form.value) {
+        form.value.validate()
       }
     }
 
@@ -315,7 +341,8 @@ export default {
       enviarIncidencia,
       captchaContainer,
       smAndDown,
-      xs
+      xs,
+      validarCoordenadas
     }
   }
 }
