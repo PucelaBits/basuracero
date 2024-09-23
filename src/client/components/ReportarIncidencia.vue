@@ -1,7 +1,7 @@
 <template>
   <v-dialog 
     v-model="dialog" 
-    :max-width="$vuetify.display.smAndDown ? '95%' : '600px'"
+    :max-width="$vuetify.display.smAndDown ? '99%' : '600px'"
     :fullscreen="$vuetify.display.xs"
   >
     <v-card>
