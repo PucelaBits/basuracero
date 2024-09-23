@@ -16,6 +16,27 @@
           @incidencia-seleccionada="abrirDetalleIncidencia"
           :ubicacionSeleccionada="ubicacionSeleccionada"
         />
+
+        <v-card
+          class="text-center custom-banner ma-4"
+        >
+          <v-card-text>
+            <v-row>
+              <v-col cols="12">
+                <v-icon>mdi-camera</v-icon>
+                <span class="ml-2">Informa de incidencias</span>
+              </v-col>
+              <v-col cols="12">
+                <v-icon>mdi-broom</v-icon>
+                <span class="ml-2">Manten tu ciudad limpia</span>
+              </v-col>
+              <v-col cols="12">
+                <v-icon>mdi-check-circle</v-icon>
+                <span class="ml-2">Valida las ya solucionadas</span>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
         
         <v-card class="ma-4">
           <v-card-text>
@@ -113,24 +134,6 @@ export default {
     const mostrarMensajeExito = ref(false)
     const mostrarDetalleIncidencia = ref(false)
     const theme = useTheme()
-
-    // Definir un tema personalizado más moderno
-    theme.global.name.value = 'myCustomTheme'
-    theme.themes.value.myCustomTheme = {
-      dark: false,
-      colors: {
-        background: '#F5F5F5',
-        surface: '#FFFFFF',
-        primary: '#392763',
-        'primary-darken-1': '#1976D2',
-        secondary: '#573b96',
-        'secondary-darken-1': '#E91E63',
-        error: '#FF9AA2',
-        info: '#B5E5EF',
-        success: '#C7EFCF',
-        warning: '#FFE5B4',
-      },
-    }
 
     const totalIncidencias = ref(0)
 
@@ -277,9 +280,7 @@ export default {
 }
 </script>
 
-<style>
-/* ... (estilos existentes) ... */
-
+<style scoped>
 .mensaje-exito {
   position: fixed;
   top: 50%;
@@ -358,5 +359,12 @@ export default {
   letter-spacing: 1px !important;
   text-align: center !important;
   width: 100% !important;
+}
+
+.custom-banner {
+  background-color: #7361a0;
+  color: #fff !important;
+  font-size: 0.75em;
+  font-weight: bold;
 }
 </style>

@@ -324,6 +324,6 @@ export default {
 <style scoped>
 
 .frc-captcha {
-  margin: 0.5em auto;
+  margin: 0.5em auto 1.5em auto;
 }
 </style>
