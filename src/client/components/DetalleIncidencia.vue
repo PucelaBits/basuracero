@@ -5,7 +5,7 @@
         <v-img
           :src="incidencia.imagen"
           :alt="incidencia.tipo"
-          height="300"
+          height="270"
           class="imagen-detalle"
           @click="abrirImagenCompleta"
           cover
@@ -152,23 +152,23 @@
       </v-card>
     </v-dialog>
 
-    <!-- Nuevo modal para la imagen a pantalla completa -->
+    <!-- Diálogo flotante para la imagen a pantalla completa -->
     <v-dialog v-model="dialogImagen" fullscreen>
-      <v-card>
-        <v-toolbar dark color="#392763">
-          <v-btn icon dark @click="dialogImagen = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-toolbar>
-        <v-card-text class="pa-0 d-flex align-center justify-center" style="height: calc(100vh - 64px);">
-          <v-img
-            :src="incidencia.imagen"
-            :alt="incidencia.tipo"
-            max-height="100%"
-            max-width="100%"
-            contain
-          ></v-img>
-        </v-card-text>
+      <v-card flat class="transparent">
+        <v-img
+          :src="incidencia.imagen"
+          :alt="incidencia.tipo"
+          max-height="100vh"
+          max-width="100vw"
+          contain
+          @click="dialogImagen = false"
+        >
+          <template v-slot:placeholder>
+            <v-row class="fill-height ma-0" align="center" justify="center">
+              <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+            </v-row>
+          </template>
+        </v-img>
       </v-card>
     </v-dialog>
   </v-dialog>
