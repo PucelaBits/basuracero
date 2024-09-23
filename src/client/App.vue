@@ -1,11 +1,11 @@
 <template>
   <v-app>
-    <v-app-bar app color="primary" dark>
-      <v-toolbar-title>Basura Cero</v-toolbar-title>
+    <v-app-bar app :color="theme.colors.primary" dark elevation="4">
+      <v-toolbar-title class="text-h5 font-weight-bold">Basura Cero</v-toolbar-title>
     </v-app-bar>
 
-    <v-main>
-      <v-container fluid>
+    <v-main class="bg-grey-lighten-4">
+      <v-container fluid class="pa-0">
         <MapaIncidencias 
           :incidencias="incidencias" 
           :incluirSolucionadas="incluirSolucionadas"
@@ -15,7 +15,7 @@
           :ubicacionSeleccionada="ubicacionSeleccionada"
         />
         
-        <v-card class="mt-4">
+        <v-card class="ma-4">
           <v-card-text>
             <div class="text-h6">{{ textoTotalIncidencias }}</div>
             <v-switch
@@ -26,33 +26,38 @@
           </v-card-text>
         </v-card>
 
-        <ListaIncidencias :incidencias="incidenciasPaginadas" />
+        <ListaIncidencias 
+          :incidencias="incidenciasPaginadas" 
+          @abrir-detalle="abrirDetalleIncidencia"
+        />
         
         <v-pagination
           v-model="currentPage"
           :length="totalPages"
           @input="obtenerIncidencias"
+          class="my-4"
         ></v-pagination>
       </v-container>
     </v-main>
 
     <v-btn
       fab
-      large
-      color="primary"
+      :color="theme.colors.secondary"
       fixed
       bottom
       right
       @click="mostrarFormulario = true"
+      class="floating-btn"
+      elevation="8"
     >
       <v-icon>mdi-plus</v-icon>
     </v-btn>
 
-    <v-dialog v-model="mostrarFormulario" max-width="600px">
+    <v-dialog v-model="mostrarFormulario" max-width="600px" class="dialog-sobre-boton">
       <ReportarIncidencia 
-        @incidencia-creada="incidenciaCreada" 
+        v-model="mostrarFormulario"
         :ubicacionSeleccionada="ubicacionSeleccionada"
-        @cerrar="mostrarFormulario = false"
+        @incidencia-creada="incidenciaCreada"
       />
     </v-dialog>
 
@@ -62,18 +67,18 @@
       {{ mensajeExito }}
     </v-snackbar>
 
-    <v-dialog v-model="!!incidenciaSeleccionada" fullscreen>
-      <DetalleIncidencia 
-        v-if="incidenciaSeleccionada" 
-        :incidencia="incidenciaSeleccionada"
-        @cerrar="incidenciaSeleccionada = null"
-      />
-    </v-dialog>
+    <DetalleIncidencia 
+      v-if="incidenciaSeleccionada" 
+      :incidencia="incidenciaSeleccionada"
+      v-model="mostrarDetalleIncidencia"
+      @cerrar="cerrarDetalleIncidencia"
+    />
   </v-app>
 </template>
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { useTheme } from 'vuetify'
 import axios from 'axios'
 import ReportarIncidencia from './components/ReportarIncidencia.vue'
 import ListaIncidencias from './components/ListaIncidencias.vue'
@@ -103,6 +108,26 @@ export default {
     const incluirSolucionadas = ref(false)
     const incidenciaSeleccionada = ref(null)
     const mostrarMensajeExito = ref(false)
+    const mostrarDetalleIncidencia = ref(false)
+    const theme = useTheme()
+
+    // Definir un tema personalizado más moderno
+    theme.global.name.value = 'myCustomTheme'
+    theme.themes.value.myCustomTheme = {
+      dark: false,
+      colors: {
+        background: '#F5F5F5',
+        surface: '#FFFFFF',
+        primary: '#392763',
+        'primary-darken-1': '#1976D2',
+        secondary: '#573b96',
+        'secondary-darken-1': '#E91E63',
+        error: '#FF9AA2',
+        info: '#B5E5EF',
+        success: '#C7EFCF',
+        warning: '#FFE5B4',
+      },
+    }
 
     const totalIncidencias = computed(() => incidencias.value.length)
     const textoTotalIncidencias = computed(() => {
@@ -126,7 +151,7 @@ export default {
 
     const actualizarLista = () => {
       obtenerIncidencias()
-      mensajeExito.value = 'Incidencia añadida con éxito'
+      mensajeExito.value = 'Incidencia añadida con xito'
       mostrarMensajeExito.value = true
       setTimeout(() => {
         mensajeExito.value = ''
@@ -188,6 +213,12 @@ export default {
     const abrirDetalleIncidencia = (incidencia) => {
       console.log('Abriendo detalle de incidencia:', incidencia);
       incidenciaSeleccionada.value = incidencia;
+      mostrarDetalleIncidencia.value = true;
+    }
+
+    const cerrarDetalleIncidencia = () => {
+      incidenciaSeleccionada.value = null;
+      mostrarDetalleIncidencia.value = false;
     }
 
     onMounted(obtenerIncidencias)
@@ -214,7 +245,10 @@ export default {
       obtenerIncidencias,
       abrirDetalleIncidencia,
       incidenciaSeleccionada,
-      mostrarMensajeExito
+      mostrarMensajeExito,
+      mostrarDetalleIncidencia,
+      cerrarDetalleIncidencia,
+      theme: computed(() => theme.current.value),
     }
   }
 }
@@ -250,5 +284,54 @@ export default {
 
 .filtros label {
   cursor: pointer;
+}
+
+.floating-btn {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 99 !important;
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.floating-btn:hover {
+  transform: scale(1.1) !important;
+}
+
+.floating-btn .v-btn__content {
+  height: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+}
+
+/* Estilos adicionales para un aspecto más moderno */
+.v-card {
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+}
+
+.v-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+}
+
+.v-btn {
+  text-transform: none !important;
+  letter-spacing: 0.5px !important;
+  font-weight: 500 !important;
+}
+
+.v-toolbar-title {
+  letter-spacing: 1px !important;
 }
 </style>

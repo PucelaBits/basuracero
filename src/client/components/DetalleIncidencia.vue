@@ -1,53 +1,85 @@
 <template>
-  <div class="detalle-incidencia-overlay" @click="cerrar">
-    <div class="detalle-incidencia-contenido" @click.stop>
-      <img :src="incidencia.imagen" :alt="incidencia.tipo" class="imagen-detalle" @click="abrirImagenCompleta" />
-      <div class="detalle-contenido">
-        <button class="cerrar-btn" @click="cerrar">X</button>
-        <h2>{{ incidencia.tipo }}</h2>
-        <p>{{ incidencia.descripcion }}</p>
-        <div class="meta-info">
-          <p><strong>Enviado por:</strong> {{ incidencia.nombre }}</p>
-          <p><strong>Fecha:</strong> {{ formatDate(incidencia.fecha) }}</p>
-        </div>
-        <div id="mapa-detalle" class="mapa-detalle"></div>
-        <!-- Añade esta sección para mostrar la dirección -->
-        <div v-if="incidencia.direccion" class="direccion-info">
-          <p><strong>Dirección:</strong> {{ incidencia.direccion }}</p>
-        </div>
-        <div class="estado-incidencia">
-          <p><strong>Estado:</strong> {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}</p>
-          <p v-if="incidencia.estado === 'solucionada'">
-            <strong>Fecha de solución:</strong> {{ formatDate(incidencia.fecha_solucion) }}
-          </p>
-          <p v-if="incidencia.reportes_solucion > 0">
-            {{ incidencia.reportes_solucion }} personas han indicado que está solucionado
-          </p>
-        </div>
-        <div class="acciones-incidencia">
-          <v-btn
-            v-if="incidencia.estado === 'activa'"
-            @click="mostrarDialogoConfirmacion = true"
-            :loading="reportando"
-            :disabled="reportando"
-            color="success"
-            class="btn-accion"
-          >
-            {{ reportando ? 'Reportando...' : 'Reportar como solucionada' }}
-          </v-btn>
-          <a 
-            href="https://www.valladolid.es/es/sqi#proxia-restful-sqi.1.1/p!/new" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="btn-accion btn-queja-ayuntamiento"
-          >
-            Enviar queja al ayuntamiento
-          </a>
-        </div>
-      </div>
-    </div>
+  <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
+    <v-card class="detalle-incidencia">
+      <v-toolbar dark color="#392763">
+        <v-btn icon dark @click="cerrar">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+        <v-toolbar-title>{{ incidencia.tipo }}</v-toolbar-title>
+        <v-spacer></v-spacer>
+      </v-toolbar>
 
-    <!-- Diálogo de confirmación -->
+      <v-card-text class="flex-grow-1 overflow-y-auto pa-0">
+        <v-img
+          :src="incidencia.imagen"
+          :alt="incidencia.tipo"
+          height="300"
+          class="imagen-detalle"
+          @click="abrirImagenCompleta"
+          cover
+        ></v-img>
+
+        <v-container class="px-4 py-6">
+          <v-card flat class="mb-6">
+            <v-card-text class="text-body-1">
+              {{ incidencia.descripcion }}
+            </v-card-text>
+          </v-card>
+
+          <v-divider class="mb-3"></v-divider>
+
+          <v-row align="center" class="text-caption text--secondary">
+            <v-col cols="auto">
+              <v-icon small class="mr-1">mdi-account</v-icon>
+              {{ incidencia.nombre }}
+            </v-col>
+            <v-spacer></v-spacer>
+            <v-col cols="auto">
+              <v-icon small class="mr-1">mdi-calendar</v-icon>
+              {{ formatDate(incidencia.fecha) }}
+            </v-col>
+          </v-row>
+        </v-container>
+
+        <div id="mapa-detalle" class="mapa-detalle mt-4"></div>
+        <v-sheet v-if="incidencia.direccion" color="grey lighten-3" class="pa-3 mt-4 rounded">
+          <v-icon left>mdi-map-marker</v-icon>
+          <span class="font-weight-medium">Dirección:</span> {{ incidencia.direccion }}
+        </v-sheet>
+        <v-alert :type="incidencia.estado === 'activa' ? 'warning' : 'success'" dense class="mt-4">
+          <strong>Estado:</strong> {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
+          <div v-if="incidencia.estado === 'solucionada'">
+            <strong>Fecha de solución:</strong> {{ formatDate(incidencia.fecha_solucion) }}
+          </div>
+          <div v-if="incidencia.reportes_solucion > 0">
+            {{ incidencia.reportes_solucion }} personas han indicado que está solucionado
+          </div>
+        </v-alert>
+      </v-card-text>
+
+      <v-card-actions class="flex-column">
+        <v-btn
+          v-if="incidencia.estado === 'activa'"
+          @click="mostrarDialogoConfirmacion = true"
+          :loading="reportando"
+          :disabled="reportando"
+          color="success"
+          class="mb-2 w-100"
+        >
+          {{ reportando ? 'Reportando...' : 'Reportar como solucionada' }}
+        </v-btn>
+        <v-btn
+          href="https://www.valladolid.es/es/sqi#proxia-restful-sqi.1.1/p!/new"
+          target="_blank"
+          rel="noopener noreferrer"
+          color="primary"
+          class="w-100"
+        >
+          Enviar queja al ayuntamiento
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+
     <v-dialog v-model="mostrarDialogoConfirmacion" max-width="400px">
       <v-card>
         <v-card-title class="headline">Confirmar solución</v-card-title>
@@ -66,7 +98,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Diálogo de advertencia -->
     <v-dialog v-model="mostrarDialogoAdvertencia" max-width="400px">
       <v-card>
         <v-card-title class="headline">Advertencia</v-card-title>
@@ -81,15 +112,34 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </div>
+
+    <!-- Nuevo modal para la imagen a pantalla completa -->
+    <v-dialog v-model="dialogImagen" fullscreen>
+      <v-card>
+        <v-toolbar dark color="#392763">
+          <v-btn icon dark @click="dialogImagen = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-toolbar>
+        <v-card-text class="pa-0 d-flex align-center justify-center" style="height: calc(100vh - 64px);">
+          <v-img
+            :src="incidencia.imagen"
+            :alt="incidencia.tipo"
+            max-height="100%"
+            max-width="100%"
+            contain
+          ></v-img>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+  </v-dialog>
 </template>
 
 <script>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { VBtn, VDialog, VCard, VCardTitle, VCardText, VCardActions, VSpacer } from 'vuetify/components';
 
 export default {
   name: 'DetalleIncidencia',
@@ -97,16 +147,37 @@ export default {
     incidencia: {
       type: Object,
       required: true
+    },
+    modelValue: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['cerrar'],
+  emits: ['update:modelValue', 'cerrar'],
   setup(props, { emit }) {
+    const dialog = ref(props.modelValue);
+    const reportando = ref(false);
+    const mostrarDialogoConfirmacion = ref(false);
+    const mostrarDialogoAdvertencia = ref(false);
+    const dialogImagen = ref(false);
+
+    watch(() => props.modelValue, (newValue) => {
+      dialog.value = newValue;
+    });
+
+    watch(dialog, (newValue) => {
+      emit('update:modelValue', newValue);
+      if (!newValue) {
+        emit('cerrar');
+      }
+    });
+
     const cerrar = () => {
-      emit('cerrar');
+      dialog.value = false;
     };
 
     const abrirImagenCompleta = () => {
-      window.openImageModal(props.incidencia.imagen);
+      dialogImagen.value = true;
     };
 
     const formatDate = (dateString) => {
@@ -115,16 +186,11 @@ export default {
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
-    const reportando = ref(false);
-    const mostrarDialogoConfirmacion = ref(false);
-    const mostrarDialogoAdvertencia = ref(false);
-
     const confirmarSolucion = () => {
       mostrarDialogoConfirmacion.value = false;
       reportarComoSolucionada();
     };
 
-    // Añadir esta nueva función
     const cancelarConfirmacion = () => {
       mostrarDialogoConfirmacion.value = false;
       mostrarDialogoAdvertencia.value = true;
@@ -148,24 +214,26 @@ export default {
     };
 
     onMounted(() => {
-      const map = L.map('mapa-detalle').setView([props.incidencia.latitud, props.incidencia.longitud], 15);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-        maxZoom: 19
-      }).addTo(map);
-      
-      // Nuevo código para el marcador personalizado
-      L.marker([props.incidencia.latitud, props.incidencia.longitud], {
-        icon: L.divIcon({
-          className: 'custom-div-icon',
-          html: "<div style='background-color:#c30b82;' class='marker-pin'></div>",
-          iconSize: [30, 42],
-          iconAnchor: [15, 42]
-        })
-      }).addTo(map);
+      if (props.incidencia.latitud && props.incidencia.longitud) {
+        const map = L.map('mapa-detalle').setView([props.incidencia.latitud, props.incidencia.longitud], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '© OpenStreetMap contributors © CARTO',
+          maxZoom: 19
+        }).addTo(map);
+        
+        L.marker([props.incidencia.latitud, props.incidencia.longitud], {
+          icon: L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:#c30b82;' class='marker-pin'></div>",
+            iconSize: [30, 42],
+            iconAnchor: [15, 42]
+          })
+        }).addTo(map);
+      }
     });
 
     return {
+      dialog,
       cerrar,
       abrirImagenCompleta,
       formatDate,
@@ -174,14 +242,34 @@ export default {
       mostrarDialogoConfirmacion,
       mostrarDialogoAdvertencia,
       confirmarSolucion,
-      cancelarConfirmacion // Añadir esta nueva función al return
+      cancelarConfirmacion,
+      dialogImagen
     };
   }
 };
 </script>
 
 <style scoped>
-/* Añade estos estilos para el marcador personalizado */
+.detalle-incidencia {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.imagen-detalle {
+  width: 100%;
+  max-height: 50vh;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.mapa-detalle {
+  height: 300px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* Estilos para el marcador personalizado */
 .custom-div-icon {
   background: none;
   border: none;
@@ -209,96 +297,16 @@ export default {
   border-radius: 50%;
 }
 
-.btn-reportar-solucionada {
-  background-color: #27ae60;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-top: 10px;
+.v-card__text {
+  flex-grow: 1;
+  overflow-y: auto;
 }
 
-.btn-reportar-solucionada:hover {
-  background-color: #2ecc71;
+.v-card__actions {
+  padding: 16px;
 }
 
-.btn-reportar-solucionada:disabled {
-  background-color: #95a5a6;
-  cursor: not-allowed;
-}
-
-.estado-incidencia {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-}
-
-.direccion-info {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-}
-
-.direccion-info p {
-  margin: 0;
-  font-size: 0.9em;
-}
-
-.acciones-incidencia {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.btn-accion {
+.w-100 {
   width: 100%;
-  padding: 10px 0px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  text-decoration: none;
-  text-align: center;
-  white-space: normal;
-  word-wrap: break-word;
-}
-
-.btn-reportar-solucionada {
-  background-color: #27ae60;
-  color: white;
-  border: none;
-}
-
-.btn-reportar-solucionada:hover {
-  background-color: #2ecc71;
-}
-
-.btn-reportar-solucionada:disabled {
-  background-color: #95a5a6;
-  cursor: not-allowed;
-}
-
-.btn-queja-ayuntamiento {
-  background-color: #392763c4;
-  color: white;
-  border: none;
-}
-
-.btn-queja-ayuntamiento:hover {
-  background-color: #533d85c4;
-}
-
-@media (min-width: 768px) {
-  .acciones-incidencia {
-    flex-direction: row;
-  }
-
-  .btn-accion {
-    flex: 1;
-  }
 }
 </style>

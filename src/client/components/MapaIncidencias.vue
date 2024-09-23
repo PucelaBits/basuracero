@@ -63,6 +63,11 @@ export default {
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
+    const truncateText = (text, maxLength) => {
+      if (text.length <= maxLength) return text;
+      return text.slice(0, maxLength) + '...';
+    };
+
     const initMap = () => {
       map = L.map('map').setView([41.652251, -4.724532], 13)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -108,17 +113,22 @@ export default {
       props.incidencias.forEach(incidencia => {
         if (incidencia.estado === 'activa' || (incidencia.estado === 'solucionada' && props.incluirSolucionadas)) {
           const popupContent = L.DomUtil.create('div', 'custom-popup')
-          const img = L.DomUtil.create('img', 'popup-image', popupContent)
-          img.src = incidencia.imagen
-          img.alt = incidencia.tipo
-          img.onerror = "this.onerror=null;this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';"
           
-          const content = L.DomUtil.create('div', 'popup-content', popupContent)
-          content.innerHTML = `
-            <h3>${incidencia.tipo}</h3>
-            <p>${incidencia.descripcion}</p>
-            <small>${incidencia.nombre} - ${formatDate(incidencia.fecha, true)}</small>
-            <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
+          popupContent.innerHTML = `
+            <div class="popup-header">
+              <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image">
+              <div class="popup-chips">
+                <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
+                <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
+              </div>
+            </div>
+            <div class="popup-content">
+              <p class="popup-description">${incidencia.descripcion}</p>
+              <div class="popup-footer">
+                <span><i class="fas fa-user"></i> ${incidencia.nombre}</span>
+                <span><i class="fas fa-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
+              </div>
+            </div>
           `
 
           const marker = L.marker([incidencia.latitud, incidencia.longitud], {
@@ -126,12 +136,12 @@ export default {
           }).addTo(map)
 
           marker.bindPopup(popupContent, { 
-            maxWidth: 300, 
-            minWidth: 300,
+            maxWidth: 250, 
+            minWidth: 250,
             className: 'custom-popup-class' 
           })
 
-          L.DomEvent.on(img, 'click', (e) => {
+          L.DomEvent.on(popupContent.querySelector('.popup-image'), 'click', (e) => {
             L.DomEvent.stopPropagation(e);
             abrirDetalle(incidencia);
           })
@@ -314,6 +324,11 @@ export default {
   padding: 0;
 }
 
+.popup-header {
+  position: relative;
+  width: 100%;
+}
+
 .popup-image {
   width: 100%;
   height: 150px;
@@ -321,19 +336,76 @@ export default {
   display: block;
 }
 
+.popup-chips {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.popup-chip {
+  background-color: white;
+  color: #392763;
+  padding: 2px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.estado-pastilla {
+  padding: 2px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.estado-pastilla.activa {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.estado-pastilla.solucionada {
+  background-color: #2ecc71;
+  color: white;
+}
+
 .popup-content {
   padding: 10px;
+}
+
+.popup-description {
+  font-size: 14px;
+  line-height: 1;
+  margin-bottom: 10px;
+  margin-top: 1px !important;
+}
+
+.popup-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+}
+
+.popup-footer i {
+  margin-right: 5px;
 }
 
 .leaflet-popup-content-wrapper {
   padding: 0;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .leaflet-popup-content {
   margin: 0;
-  width: 500px !important;
+  width: 100%;
 }
 
 .leaflet-popup-tip-container {
@@ -365,40 +437,16 @@ export default {
 .custom-popup-class .leaflet-popup-content-wrapper {
   padding: 0;
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .custom-popup-class .leaflet-popup-content {
   margin: 0;
-  width: 100% !important;
+  width: 100%;
 }
 
 .custom-popup {
   width: 100%;
-}
-
-.popup-image {
-  width: 200px;
-  height: 150px;
-  object-fit: cover;
-  display: block;
-}
-
-.popup-content {
-  padding: 10px;
-}
-
-.popup-content h3 {
-  margin-top: 0;
-  margin-bottom: 5px;
-}
-
-.popup-content p {
-  margin-bottom: 5px;
-}
-
-.popup-content small {
-  display: block;
-  color: #666;
 }
 
 .search-container {
@@ -436,26 +484,6 @@ export default {
 
 .search-button:hover {
   background-color: #f4f4f4;
-}
-
-.estado-pastilla {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
-  font-weight: bold;
-}
-
-.estado-pastilla.activa {
-  background-color: #e74c3c;
-  color: white;
-}
-
-.estado-pastilla.solucionada {
-  background-color: #2ecc71;
-  color: white;
 }
 
 .custom-popup .popup-image {
