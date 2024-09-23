@@ -10,8 +10,15 @@ export default defineConfig({
   plugins: [vue()],
   root: path.resolve(__dirname, 'src/client'),
   build: {
-    outDir: path.resolve(__dirname, 'dist')
+    outDir: path.resolve(__dirname, 'dist'),
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'src/client/index.html')
+      }
+    }
   },
+  publicDir: path.resolve(__dirname, 'public'),
   server: {
     proxy: {
       '/api': process.env.NODE_ENV === 'production' ? 'http://localhost:5050' : 'http://localhost:5050',
