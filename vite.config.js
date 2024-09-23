@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
+import dotenv from 'dotenv'
+
+// Cargar las variables de entorno desde el archivo .env
+dotenv.config()
 
 export default defineConfig({
   plugins: [vue()],

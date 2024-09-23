@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
@@ -7,6 +8,9 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { obtenerIP } = require('../utils/ip');
+const axios = require('axios');
+
+const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
 
 // Asegurarse de que la carpeta uploads existe
 const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
@@ -54,8 +58,8 @@ router.get('/tipos', (req, res) => {
 
 // Crear una nueva incidencia
 router.post('/', upload.single('imagen'), async (req, res) => {
-  const { tipo_id, descripcion, latitud, longitud, nombre, direccion } = req.body;
-  
+  const { tipo_id, descripcion, latitud, longitud, nombre, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
+
   const errores = validarIncidencia(req.body);
   if (errores.length > 0) {
     return res.status(400).json({ errores });
@@ -66,6 +70,16 @@ router.post('/', upload.single('imagen'), async (req, res) => {
   }
 
   try {
+    // Validar el captcha
+    const captchaResponse = await axios.post('https://api.friendlycaptcha.com/api/v1/siteverify', {
+      solution: captchaSolution,
+      secret: friendlyCaptchaSecret
+    });
+
+    if (!captchaResponse.data.success) {
+      return res.status(400).json({ error: 'Captcha inválido' });
+    }
+
     console.log('Procesando imagen...');
     // Procesar y guardar la imagen
     const filename = `${uuidv4()}.jpg`;
@@ -152,8 +166,19 @@ router.get('/', (req, res) => {
 router.post('/:id/solucionada', async (req, res) => {
   const incidenciaId = req.params.id;
   const ip = obtenerIP(req);
+  const { 'frc-captcha-solution': captchaSolution } = req.body;
 
   try {
+    // Validar el captcha
+    const captchaResponse = await axios.post('https://api.friendlycaptcha.com/api/v1/siteverify', {
+      solution: captchaSolution,
+      secret: friendlyCaptchaSecret
+    });
+
+    if (!captchaResponse.data.success) {
+      return res.status(400).json({ error: 'Captcha inválido' });
+    }
+
     // Verificar si el usuario ya ha reportado esta incidencia
     const reporteExistente = await new Promise((resolve, reject) => {
       db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
@@ -194,7 +219,7 @@ router.post('/:id/solucionada', async (req, res) => {
 
     res.json({ mensaje: 'Reporte de solución registrado', reportes: count });
   } catch (error) {
-    console.error('Error al reportar incidencia como solucionada:', error);
+    console.error('Error al procesar la incidencia:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

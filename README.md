@@ -2,6 +2,10 @@
 
 Esta aplicación permite a los ciudadanos reportar incidencias urbanas en Valladolid.
 
+**Antes de empezar**
+
+Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env` y rellenar los datos del API del captcha.
+
 ## Ejecución en producción con Docker
 
 Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos:

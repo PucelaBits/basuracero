@@ -122,20 +122,17 @@
       </v-card-actions>
     </v-card>
 
-    <v-dialog v-model="mostrarDialogoConfirmacion" max-width="400px">
+    <v-dialog v-model="mostrarDialogoConfirmacion" max-width="500px">
       <v-card>
-        <v-card-title class="headline">Confirmar solución</v-card-title>
+        <v-card-title class="headline">Confirmar resolución</v-card-title>
         <v-card-text>
-          ¿Has comprobado presencialmente que está solucionada?
+          ¿Has verificado presencialmente que la incidencia ha sido solucionada?
+          <div ref="captchaContainer" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="grey darken-1" text @click="cancelarConfirmacion">
-            No
-          </v-btn>
-          <v-btn color="green darken-1" text @click="confirmarSolucion">
-            Sí
-          </v-btn>
+          <v-btn color="green darken-1" text @click="confirmarSolucion">Sí</v-btn>
+          <v-btn color="red darken-1" text @click="cancelarConfirmacion">No</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -178,10 +175,11 @@
 </template>
 
 <script>
-import { onMounted, ref, watch } from 'vue';
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { WidgetInstance } from 'friendly-challenge';
 
 export default {
   name: 'DetalleIncidencia',
@@ -202,6 +200,9 @@ export default {
     const mostrarDialogoConfirmacion = ref(false);
     const mostrarDialogoAdvertencia = ref(false);
     const dialogImagen = ref(false);
+    const captchaSolution = ref(null);
+    const captchaContainer = ref(null);
+    const captchaWidget = ref(null);
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -211,6 +212,26 @@ export default {
       emit('update:modelValue', newValue);
       if (!newValue) {
         emit('cerrar');
+      }
+    });
+
+    watch(mostrarDialogoConfirmacion, async (newValue) => {
+      if (newValue) {
+        await nextTick(); // Esperar a que el DOM se actualice
+        if (import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true' && captchaContainer.value) {
+          console.log('Inicializando captcha...');
+          captchaWidget.value = new WidgetInstance(captchaContainer.value, {
+            sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
+            doneCallback: (solution) => {
+              captchaSolution.value = solution;
+            },
+            errorCallback: (err) => {
+              console.error("Error al resolver el Captcha:", err);
+            }
+          });
+        } else {
+          console.error('Contenedor del captcha no encontrado');
+        }
       }
     });
 
@@ -228,20 +249,18 @@ export default {
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
-    const confirmarSolucion = () => {
-      mostrarDialogoConfirmacion.value = false;
-      reportarComoSolucionada();
-    };
+    const confirmarSolucion = async () => {
+      if (!captchaSolution.value) {
+        alert('Por favor, completa el captcha.');
+        return;
+      }
 
-    const cancelarConfirmacion = () => {
       mostrarDialogoConfirmacion.value = false;
-      mostrarDialogoAdvertencia.value = true;
-    };
-
-    const reportarComoSolucionada = async () => {
       reportando.value = true;
       try {
-        const response = await axios.post(`/api/incidencias/${props.incidencia.id}/solucionada`);
+        const response = await axios.post(`/api/incidencias/${props.incidencia.id}/solucionada`, {
+          'frc-captcha-solution': captchaSolution.value
+        });
         props.incidencia.reportes_solucion = response.data.reportes;
         if (response.data.reportes >= 3) {
           props.incidencia.estado = 'solucionada';
@@ -253,6 +272,11 @@ export default {
       } finally {
         reportando.value = false;
       }
+    };
+
+    const cancelarConfirmacion = () => {
+      mostrarDialogoConfirmacion.value = false;
+      mostrarDialogoAdvertencia.value = true;
     };
 
     const truncateText = (text, maxLength) => {
@@ -289,19 +313,25 @@ export default {
       }
     });
 
+    onUnmounted(() => {
+      if (captchaWidget.value) {
+        captchaWidget.value.destroy();
+      }
+    });
+
     return {
       dialog,
       cerrar,
       abrirImagenCompleta,
       formatDate,
-      reportarComoSolucionada,
+      confirmarSolucion,
+      cancelarConfirmacion,
       reportando,
       mostrarDialogoConfirmacion,
       mostrarDialogoAdvertencia,
-      confirmarSolucion,
-      cancelarConfirmacion,
       dialogImagen,
       truncateText,
+      captchaContainer
     };
   }
 };
@@ -421,4 +451,9 @@ export default {
 .mapa-container {
   position: relative;
 }
+
+.frc-captcha {
+  margin: 0.5em auto;
+}
+
 </style>

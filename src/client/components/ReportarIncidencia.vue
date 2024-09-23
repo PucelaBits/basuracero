@@ -93,27 +93,32 @@
           ></v-file-input>
           
           <v-img v-if="previewUrl" :src="previewUrl" max-height="200" class="mb-4"></v-img>
+
+          <div ref="captchaContainer" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
+
+          <v-row justify="center">
+            <v-col cols="12" class="text-center">
+              <v-btn
+                color="primary"
+                @click="enviarIncidencia"
+                :loading="enviando"
+                :disabled="!formValido || enviando || !incidencia.imagen"
+              >
+                {{ enviando ? 'Enviando...' : 'Enviar' }}
+              </v-btn>
+            </v-col>
+          </v-row>
         </v-form>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-          color="primary"
-          @click="enviarIncidencia"
-          :loading="enviando"
-          :disabled="!formValido || enviando || !incidencia.imagen"
-        >
-          {{ enviando ? 'Enviando...' : 'Enviar' }}
-        </v-btn>
-      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import axios from 'axios'
+import { WidgetInstance } from 'friendly-challenge'
 
 export default {
   name: 'ReportarIncidencia',
@@ -142,6 +147,9 @@ export default {
     const previewUrl = ref(null)
     const enviando = ref(false)
     const direccion = ref('')
+    const captchaContainer = ref(null)
+    const captchaSolution = ref(null)
+    const captchaWidget = ref(null)
 
     const cerrar = () => {
       dialog.value = false
@@ -220,6 +228,7 @@ export default {
           }
         }
         formData.append('direccion', direccion.value)
+        formData.append('frc-captcha-solution', captchaSolution.value)
 
         await axios.post('/api/incidencias', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -267,7 +276,28 @@ export default {
       }
     }, { immediate: true })
 
-    onMounted(obtenerTiposIncidencias)
+    onMounted(() => {
+      obtenerTiposIncidencias();
+
+      if (import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true' && captchaContainer.value) {
+        captchaWidget.value = new WidgetInstance(captchaContainer.value, {
+          startMode: "auto",
+          sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
+          doneCallback: (solution) => {
+            captchaSolution.value = solution;
+          },
+          errorCallback: (err) => {
+            console.error("Error al resolver el Captcha:", err);
+          }
+        });
+      }
+    })
+
+    onUnmounted(() => {
+      if (captchaWidget.value) {
+        captchaWidget.value.destroy()
+      }
+    })
 
     return {
       dialog,
@@ -283,9 +313,17 @@ export default {
       obtenerDireccion,
       obtenerUbicacion,
       enviarIncidencia,
+      captchaContainer,
       smAndDown,
       xs
     }
   }
 }
 </script>
+
+<style scoped>
+
+.frc-captcha {
+  margin: 0.5em auto;
+}
+</style>
