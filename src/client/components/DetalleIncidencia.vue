@@ -94,7 +94,9 @@
         </v-container>
 
         <!-- Mapa -->
-        <div id="mapa-detalle" class="mapa-detalle mt-4"></div>
+        <div class="mapa-container mt-4">
+          <div id="mapa-detalle" class="mapa-detalle"></div>
+        </div>
       </v-card-text>
 
       <v-card-actions class="flex-column">
@@ -258,13 +260,23 @@ export default {
       return text.slice(0, maxLength) + '...';
     };
 
+    const map = ref(null);
+
     onMounted(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
-        const map = L.map('mapa-detalle').setView([props.incidencia.latitud, props.incidencia.longitud], 15);
+        map.value = L.map('mapa-detalle', {
+          dragging: false,
+          touchZoom: true,
+          scrollWheelZoom: false,
+          doubleClickZoom: true,
+          boxZoom: false,
+          tap: false
+        }).setView([props.incidencia.latitud, props.incidencia.longitud], 15);
+
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© OpenStreetMap contributors © CARTO',
           maxZoom: 19
-        }).addTo(map);
+        }).addTo(map.value);
         
         L.marker([props.incidencia.latitud, props.incidencia.longitud], {
           icon: L.divIcon({
@@ -273,7 +285,7 @@ export default {
             iconSize: [30, 42],
             iconAnchor: [15, 42]
           })
-        }).addTo(map);
+        }).addTo(map.value);
       }
     });
 
@@ -289,7 +301,7 @@ export default {
       confirmarSolucion,
       cancelarConfirmacion,
       dialogImagen,
-      truncateText
+      truncateText,
     };
   }
 };
@@ -404,5 +416,9 @@ export default {
 
 .w-100 {
   width: 100%;
+}
+
+.mapa-container {
+  position: relative;
 }
 </style>
