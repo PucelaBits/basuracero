@@ -1,15 +1,7 @@
 <template>
   <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
     <v-card class="detalle-incidencia">
-      <v-toolbar dark color="#392763">
-        <v-btn icon dark @click="cerrar">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-        <v-toolbar-title>{{ incidencia.tipo }}</v-toolbar-title>
-        <v-spacer></v-spacer>
-      </v-toolbar>
-
-      <v-card-text class="flex-grow-1 overflow-y-auto pa-0">
+      <div class="imagen-container">
         <v-img
           :src="incidencia.imagen"
           :alt="incidencia.tipo"
@@ -17,8 +9,27 @@
           class="imagen-detalle"
           @click="abrirImagenCompleta"
           cover
-        ></v-img>
+        >
+          <template v-slot:placeholder>
+            <v-row class="fill-height ma-0" align="center" justify="center">
+              <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+            </v-row>
+          </template>
+          
+          <!-- Pastillas de tipo y estado -->
+          <div class="pastillas-container">
+            <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
+            <span :class="['estado-pastilla', incidencia.estado]">
+              {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
+            </span>
+          </div>
+        </v-img>
+        <v-btn icon dark class="close-btn" @click="cerrar">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
 
+      <v-card-text class="flex-grow-1 overflow-y-auto pa-0">
         <v-container class="px-4 py-6">
           <v-card flat class="mb-6">
             <v-card-text class="text-body-1">
@@ -39,22 +50,51 @@
               {{ formatDate(incidencia.fecha) }}
             </v-col>
           </v-row>
+
+          <!-- Dirección -->
+          <v-row v-if="incidencia.direccion" align="center" class="mt-2">
+            <v-col cols="12">
+              <div class="d-flex align-center text-caption">
+                <v-icon small class="mr-1">mdi-map-marker</v-icon>
+                <span>{{ incidencia.direccion }}</span>
+              </div>
+            </v-col>
+          </v-row>
+
+          <!-- Estado -->
+          <v-row align="center" class="mt-2">
+            <v-col cols="auto">
+              <div class="d-flex align-center text-caption">
+                <v-icon :color="incidencia.estado === 'activa' ? 'error' : 'success'" small class="mr-1">
+                  {{ incidencia.estado === 'activa' ? 'mdi-alert-circle' : 'mdi-check-circle' }}
+                </v-icon>
+                <span :class="{ 'error--text': incidencia.estado === 'activa', 'success--text': incidencia.estado === 'solucionada' }">
+                  {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
+                </span>
+              </div>
+            </v-col>
+          </v-row>
+          <v-row v-if="incidencia.estado === 'solucionada'" align="center" class="mt-1">
+            <v-col cols="auto">
+              <div class="d-flex align-center text-caption">
+                <v-icon color="success" small class="mr-1">mdi-check-circle</v-icon>
+                <v-icon small class="mr-1">mdi-calendar</v-icon>
+                <span>{{ formatDate(incidencia.fecha_solucion) }}</span>
+              </div>
+            </v-col>
+          </v-row>
+          <v-row v-if="incidencia.reportes_solucion > 0" align="center" class="mt-1">
+            <v-col cols="auto">
+              <div class="d-flex align-center text-caption">
+                <v-icon small class="mr-1">mdi-account-group</v-icon>
+                <span>{{ incidencia.reportes_solucion }} personas han indicado que está solucionado</span>
+              </div>
+            </v-col>
+          </v-row>
         </v-container>
 
+        <!-- Mapa -->
         <div id="mapa-detalle" class="mapa-detalle mt-4"></div>
-        <v-sheet v-if="incidencia.direccion" color="grey lighten-3" class="pa-3 mt-4 rounded">
-          <v-icon left>mdi-map-marker</v-icon>
-          <span class="font-weight-medium">Dirección:</span> {{ incidencia.direccion }}
-        </v-sheet>
-        <v-alert :type="incidencia.estado === 'activa' ? 'warning' : 'success'" dense class="mt-4">
-          <strong>Estado:</strong> {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
-          <div v-if="incidencia.estado === 'solucionada'">
-            <strong>Fecha de solución:</strong> {{ formatDate(incidencia.fecha_solucion) }}
-          </div>
-          <div v-if="incidencia.reportes_solucion > 0">
-            {{ incidencia.reportes_solucion }} personas han indicado que está solucionado
-          </div>
-        </v-alert>
       </v-card-text>
 
       <v-card-actions class="flex-column">
@@ -213,6 +253,11 @@ export default {
       }
     };
 
+    const truncateText = (text, maxLength) => {
+      if (text.length <= maxLength) return text;
+      return text.slice(0, maxLength) + '...';
+    };
+
     onMounted(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
         const map = L.map('mapa-detalle').setView([props.incidencia.latitud, props.incidencia.longitud], 15);
@@ -243,7 +288,8 @@ export default {
       mostrarDialogoAdvertencia,
       confirmarSolucion,
       cancelarConfirmacion,
-      dialogImagen
+      dialogImagen,
+      truncateText
     };
   }
 };
@@ -256,11 +302,61 @@ export default {
   height: 100%;
 }
 
+.imagen-container {
+  position: relative;
+}
+
 .imagen-detalle {
   width: 100%;
-  max-height: 50vh;
+  height: 300px;
   object-fit: cover;
   cursor: pointer;
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.pastillas-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.popup-chip {
+  background-color: white;
+  color: #392763;
+  padding: 2px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.estado-pastilla {
+  padding: 2px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.estado-pastilla.activa {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.estado-pastilla.solucionada {
+  background-color: #2ecc71;
+  color: white;
 }
 
 .mapa-detalle {

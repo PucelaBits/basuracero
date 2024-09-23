@@ -1,5 +1,9 @@
 <template>
-  <v-dialog v-model="dialog" max-width="600px">
+  <v-dialog 
+    v-model="dialog" 
+    :max-width="$vuetify.display.smAndDown ? '95%' : '600px'"
+
+  >
     <v-card>
       <v-card-title class="d-flex justify-space-between align-center">
         Enviar incidencia
@@ -53,19 +57,34 @@
             @input="obtenerDireccion"
           ></v-text-field>
           
-          <v-sheet v-if="direccion" color="grey lighten-3" class="pa-3 mb-4 rounded">
-            <v-icon left>mdi-map-marker</v-icon>
-            <span class="font-weight-medium">Dirección:</span> {{ direccion }}
-          </v-sheet>
+          <v-textarea
+            v-model="direccion"
+            label="Dirección"
+            readonly
+            dense
+            auto-grow
+            rows="2"
+            row-height="18"
+            class="mb-4"
+            hide-details
+          >
+            <template v-slot:prepend>
+              <v-icon>mdi-map-marker</v-icon>
+            </template>
+          </v-textarea>
           
-          <v-btn @click="obtenerUbicacion" color="primary" class="mb-4">
-            Usar tu ubicación actual
-          </v-btn>
+          <v-row justify="center" class="mb-4">
+            <v-col cols="12" class="text-center">
+              <v-btn @click="obtenerUbicacion" color="primary">
+                Usar tu ubicación actual
+              </v-btn>
+            </v-col>
+          </v-row>
           
           <v-file-input
             v-model="incidencia.imagen"
             accept="image/*"
-            label="Subir imagen"
+            label="Hacer o subir foto"
             prepend-icon="mdi-camera"
             @change="onFileSelected"
             :rules="[v => !!v || 'La imagen es requerida']"
@@ -92,7 +111,8 @@
 </template>
 
 <script>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
+import { useDisplay } from 'vuetify'
 import axios from 'axios'
 
 export default {
@@ -106,6 +126,7 @@ export default {
   },
   emits: ['update:modelValue', 'incidencia-creada'],
   setup(props, { emit }) {
+    const { smAndDown, xs } = useDisplay()
     const dialog = ref(props.modelValue)
     const form = ref(null)
     const formValido = ref(false)
@@ -261,7 +282,9 @@ export default {
       onFileSelected,
       obtenerDireccion,
       obtenerUbicacion,
-      enviarIncidencia
+      enviarIncidencia,
+      smAndDown,
+      xs
     }
   }
 }

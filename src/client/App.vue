@@ -1,7 +1,9 @@
 <template>
   <v-app>
-    <v-app-bar app :color="theme.colors.primary" dark elevation="4">
-      <v-toolbar-title class="text-h5 font-weight-bold">Basura Cero</v-toolbar-title>
+    <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact">
+      <v-container class="d-flex justify-center">
+        <v-toolbar-title class="text-h6 font-weight-bold">Basura Cero</v-toolbar-title>
+      </v-container>
     </v-app-bar>
 
     <v-main class="bg-grey-lighten-4">
@@ -17,12 +19,12 @@
         
         <v-card class="ma-4">
           <v-card-text>
-            <div class="text-h6">{{ textoTotalIncidencias }}</div>
             <v-switch
               v-model="incluirSolucionadas"
               label="Incluir incidencias solucionadas"
               @change="obtenerIncidencias"
             ></v-switch>
+            <div class="text-caption text-grey">{{ textoTotalIncidencias }}</div>
           </v-card-text>
         </v-card>
 
@@ -333,5 +335,7 @@ export default {
 
 .v-toolbar-title {
   letter-spacing: 1px !important;
+  text-align: center !important;
+  width: 100% !important;
 }
 </style>
