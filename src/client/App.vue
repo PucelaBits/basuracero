@@ -1,8 +1,11 @@
 <template>
   <v-app>
     <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact">
-      <v-container class="d-flex justify-center">
-        <v-toolbar-title class="text-h6 font-weight-bold">Basura Cero</v-toolbar-title>
+      <v-container class="d-flex justify-center align-center">
+        <v-avatar size="25" rounded="circle" class="mr-auto">
+          <img src="/favicon.png" alt="Favicon" class="favicon">
+        </v-avatar>
+        <v-toolbar-title class="text-h6 font-weight-bold titulo">Basura Cero</v-toolbar-title>
       </v-container>
     </v-app-bar>
 
@@ -288,6 +291,19 @@ export default {
 </script>
 
 <style scoped>
+
+.titulo {
+  font-size: 0.85em !important;
+  text-transform: uppercase !important;
+  text-shadow: 1px 1px 2px #000 !important;
+  margin-left: -25px;
+}
+
+.favicon {
+  width: 100% !important; 
+  height: auto !important;
+}
+
 .mensaje-exito {
   position: fixed;
   top: 50%;
