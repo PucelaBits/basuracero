@@ -162,6 +162,40 @@ router.get('/', (req, res) => {
   });
 });
 
+// Obtener todas las incidencias sin paginación
+router.get('/todas', (req, res) => {
+  const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
+
+  const whereClause = incluirSolucionadas ? '' : 'WHERE i.estado = "activa"';
+
+  const sql = `
+    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+           COALESCE(i.direccion, '') as direccion,
+           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion
+    FROM incidencias i
+    JOIN tipos_incidencias t ON i.tipo_id = t.id
+    ${whereClause}
+    ORDER BY i.fecha DESC
+  `;
+  
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      console.error('Error al obtener todas las incidencias:', err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+      return;
+    }
+    
+    const incidenciasConImagenes = rows.map(incidencia => ({
+      ...incidencia,
+      imagen: incidencia.imagen ? `/uploads/${incidencia.imagen}` : null
+    }));
+
+    res.json({
+      incidencias: incidenciasConImagenes
+    });
+  });
+});
+
 // Reportar incidencia como solucionada
 router.post('/:id/solucionada', async (req, res) => {
   const incidenciaId = req.params.id;

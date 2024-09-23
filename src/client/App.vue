@@ -9,7 +9,7 @@
     <v-main class="bg-grey-lighten-4">
       <v-container fluid class="pa-0">
         <MapaIncidencias 
-          :incidencias="incidencias" 
+          :incidencias="todasLasIncidencias" 
           :incluirSolucionadas="incluirSolucionadas"
           @ubicacion-seleccionada="actualizarUbicacion"
           @abrir-formulario="mostrarFormulario = true"
@@ -29,14 +29,14 @@
         </v-card>
 
         <ListaIncidencias 
-          :incidencias="incidenciasPaginadas" 
+          :incidencias="incidencias" 
           @abrir-detalle="abrirDetalleIncidencia"
         />
         
         <v-pagination
           v-model="currentPage"
           :length="totalPages"
-          @input="obtenerIncidencias"
+          @update:model-value="(page) => obtenerIncidencias(page)"
           class="my-4"
         ></v-pagination>
       </v-container>
@@ -79,7 +79,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import axios from 'axios'
 import ReportarIncidencia from './components/ReportarIncidencia.vue'
@@ -99,6 +99,7 @@ export default {
   },
   setup() {
     const incidencias = ref([])
+    const todasLasIncidencias = ref([])
     const ubicacionSeleccionada = ref({})
     const currentPage = ref(1)
     const totalPages = ref(1)
@@ -131,7 +132,8 @@ export default {
       },
     }
 
-    const totalIncidencias = computed(() => incidencias.value.length)
+    const totalIncidencias = ref(0)
+
     const textoTotalIncidencias = computed(() => {
       if (incluirSolucionadas.value) {
         return `${totalIncidencias.value} incidencias reportadas`
@@ -140,16 +142,42 @@ export default {
       }
     })
 
-    const obtenerIncidencias = async () => {
+    const obtenerIncidencias = async (page = currentPage.value) => {
       try {
-        const response = await axios.get(`/api/incidencias?page=${currentPage.value}&limit=${itemsPerPage}&incluirSolucionadas=${incluirSolucionadas.value}`)
-        incidencias.value = response.data.incidencias
-        currentPage.value = response.data.currentPage
-        totalPages.value = response.data.totalPages
+        const response = await axios.get(`/api/incidencias`, {
+          params: {
+            page: page,
+            limit: itemsPerPage,
+            incluirSolucionadas: incluirSolucionadas.value
+          }
+        });
+        incidencias.value = response.data.incidencias;
+        currentPage.value = response.data.currentPage;
+        totalPages.value = response.data.totalPages;
+        totalIncidencias.value = response.data.totalItems;
       } catch (error) {
-        console.error('Error al obtener incidencias:', error.response ? error.response.data : error.message)
+        console.error('Error al obtener incidencias:', error.response ? error.response.data : error.message);
+      }
+    };
+
+    const obtenerTodasLasIncidencias = async () => {
+      try {
+        const response = await axios.get(`/api/incidencias/todas?incluirSolucionadas=${incluirSolucionadas.value}`)
+        todasLasIncidencias.value = response.data.incidencias
+      } catch (error) {
+        console.error('Error al obtener todas las incidencias:', error.response ? error.response.data : error.message)
       }
     }
+
+    onMounted(() => {
+      obtenerIncidencias()
+      obtenerTodasLasIncidencias()
+    })
+
+    watch(() => incluirSolucionadas.value, () => {
+      obtenerIncidencias()
+      obtenerTodasLasIncidencias()
+    })
 
     const actualizarLista = () => {
       obtenerIncidencias()
@@ -174,12 +202,6 @@ export default {
         }
       }, 100)
     }
-
-    const incidenciasPaginadas = computed(() => {
-      const start = (currentPage.value - 1) * itemsPerPage
-      const end = start + itemsPerPage
-      return incidencias.value.slice(start, end)
-    })
 
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
@@ -223,11 +245,8 @@ export default {
       mostrarDetalleIncidencia.value = false;
     }
 
-    onMounted(obtenerIncidencias)
-
     return {
       incidencias,
-      incidenciasPaginadas,
       ubicacionSeleccionada,
       actualizarLista,
       actualizarUbicacion,
@@ -251,6 +270,8 @@ export default {
       mostrarDetalleIncidencia,
       cerrarDetalleIncidencia,
       theme: computed(() => theme.current.value),
+      todasLasIncidencias,
+      obtenerTodasLasIncidencias,
     }
   }
 }
