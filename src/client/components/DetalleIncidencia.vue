@@ -87,7 +87,7 @@
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon small class="mr-1">mdi-account-group</v-icon>
-                <span>{{ incidencia.reportes_solucion }} personas han indicado que está solucionado</span>
+                <span>{{ incidencia.reportes_solucion === 1 ? '1 persona ha indicado que está solucionado' : `${incidencia.reportes_solucion} personas han indicado que está solucionado` }}</span>
               </div>
             </v-col>
           </v-row>
