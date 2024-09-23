@@ -153,7 +153,7 @@ export default {
 
     const actualizarLista = () => {
       obtenerIncidencias()
-      mensajeExito.value = 'Incidencia añadida con xito'
+      mensajeExito.value = 'Incidencia añadida con éxito'
       mostrarMensajeExito.value = true
       setTimeout(() => {
         mensajeExito.value = ''
