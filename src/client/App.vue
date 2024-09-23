@@ -21,7 +21,7 @@
           <v-card-text>
             <v-switch
               v-model="incluirSolucionadas"
-              label="Incluir incidencias solucionadas"
+              label="Ver solucionadas"
               @change="obtenerIncidencias"
             ></v-switch>
             <div class="text-caption text-grey">{{ textoTotalIncidencias }}</div>
