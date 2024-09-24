@@ -3,6 +3,7 @@
     <v-card class="detalle-incidencia">
       <div class="imagen-container">
         <v-img
+          v-if="incidencia.estado !== 'spam'"
           :src="incidencia.imagen"
           :alt="incidencia.tipo"
           height="270"
@@ -24,6 +25,9 @@
             </span>
           </div>
         </v-img>
+        <div v-else class="spam-placeholder" height="270">
+          <v-icon x-large color="grey">mdi-image-off</v-icon>
+        </div>
         <v-btn icon dark class="close-btn" @click="cerrar">
           <v-icon>mdi-close</v-icon>
         </v-btn>
@@ -31,9 +35,16 @@
 
       <v-card-text class="flex-grow-1 overflow-y-auto pa-0">
         <v-container class="px-4 py-6">
-          <v-card flat class="mb-6">
+          <v-card flat class="mb-6" v-if="incidencia.estado !== 'spam'">
             <v-card-text class="text-body-1">
               {{ incidencia.descripcion }}
+            </v-card-text>
+          </v-card>
+
+          <v-card flat class="mb-6" v-else>
+            <v-card-text class="text-body-1 text-center">
+              <v-icon large color="warning" class="mb-2">mdi-alert</v-icon>
+              <p>Nuestra comunidad ha marcado esta incidencia como inadecuada o spam. Si cree que es un error, por favor <a href="https://t.me/basuracero" target="_blank">contacte con nosotros</a>.</p>
             </v-card-text>
           </v-card>
 
@@ -62,7 +73,7 @@
           </v-row>
 
           <!-- Estado -->
-          <v-row align="center" class="mt-2">
+          <v-row align="center" class="mt-2" v-if="incidencia.estado !== 'spam'">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon :color="incidencia.estado === 'activa' ? 'error' : 'success'" small class="mr-1">
@@ -83,7 +94,7 @@
               </div>
             </v-col>
           </v-row>
-          <v-row v-if="incidencia.reportes_solucion > 0" align="center" class="mt-1">
+          <v-row v-if="incidencia.reportes_solucion > 0 && incidencia.estado !== 'spam'" align="center" class="mt-1">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon small class="mr-1">mdi-account-group</v-icon>
@@ -91,6 +102,23 @@
               </div>
             </v-col>
           </v-row>
+          <v-row v-if="incidencia.estado !== 'spam'" align="center" class="mt-1">
+            <v-col cols="auto">
+              <div class="d-flex align-center text-caption cursor-pointer" @click="mostrarDialogoReporteInadecuado = true">
+                <v-icon small class="mr-1">mdi-alert-circle</v-icon>
+                <span>Avisar de contenido inadecuado o spam</span>
+              </div>
+            </v-col>
+          </v-row>
+          <v-row v-if="incidencia.reportes_inadecuado > 0" align="center" class="mt-1">
+            <v-col cols="auto">
+              <div class="d-flex align-center text-caption">
+                <v-icon small class="mr-1">mdi-alert</v-icon>
+                <span>{{ incidencia.reportes_inadecuado === 1 ? '1 persona ha reportado este contenido como inadecuado' : `${incidencia.reportes_inadecuado} personas han reportado este contenido como inadecuado` }}</span>
+              </div>
+            </v-col>
+          </v-row>
+
         </v-container>
 
         <!-- Mapa -->
@@ -115,12 +143,13 @@
           @click="mostrarDialogoWhatsApp = true"
           color="primary"
           class="w-100"
+          v-if="incidencia.estado !== 'spam'"
         >
           <v-icon left>mdi-whatsapp</v-icon>
           <span style="margin-left: 5px;">Informar al ayuntamiento</span>
         </v-btn>
         <v-btn
-          v-if="canShare"
+          v-if="canShare && incidencia.estado !== 'spam'"
           @click="compartir"
           color="info"
           class="w-100"
@@ -215,6 +244,21 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="mostrarDialogoReporteInadecuado" max-width="500px">
+      <v-card>
+        <v-card-title class="headline">Reportar contenido inadecuado</v-card-title>
+        <v-card-text>
+          ¿Estás seguro de que quieres reportar este contenido como inadecuado o spam?
+          <div ref="captchaContainerInadecuado" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red darken-1" text @click="reportarContenidoInadecuado">Sí, reportar</v-btn>
+          <v-btn color="green darken-1" text @click="mostrarDialogoReporteInadecuado = false">Cancelar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
@@ -254,6 +298,10 @@ export default {
     const mostrarDialogoError = ref(false);
     const mensajeError = ref('');
     const isComponentMounted = ref(true);
+    const mostrarDialogoReporteInadecuado = ref(false);
+    const captchaContainerInadecuado = ref(null);
+    const captchaSolutionInadecuado = ref(null);
+    const captchaWidgetInadecuado = ref(null);
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -476,6 +524,51 @@ export default {
       mostrarDialogoError.value = true;
     };
 
+    const reportarContenidoInadecuado = async () => {
+      if (!captchaSolutionInadecuado.value) {
+        mostrarError('Por favor, completa el captcha.');
+        return;
+      }
+
+      mostrarDialogoReporteInadecuado.value = false;
+      try {
+        const response = await axios.post(`/api/incidencias/${props.incidencia.id}/inadecuado`, {
+          'frc-captcha-solution': captchaSolutionInadecuado.value
+        });
+        if (isComponentMounted.value) {
+          props.incidencia.reportes_inadecuado = response.data.reportes;
+          if (response.data.reportes >= 3) {
+            props.incidencia.estado = 'spam';
+          }
+        }
+      } catch (error) {
+        console.error('Error al reportar contenido inadecuado:', error);
+        if (isComponentMounted.value) {
+          mostrarError(error.response?.data?.error || 'Error al reportar contenido inadecuado');
+        }
+      }
+    };
+
+    watch(mostrarDialogoReporteInadecuado, async (newValue) => {
+      if (newValue) {
+        await nextTick();
+        if (import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true' && captchaContainerInadecuado.value) {
+          console.log('Inicializando captcha para reporte inadecuado...');
+          captchaWidgetInadecuado.value = new WidgetInstance(captchaContainerInadecuado.value, {
+            sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
+            doneCallback: (solution) => {
+              captchaSolutionInadecuado.value = solution;
+            },
+            errorCallback: (err) => {
+              console.error("Error al resolver el Captcha para reporte inadecuado:", err);
+            }
+          });
+        } else {
+          console.error('Contenedor del captcha para reporte inadecuado no encontrado');
+        }
+      }
+    });
+
     return {
       dialog,
       cerrar,
@@ -495,6 +588,9 @@ export default {
       enviarWhatsApp,
       mostrarDialogoError,
       mensajeError,
+      mostrarDialogoReporteInadecuado,
+      reportarContenidoInadecuado,
+      captchaContainerInadecuado,
     };
   }
 };
@@ -619,4 +715,11 @@ export default {
   margin: 0.5em auto;
 }
 
+.spam-placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+  height: 270px;
+}
 </style>

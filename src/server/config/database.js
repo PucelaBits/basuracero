@@ -109,6 +109,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
         fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (incidencia_id) REFERENCES incidencias(id)
       )`);
+
+      // Crear una nueva tabla para los reportes de contenido inadecuado
+      db.run(`CREATE TABLE IF NOT EXISTS reportes_inadecuado (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        incidencia_id INTEGER,
+        ip TEXT,
+        fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (incidencia_id) REFERENCES incidencias(id)
+      )`);
     });
   }
 });

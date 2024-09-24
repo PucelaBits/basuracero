@@ -127,17 +127,20 @@ router.get('/', (req, res) => {
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
   const tipo = req.query.tipo;
 
-  let whereClause = incluirSolucionadas ? '' : 'WHERE i.estado = "activa"';
+  let whereClause = 'WHERE i.estado != "spam"';
+  if (!incluirSolucionadas) {
+    whereClause += ' AND i.estado = "activa"';
+  }
   if (tipo) {
-    whereClause += whereClause ? ' AND ' : 'WHERE ';
-    whereClause += `i.tipo_id = ${tipo}`;
+    whereClause += ` AND i.tipo_id = ${tipo}`;
   }
 
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
   const dataSql = `
     SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
-           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion
+           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
+           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     ${whereClause}
@@ -186,7 +189,8 @@ router.get('/todas', (req, res) => {
   const sql = `
     SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
-           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion
+           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
+           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     ${whereClause}
@@ -218,7 +222,8 @@ router.get('/:id', (req, res) => {
   const sql = `
     SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
-           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion
+           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
+           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     WHERE i.id = ?
@@ -303,6 +308,68 @@ router.post('/:id/solucionada', async (req, res) => {
     res.json({ mensaje: 'Reporte de solución registrado', reportes: count });
   } catch (error) {
     console.error('Error al procesar la incidencia:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Reportar incidencia como contenido inadecuado o spam
+router.post('/:id/inadecuado', async (req, res) => {
+  const incidenciaId = req.params.id;
+  const ip = obtenerIP(req);
+  const { 'frc-captcha-solution': captchaSolution } = req.body;
+
+  try {
+    // Validar el captcha
+    const captchaResponse = await axios.post('https://api.friendlycaptcha.com/api/v1/siteverify', {
+      solution: captchaSolution,
+      secret: friendlyCaptchaSecret
+    });
+
+    if (!captchaResponse.data.success) {
+      return res.status(400).json({ error: 'Captcha inválido' });
+    }
+
+    // Verificar si el usuario ya ha reportado esta incidencia como inadecuada
+    const reporteExistente = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM reportes_inadecuado WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (reporteExistente) {
+      return res.status(400).json({ error: 'Ya has reportado esta incidencia como contenido inadecuado' });
+    }
+
+    // Insertar el nuevo reporte
+    await new Promise((resolve, reject) => {
+      db.run('INSERT INTO reportes_inadecuado (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Contar el número de reportes para esta incidencia
+    const { count } = await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM reportes_inadecuado WHERE incidencia_id = ?', [incidenciaId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    // Si hay 3 o más reportes, marcar la incidencia como spam
+    if (count >= 3) {
+      await new Promise((resolve, reject) => {
+        db.run('UPDATE incidencias SET estado = ? WHERE id = ?', ['spam', incidenciaId], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
+
+    res.json({ mensaje: 'Reporte de contenido inadecuado registrado', reportes: count });
+  } catch (error) {
+    console.error('Error al procesar el reporte de contenido inadecuado:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
