@@ -95,6 +95,7 @@ router.post('/', upload.single('imagen'), async (req, res) => {
     const filepath = path.join(uploadsDir, filename);
     
     await sharp(req.file.buffer)
+      .rotate()
       .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 80 })
       .toFile(filepath);
