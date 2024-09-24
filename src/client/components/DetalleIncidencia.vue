@@ -108,7 +108,8 @@
           color="success"
           class="mb-2 w-100"
         >
-          {{ reportando ? 'Reportando...' : 'Reportar como solucionada' }}
+          <v-icon left>mdi-check-circle</v-icon>
+          <span style="margin-left: 5px;">{{ reportando ? 'Marcando...' : 'Marcar como solucionada' }}</span>
         </v-btn>
         <v-btn
           href="https://www.valladolid.es/es/sqi#proxia-restful-sqi.1.1/p!/new"
@@ -117,7 +118,17 @@
           color="primary"
           class="w-100"
         >
-          Enviar queja al ayuntamiento
+          <v-icon left>mdi-email</v-icon>
+          <span style="margin-left: 5px;">Informar al ayuntamiento</span>
+        </v-btn>
+        <v-btn
+          v-if="canShare"
+          @click="compartir"
+          color="info"
+          class="w-100"
+        >
+          <v-icon left>mdi-share</v-icon>
+          <span style="margin-left: 5px;">Compartir</span>
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -176,6 +187,7 @@
 
 <script>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -195,6 +207,7 @@ export default {
   },
   emits: ['update:modelValue', 'cerrar'],
   setup(props, { emit }) {
+    const router = useRouter();
     const dialog = ref(props.modelValue);
     const reportando = ref(false);
     const mostrarDialogoConfirmacion = ref(false);
@@ -203,6 +216,7 @@ export default {
     const captchaSolution = ref(null);
     const captchaContainer = ref(null);
     const captchaWidget = ref(null);
+    const canShare = ref(false);
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -237,6 +251,7 @@ export default {
 
     const cerrar = () => {
       dialog.value = false;
+      router.push('/');
     };
 
     const abrirImagenCompleta = () => {
@@ -311,6 +326,10 @@ export default {
           })
         }).addTo(map.value);
       }
+
+      if (navigator.share) {
+        canShare.value = true;
+      }
     });
 
     onUnmounted(() => {
@@ -318,6 +337,19 @@ export default {
         captchaWidget.value.destroy();
       }
     });
+
+    const compartir = () => {
+      if (navigator.share) {
+        navigator.share({
+          title: document.title,
+          url: window.location.href
+        }).catch((error) => {
+          console.error('Error al compartir:', error);
+        });
+      } else {
+        alert('La funcionalidad de compartir no está soportada en este navegador.');
+      }
+    };
 
     return {
       dialog,
@@ -331,7 +363,9 @@ export default {
       mostrarDialogoAdvertencia,
       dialogImagen,
       truncateText,
-      captchaContainer
+      captchaContainer,
+      canShare,
+      compartir
     };
   }
 };

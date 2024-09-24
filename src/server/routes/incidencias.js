@@ -124,8 +124,13 @@ router.get('/', (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
+  const tipo = req.query.tipo;
 
-  const whereClause = incluirSolucionadas ? '' : 'WHERE i.estado = "activa"';
+  let whereClause = incluirSolucionadas ? '' : 'WHERE i.estado = "activa"';
+  if (tipo) {
+    whereClause += whereClause ? ' AND ' : 'WHERE ';
+    whereClause += `i.tipo_id = ${tipo}`;
+  }
 
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
   const dataSql = `
@@ -202,6 +207,40 @@ router.get('/todas', (req, res) => {
     res.json({
       incidencias: incidenciasConImagenes
     });
+  });
+});
+
+// Obtener incidencia por ID
+router.get('/:id', (req, res) => {
+  const incidenciaId = req.params.id;
+
+  const sql = `
+    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+           COALESCE(i.direccion, '') as direccion,
+           (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion
+    FROM incidencias i
+    JOIN tipos_incidencias t ON i.tipo_id = t.id
+    WHERE i.id = ?
+  `;
+
+  db.get(sql, [incidenciaId], (err, row) => {
+    if (err) {
+      console.error('Error al obtener la incidencia:', err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+      return;
+    }
+
+    if (!row) {
+      res.status(404).json({ error: 'Incidencia no encontrada' });
+      return;
+    }
+
+    const incidenciaConImagen = {
+      ...row,
+      imagen: row.imagen ? `/uploads/${row.imagen}` : null
+    };
+
+    res.json(incidenciaConImagen);
   });
 });
 

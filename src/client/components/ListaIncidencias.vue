@@ -9,7 +9,7 @@
         md="4"
         lg="3"
       >
-        <v-card @click="$emit('abrir-detalle', incidencia)" class="ma-2">
+        <v-card @click="abrirDetalle(incidencia)" class="ma-2">
           <v-img
             :src="incidencia.imagen"
             :alt="incidencia.tipo"
@@ -52,24 +52,27 @@
 <script>
 import { ref } from 'vue';
 import DetalleIncidencia from './DetalleIncidencia.vue';
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'ListaIncidencias',
   components: {
     DetalleIncidencia
   },
-  emits: ['abrir-detalle'],
+  emits: ['incidencia-seleccionada'],
   props: {
     incidencias: {
       type: Array,
       required: true
     }
   },
-  setup() {
+  setup(props, { emit }) {
+    const router = useRouter();
     const incidenciaSeleccionada = ref(null);
 
     const abrirDetalle = (incidencia) => {
-      incidenciaSeleccionada.value = incidencia;
+      emit('incidencia-seleccionada', incidencia);
+      router.push({ name: 'DetalleIncidencia', params: { id: incidencia.id } });
     };
 
     const cerrarDetalle = () => {

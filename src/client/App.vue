@@ -46,13 +46,22 @@
               label="Ver solucionadas"
               @change="obtenerIncidencias"
             ></v-switch>
+            <!--<v-select
+                v-model="tipoSeleccionado"
+                :items="['Todas', ...tiposIncidencias]"
+                item-title="nombre"
+                item-value="id"
+                label="Filtrar por tipo"
+                @input="obtenerIncidencias"
+            />-->
+
             <div class="text-caption text-grey">{{ textoTotalIncidencias }}</div>
           </v-card-text>
         </v-card>
 
         <ListaIncidencias 
           :incidencias="incidencias" 
-          @abrir-detalle="abrirDetalleIncidencia"
+          @incidencia-seleccionada="abrirDetalleIncidencia"
         />
         
         <v-pagination
@@ -120,11 +129,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import axios from 'axios'
+import { useRoute, useRouter } from 'vue-router'
 import ReportarIncidencia from './components/ReportarIncidencia.vue'
 import ListaIncidencias from './components/ListaIncidencias.vue'
 import MapaIncidencias from './components/MapaIncidencias.vue'
 import ImageModal from './components/ImageModal.vue'
 import DetalleIncidencia from './components/DetalleIncidencia.vue'
+// Importar el método para obtener los tipos de incidencias
+import { obtenerTiposIncidencias } from './utils/api'
 
 export default {
   name: 'App',
@@ -151,8 +163,12 @@ export default {
     const mostrarMensajeExito = ref(false)
     const mostrarDetalleIncidencia = ref(false)
     const theme = useTheme()
+    const route = useRoute()
+    const router = useRouter()
 
     const totalIncidencias = ref(0)
+    const tipoSeleccionado = ref(null)
+    const tiposIncidencias = ref([])
 
     const textoTotalIncidencias = computed(() => {
       if (incluirSolucionadas.value) {
@@ -162,13 +178,23 @@ export default {
       }
     })
 
+    const obtenerTipos = async () => {
+      try {
+        const response = await obtenerTiposIncidencias()
+        tiposIncidencias.value = response.data
+      } catch (error) {
+        console.error('Error al obtener tipos de incidencias:', error)
+      }
+    }
+
     const obtenerIncidencias = async (page = currentPage.value) => {
       try {
         const response = await axios.get(`/api/incidencias`, {
           params: {
             page: page,
             limit: itemsPerPage,
-            incluirSolucionadas: incluirSolucionadas.value
+            incluirSolucionadas: incluirSolucionadas.value,
+            tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value
           }
         });
         incidencias.value = response.data.incidencias;
@@ -190,13 +216,21 @@ export default {
     }
 
     onMounted(() => {
-      obtenerIncidencias()
-      obtenerTodasLasIncidencias()
-    })
+      obtenerIncidencias();
+      obtenerTodasLasIncidencias();
+      obtenerTipos();
+    });
 
     watch(() => incluirSolucionadas.value, () => {
       obtenerIncidencias()
       obtenerTodasLasIncidencias()
+    })
+
+    watch(() => route.params.id, (newId) => {
+      console.log('Nuevo ID de incidencia:', newId)
+      if (newId) {
+        abrirDetalleIncidenciaPorId(newId)
+      }
     })
 
     const actualizarLista = () => {
@@ -260,6 +294,15 @@ export default {
       mostrarDetalleIncidencia.value = true;
     }
 
+    const abrirDetalleIncidenciaPorId = async (id) => {
+      try {
+        const response = await axios.get(`/api/incidencias/${id}`)
+        abrirDetalleIncidencia(response.data)
+      } catch (error) {
+        console.error('Error al obtener la incidencia:', error.response ? error.response.data : error.message)
+      }
+    }
+
     const cerrarDetalleIncidencia = () => {
       incidenciaSeleccionada.value = null;
       mostrarDetalleIncidencia.value = false;
@@ -267,7 +310,6 @@ export default {
 
     const seleccionarEnMapa = () => {
       mostrarFormulario.value = false
-      // Aquí puedes agregar lógica adicional si es necesario
     }
 
     return {
@@ -290,6 +332,7 @@ export default {
       incluirSolucionadas,
       obtenerIncidencias,
       abrirDetalleIncidencia,
+      abrirDetalleIncidenciaPorId,
       incidenciaSeleccionada,
       mostrarMensajeExito,
       mostrarDetalleIncidencia,
@@ -297,7 +340,10 @@ export default {
       theme: computed(() => theme.current.value),
       todasLasIncidencias,
       obtenerTodasLasIncidencias,
-      seleccionarEnMapa
+      seleccionarEnMapa,
+      tipoSeleccionado,
+      tiposIncidencias,
+      obtenerIncidencias
     }
   }
 }

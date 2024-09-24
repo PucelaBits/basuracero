@@ -23,6 +23,7 @@
 <script>
 import { onMounted, onUnmounted, watch, ref } from 'vue'
 import L from 'leaflet'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'MapaIncidencias',
@@ -42,6 +43,7 @@ export default {
   },
   emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada'],
   setup(props, { emit }) {
+    const router = useRouter();
     let map = null
     let markers = []
     let tempMarker = null
@@ -53,6 +55,7 @@ export default {
 
     const abrirDetalle = (incidencia) => {
       emit('incidencia-seleccionada', incidencia);
+      router.push({ name: 'DetalleIncidencia', params: { id: incidencia.id } });
     };
 
     const formatDate = (dateString, onlyDate = false) => {
