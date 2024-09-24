@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact">
+    <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact" @click="scrollToTop" class="clickable-header">
       <v-container class="d-flex justify-center align-center">
         <v-avatar size="25" rounded="circle" class="mr-auto">
           <img src="/favicon.png" alt="Favicon" class="favicon">
@@ -312,6 +312,10 @@ export default {
       mostrarFormulario.value = false
     }
 
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -343,7 +347,8 @@ export default {
       seleccionarEnMapa,
       tipoSeleccionado,
       tiposIncidencias,
-      obtenerIncidencias
+      obtenerIncidencias,
+      scrollToTop,
     }
   }
 }
@@ -458,5 +463,9 @@ export default {
 
 .v-footer a:hover {
   text-decoration: underline !important;
+}
+
+.clickable-header {
+  cursor: pointer;
 }
 </style>
