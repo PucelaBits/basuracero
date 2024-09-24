@@ -33,10 +33,13 @@ const db = new sqlite3.Database(dbPath, (err) => {
         if (row.count === 0) {
           // Insertar tipos de incidencias predefinidos si la tabla está vacía
           const tiposIncidencias = [
-            'Basura y objetos abandonados',
-            'Vegetación crecida',
+            'Basura u objetos abandonados',
+            'Vegetación crecida o descuidada',
             'Bache/desperfecto en calzada o acera',
-            'Animal muerto',
+            'Moviliario urbano dañado',
+            'Señalización ausente o deficiente',
+            'Alumbrado defectuoso o insuficiente',
+            'Animal muerto o plaga',
             'Otros'
           ];
 
