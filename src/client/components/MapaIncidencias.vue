@@ -11,7 +11,7 @@
         @keyup.enter="searchAddress"
       >
       <button class="search-button" @click="toggleSearch">
-        <i class="fas fa-search"></i>
+        <v-icon>mdi-magnify</v-icon>
       </button>
     </div>
     <button @click="detectarUbicacion" class="boton-ubicacion">
@@ -280,7 +280,6 @@ export default {
   right: 20px;
   z-index: 1000;
   background-color: white;
-  border: 2px solid rgba(0,0,0,0.2);
   border-radius: 4px;
   width: 34px;
   height: 34px;
