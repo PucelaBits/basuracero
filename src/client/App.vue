@@ -20,9 +20,7 @@
           :ubicacionSeleccionada="ubicacionSeleccionada"
         />
 
-        <v-card
-          class="text-center custom-banner ma-4"
-        >
+        <v-card class="text-center custom-banner ma-4">
           <v-card-text>
             <v-row>
               <v-col cols="12">
@@ -75,6 +73,7 @@
       @click="mostrarFormulario = true"
       class="floating-btn"
       elevation="8"
+      style="margin-bottom: 15px;"
     >
       <v-icon>mdi-plus</v-icon>
     </v-btn>
@@ -100,6 +99,20 @@
       v-model="mostrarDetalleIncidencia"
       @cerrar="cerrarDetalleIncidencia"
     />
+
+    <v-footer class="pa-4">
+      <v-row justify="center" no-gutters>
+        <v-col class="text-center" cols="4" sm="auto">
+          <a href="https://t.me/pucelabits" target="_blank" rel="noopener noreferrer">Contacto</a>
+        </v-col>
+        <v-col class="text-center" cols="4" sm="auto">
+          <a href="https://github.com/PucelaBits/basuracero" target="_blank" rel="noopener noreferrer">Código</a>
+        </v-col>
+        <v-col class="text-center" cols="4" sm="auto">
+          <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener noreferrer">Licencia</a>
+        </v-col>
+      </v-row>
+    </v-footer>
   </v-app>
 </template>
 
@@ -291,7 +304,6 @@ export default {
 </script>
 
 <style scoped>
-
 .titulo {
   font-size: 0.85em !important;
   text-transform: uppercase !important;
@@ -389,5 +401,16 @@ export default {
   color: #fff !important;
   font-size: 0.75em;
   font-weight: bold;
+}
+
+.v-footer a {
+  color: #CCC;
+  text-decoration: none;
+  font-weight: normal;
+  font-size: 0.8em;
+}
+
+.v-footer a:hover {
+  text-decoration: underline !important;
 }
 </style>
