@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact" @click="scrollToTop" class="clickable-header">
       <v-container class="d-flex justify-center align-center">
-        <v-avatar size="25" rounded="circle" class="mr-auto">
+        <v-avatar size="26" rounded="circle" class="mr-auto avatar-logo">
           <img src="/favicon.png" alt="Favicon" class="favicon">
         </v-avatar>
         <v-toolbar-title class="text-h6 font-weight-bold titulo">Basura Cero</v-toolbar-title>
@@ -358,7 +358,7 @@ export default {
 .titulo {
   font-size: 0.85em !important;
   text-transform: uppercase !important;
-  text-shadow: 1px 1px 2px #000 !important;
+  text-shadow: 1px 1px 10px #000 !important;
   margin-left: -25px;
 }
 
@@ -467,5 +467,9 @@ export default {
 
 .clickable-header {
   cursor: pointer;
+}
+
+.avatar-logo {
+  height: 25px !important;
 }
 </style>
