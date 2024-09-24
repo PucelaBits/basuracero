@@ -16,7 +16,10 @@
 4. **Geolocalización automática**:
    - La app detecta automáticamente tu ubicación para hacer el reporte más rápido. O elige la ubicación manualmente si lo prefieres.
 
-5. **Diseño adaptable**:
+5. **Informar al ayuntamiento**:
+   - Puedes registrar una incidencia oficialmente con el ayuntamiento, solo con un clic te mandamos a su bot de WhatsApp con los datos ya rellenados.
+
+6. **Diseño adaptable**:
    - Usa **Basura Cero** desde tu móvil, tablet u ordenador, ¡cuándo y dónde quieras!
 
 ### **¿Por qué usar Basura Cero?**
@@ -66,6 +69,7 @@ Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos
 ### Scripts de mantenimiento
 
 - `docker-compose exec basuracero-app npm run borrar-incidencia ID`: Borra una incidencia por su ID.
+- `docker-compose exec basuracero-app npm run tipos`: Gestiona los tipos de incidencias.
 
 ### Dominio personalizado
 
@@ -150,10 +154,11 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 - `npm run dev:client`: Inicia el cliente en modo desarrollo con hot-reload.
 - `npm run build`: Construye la aplicación para producción.
 - `npm run borrar-incidencia ID`: Borra una incidencia por su ID.
+- `npm run tipos`: Gestiona los tipos de incidencias (listar, añadir, editar, eliminar y reasignar).
 
 ## Notas adicionales
 
-- Asegúrate de que el puerto 5050 estén disponibles en tu sistema.
+- Asegúrate de que el puerto 5050 esté disponible en tu sistema.
 - La base de datos SQLite se creará automáticamente en la carpeta `data` al iniciar la aplicación.
 - Las imágenes subidas se almacenarán en la carpeta `uploads`.
 - En desarrollo, el servidor proxy de Vite redirigirá las peticiones API al servidor backend.
