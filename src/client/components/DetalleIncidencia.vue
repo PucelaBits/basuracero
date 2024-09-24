@@ -190,7 +190,7 @@
         <v-card-text>
           Cuando pulse aceptar se le redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
           <br>
-          <br><strong>Nota:</strong> Es posible que tenga que escribir "Hola" al principio si nunca ha utilizado el bot antes
+          <br><strong>Nota:</strong> Necesitará mandarle primero un "Hola" si nunca ha utilizado el bot antes
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
