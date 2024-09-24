@@ -114,7 +114,7 @@
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon small class="mr-1">mdi-alert</v-icon>
-                <span>{{ incidencia.reportes_inadecuado === 1 ? '1 persona ha reportado este contenido como inadecuado' : `${incidencia.reportes_inadecuado} personas han reportado este contenido como inadecuado` }}</span>
+                <span>{{ incidencia.reportes_inadecuado === 1 ? '1 persona ha marcado este contenido como inadecuado' : `${incidencia.reportes_inadecuado} personas han marcado este contenido como inadecuado` }}</span>
               </div>
             </v-col>
           </v-row>
@@ -247,14 +247,14 @@
 
     <v-dialog v-model="mostrarDialogoReporteInadecuado" max-width="500px">
       <v-card>
-        <v-card-title class="headline">Reportar contenido inadecuado</v-card-title>
+        <v-card-title class="headline">Marcar como contenido inadecuado</v-card-title>
         <v-card-text>
-          ¿Estás seguro de que quieres reportar este contenido como inadecuado o spam?
+          ¿Estás seguro de que quieres marcar este contenido como inadecuado o spam?
           <div ref="captchaContainerInadecuado" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="red darken-1" text @click="reportarContenidoInadecuado">Sí, reportar</v-btn>
+          <v-btn color="red darken-1" text @click="reportarContenidoInadecuado">Sí, informar</v-btn>
           <v-btn color="green darken-1" text @click="mostrarDialogoReporteInadecuado = false">Cancelar</v-btn>
         </v-card-actions>
       </v-card>
@@ -369,9 +369,9 @@ export default {
           }
         }
       } catch (error) {
-        console.error('Error al reportar como solucionada:', error);
+        console.error('Error al marcar como solucionada:', error);
         if (isComponentMounted.value) {
-          mostrarError(error.response?.data?.error || 'Error al reportar como solucionada');
+          mostrarError(error.response?.data?.error || 'Error al marcar como solucionada');
         }
       } finally {
         if (isComponentMounted.value) {
@@ -542,9 +542,9 @@ export default {
           }
         }
       } catch (error) {
-        console.error('Error al reportar contenido inadecuado:', error);
+        console.error('Error al marcar contenido inadecuado:', error);
         if (isComponentMounted.value) {
-          mostrarError(error.response?.data?.error || 'Error al reportar contenido inadecuado');
+          mostrarError(error.response?.data?.error || 'Error al marcar contenido inadecuado');
         }
       }
     };
