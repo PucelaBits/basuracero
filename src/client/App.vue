@@ -112,7 +112,7 @@
     <v-footer class="pa-4">
       <v-row justify="center" no-gutters>
         <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://t.me/pucelabits" target="_blank" rel="noopener noreferrer">Contacto</a>
+          <a href="https://t.me/basuraceroapp" target="_blank" rel="noopener noreferrer">Contacto</a>
         </v-col>
         <v-col class="text-center" cols="4" sm="auto">
           <a href="https://github.com/PucelaBits/basuracero" target="_blank" rel="noopener noreferrer">Código</a>
