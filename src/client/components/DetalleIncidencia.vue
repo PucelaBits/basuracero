@@ -112,13 +112,11 @@
           <span style="margin-left: 5px;">{{ reportando ? 'Marcando...' : 'Marcar como solucionada' }}</span>
         </v-btn>
         <v-btn
-          href="https://www.valladolid.es/es/sqi#proxia-restful-sqi.1.1/p!/new"
-          target="_blank"
-          rel="noopener noreferrer"
+          @click="mostrarDialogoWhatsApp = true"
           color="primary"
           class="w-100"
         >
-          <v-icon left>mdi-email</v-icon>
+          <v-icon left>mdi-whatsapp</v-icon>
           <span style="margin-left: 5px;">Informar al ayuntamiento</span>
         </v-btn>
         <v-btn
@@ -182,6 +180,25 @@
         </v-img>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="mostrarDialogoWhatsApp" max-width="500px">
+      <v-card>
+        <v-card-title class="headline">
+          <v-icon left>mdi-whatsapp</v-icon>
+          Informar por WhatsApp
+        </v-card-title>
+        <v-card-text>
+          Cuando pulse aceptar se le redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
+          <br>
+          <br><strong>Nota:</strong> Es posible que tenga que escribir "Hola" al principio si nunca ha utilizado el bot antes
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="enviarWhatsApp">Aceptar</v-btn>
+          <v-btn color="error" text @click="mostrarDialogoWhatsApp = false">Cancelar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
@@ -217,6 +234,7 @@ export default {
     const captchaContainer = ref(null);
     const captchaWidget = ref(null);
     const canShare = ref(false);
+    const mostrarDialogoWhatsApp = ref(false);
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -400,7 +418,15 @@ export default {
 
     onUnmounted(() => {
       if (captchaWidget.value) {
-        captchaWidget.value.destroy();
+        captchaWidget.value = new WidgetInstance(captchaContainer.value, {
+          sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
+          doneCallback: (solution) => {
+            captchaSolution.value = solution;
+          },
+          errorCallback: (err) => {
+            console.error("Error al resolver el Captcha:", err);
+          }
+        });
       }
       restaurarMetadatos();
     });
@@ -418,6 +444,14 @@ export default {
       }
     };
 
+    const enviarWhatsApp = () => {
+      const mensaje = `${props.incidencia.descripcion}\nDirección: ${props.incidencia.direccion}`;
+      const mensajeEncoded = encodeURIComponent(mensaje);
+      const url = `https://wa.me/34660010010?text=${mensajeEncoded}`;
+      window.open(url, '_blank');
+      mostrarDialogoWhatsApp.value = false;
+    };
+
     return {
       dialog,
       cerrar,
@@ -432,7 +466,9 @@ export default {
       truncateText,
       captchaContainer,
       canShare,
-      compartir
+      compartir,
+      mostrarDialogoWhatsApp,
+      enviarWhatsApp,
     };
   }
 };
