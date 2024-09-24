@@ -15,7 +15,7 @@
       </button>
     </div>
     <button @click="detectarUbicacion" class="boton-ubicacion">
-      <i class="fas fa-crosshairs"></i>
+      <v-icon>mdi-map-marker</v-icon>
     </button>
   </div>
 </template>
