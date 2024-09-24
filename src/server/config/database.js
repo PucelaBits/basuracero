@@ -13,8 +13,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error al conectar con la base de datos', err.message);
   } else {
-    console.log('Conexión exitosa con la base de datos SQLite');
-    console.log('Ruta de la base de datos:', dbPath);
+    //console.log('Conexión exitosa con la base de datos SQLite');
+    //console.log('Ruta de la base de datos:', dbPath);
     
     db.serialize(() => {
       // Crear tabla de tipos de incidencias
@@ -23,18 +23,28 @@ const db = new sqlite3.Database(dbPath, (err) => {
         nombre TEXT NOT NULL UNIQUE
       )`);
 
-      // Insertar tipos de incidencias predefinidos
-      const tiposIncidencias = [
-        'Basura y objetos abandonados',
-        'Vegetación crecida',
-        'Bache/desperfecto en calzada o acera',
-        'Animal muerto',
-        'Otros'
-      ];
+      // Verificar si la tabla ya contiene datos
+      db.get('SELECT COUNT(*) AS count FROM tipos_incidencias', (err, row) => {
+        if (err) {
+          console.error('Error al verificar la tabla tipos_incidencias:', err.message);
+          return;
+        }
 
-      const stmt = db.prepare('INSERT OR IGNORE INTO tipos_incidencias (nombre) VALUES (?)');
-      tiposIncidencias.forEach(tipo => stmt.run(tipo));
-      stmt.finalize();
+        if (row.count === 0) {
+          // Insertar tipos de incidencias predefinidos si la tabla está vacía
+          const tiposIncidencias = [
+            'Basura y objetos abandonados',
+            'Vegetación crecida',
+            'Bache/desperfecto en calzada o acera',
+            'Animal muerto',
+            'Otros'
+          ];
+
+          const stmt = db.prepare('INSERT OR IGNORE INTO tipos_incidencias (nombre) VALUES (?)');
+          tiposIncidencias.forEach(tipo => stmt.run(tipo));
+          stmt.finalize();
+        }
+      });
 
       // Verificar si la tabla incidencias existe y tiene los campos necesarios
       db.all("PRAGMA table_info(incidencias)", (err, rows) => {
