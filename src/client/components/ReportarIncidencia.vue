@@ -45,6 +45,7 @@
             :rules="[v => !!v || 'La latitud es requerida']"
             required
             @input="obtenerDireccion"
+            v-show="false"
           ></v-text-field>
           
           <v-text-field
@@ -55,6 +56,7 @@
             :rules="[v => !!v || 'La longitud es requerida']"
             required
             @input="obtenerDireccion"
+            v-show="false"
           ></v-text-field>
           
           <v-textarea
