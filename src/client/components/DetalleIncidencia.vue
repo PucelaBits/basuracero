@@ -199,6 +199,22 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Nuevo diálogo para mostrar errores -->
+    <v-dialog v-model="mostrarDialogoError" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">Error</v-card-title>
+        <v-card-text>
+          {{ mensajeError }}
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="mostrarDialogoError = false">
+            Entendido
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
@@ -235,6 +251,9 @@ export default {
     const captchaWidget = ref(null);
     const canShare = ref(false);
     const mostrarDialogoWhatsApp = ref(false);
+    const mostrarDialogoError = ref(false);
+    const mensajeError = ref('');
+    const isComponentMounted = ref(true);
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -284,7 +303,7 @@ export default {
 
     const confirmarSolucion = async () => {
       if (!captchaSolution.value) {
-        alert('Por favor, completa el captcha.');
+        mostrarError('Por favor, completa el captcha.');
         return;
       }
 
@@ -294,16 +313,22 @@ export default {
         const response = await axios.post(`/api/incidencias/${props.incidencia.id}/solucionada`, {
           'frc-captcha-solution': captchaSolution.value
         });
-        props.incidencia.reportes_solucion = response.data.reportes;
-        if (response.data.reportes >= 3) {
-          props.incidencia.estado = 'solucionada';
-          props.incidencia.fecha_solucion = new Date().toISOString();
+        if (isComponentMounted.value) {
+          props.incidencia.reportes_solucion = response.data.reportes;
+          if (response.data.reportes >= 3) {
+            props.incidencia.estado = 'solucionada';
+            props.incidencia.fecha_solucion = new Date().toISOString();
+          }
         }
       } catch (error) {
         console.error('Error al reportar como solucionada:', error);
-        alert(error.response?.data?.error || 'Error al reportar como solucionada');
+        if (isComponentMounted.value) {
+          mostrarError(error.response?.data?.error || 'Error al reportar como solucionada');
+        }
       } finally {
-        reportando.value = false;
+        if (isComponentMounted.value) {
+          reportando.value = false;
+        }
       }
     };
 
@@ -417,16 +442,10 @@ export default {
     });
 
     onUnmounted(() => {
+      isComponentMounted.value = false;
       if (captchaWidget.value) {
-        captchaWidget.value = new WidgetInstance(captchaContainer.value, {
-          sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
-          doneCallback: (solution) => {
-            captchaSolution.value = solution;
-          },
-          errorCallback: (err) => {
-            console.error("Error al resolver el Captcha:", err);
-          }
-        });
+        captchaWidget.value.reset();
+        captchaWidget.value = null;
       }
       restaurarMetadatos();
     });
@@ -452,6 +471,11 @@ export default {
       mostrarDialogoWhatsApp.value = false;
     };
 
+    const mostrarError = (mensaje) => {
+      mensajeError.value = mensaje;
+      mostrarDialogoError.value = true;
+    };
+
     return {
       dialog,
       cerrar,
@@ -469,6 +493,8 @@ export default {
       compartir,
       mostrarDialogoWhatsApp,
       enviarWhatsApp,
+      mostrarDialogoError,
+      mensajeError,
     };
   }
 };
