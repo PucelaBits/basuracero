@@ -106,6 +106,8 @@
 
           <div ref="captchaContainer" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
 
+          <v-subtitle style="color: grey; font-size: smaller;">Se guardará una versión anonimizada de tu IP para evitar abusos</v-subtitle>
+
           <v-row justify="center">
             <v-col cols="12" class="text-center">
               <v-btn

@@ -165,7 +165,8 @@
         <v-card-title class="headline">Confirmar resolución</v-card-title>
         <v-card-text>
           ¿Has verificado presencialmente que la incidencia ha sido solucionada?
-          <div ref="captchaContainer" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
+          <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
+          <v-subtitle style="color: grey; font-size: smaller;">Se guardará una versión anonimizada de tu IP para evitar abusos</v-subtitle>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -250,7 +251,8 @@
         <v-card-title class="headline">Marcar como contenido inadecuado</v-card-title>
         <v-card-text>
           ¿Estás seguro de que quieres marcar este contenido como inadecuado o spam?
-          <div ref="captchaContainerInadecuado" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
+          <div ref="captchaContainerInadecuado" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
+          <v-subtitle style="color: grey; font-size: smaller;">Se guardará una versión anonimizada de tu IP para evitar abusos</v-subtitle>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -302,6 +304,8 @@ export default {
     const captchaContainerInadecuado = ref(null);
     const captchaSolutionInadecuado = ref(null);
     const captchaWidgetInadecuado = ref(null);
+
+    const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -591,6 +595,7 @@ export default {
       mostrarDialogoReporteInadecuado,
       reportarContenidoInadecuado,
       captchaContainerInadecuado,
+      friendlyCaptchaSiteKey,
     };
   }
 };

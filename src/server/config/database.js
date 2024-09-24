@@ -118,6 +118,22 @@ const db = new sqlite3.Database(dbPath, (err) => {
         fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (incidencia_id) REFERENCES incidencias(id)
       )`);
+
+      // Verificar si la tabla incidencias tiene el campo 'ip'
+      db.all("PRAGMA table_info(incidencias)", (err, rows) => {
+        if (err) {
+          console.error('Error al verificar la estructura de la tabla incidencias:', err.message);
+        } else {
+          if (Array.isArray(rows)) {
+            const columns = rows.map(row => row.name);
+            if (!columns.includes('ip')) {
+              db.run(`ALTER TABLE incidencias ADD COLUMN ip TEXT`);
+            }
+          } else {
+            console.error('La estructura de la tabla incidencias no es la esperada:', rows);
+          }
+        }
+      });
     });
   }
 });
