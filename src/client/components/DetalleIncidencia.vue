@@ -301,6 +301,70 @@ export default {
 
     const map = ref(null);
 
+    const originalMetaTags = ref({
+      title: '',
+      ogTitle: '',
+      ogDescription: '',
+      ogImage: '',
+      twitterTitle: '',
+      twitterDescription: '',
+      twitterImage: ''
+    });
+
+    const actualizarMetadatos = () => {
+      // Guardar metaetiquetas originales
+      originalMetaTags.value.title = document.title;
+      originalMetaTags.value.ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
+      originalMetaTags.value.ogDescription = document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
+      originalMetaTags.value.ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+      originalMetaTags.value.twitterTitle = document.querySelector('meta[name="twitter:title"]')?.getAttribute('content') || '';
+      originalMetaTags.value.twitterDescription = document.querySelector('meta[name="twitter:description"]')?.getAttribute('content') || '';
+      originalMetaTags.value.twitterImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content') || '';
+
+      // Actualizar título
+      document.title = `Basura Cero - Incidencia ${props.incidencia.id}`;
+      
+      // Construir la URL completa de la imagen
+      const fullImageUrl = new URL(props.incidencia.imagen, window.location.origin).href;
+
+      // Actualizar metaetiquetas para la vista previa de redes sociales
+      const updateMetaTag = (selector, attribute, content) => {
+        let metaTag = document.querySelector(selector);
+        if (metaTag) {
+          metaTag.setAttribute(attribute, content);
+        } else {
+          metaTag = document.createElement('meta');
+          metaTag.setAttribute(attribute, content);
+          document.head.appendChild(metaTag);
+        }
+      };
+
+      updateMetaTag('meta[property="og:title"]', 'content', `Basura Cero - Incidencia ${props.incidencia.id}`);
+      updateMetaTag('meta[property="og:description"]', 'content', props.incidencia.descripcion);
+      updateMetaTag('meta[property="og:image"]', 'content', fullImageUrl);
+      updateMetaTag('meta[name="twitter:title"]', 'content', `Basura Cero - Incidencia ${props.incidencia.id}`);
+      updateMetaTag('meta[name="twitter:description"]', 'content', props.incidencia.descripcion);
+      updateMetaTag('meta[name="twitter:image"]', 'content', fullImageUrl);
+    };
+
+    const restaurarMetadatos = () => {
+      document.title = originalMetaTags.value.title;
+
+      const restoreMetaTag = (selector, attribute, content) => {
+        const metaTag = document.querySelector(selector);
+        if (metaTag) {
+          metaTag.setAttribute(attribute, content);
+        }
+      };
+
+      restoreMetaTag('meta[property="og:title"]', 'content', originalMetaTags.value.ogTitle);
+      restoreMetaTag('meta[property="og:description"]', 'content', originalMetaTags.value.ogDescription);
+      restoreMetaTag('meta[property="og:image"]', 'content', originalMetaTags.value.ogImage);
+      restoreMetaTag('meta[name="twitter:title"]', 'content', originalMetaTags.value.twitterTitle);
+      restoreMetaTag('meta[name="twitter:description"]', 'content', originalMetaTags.value.twitterDescription);
+      restoreMetaTag('meta[name="twitter:image"]', 'content', originalMetaTags.value.twitterImage);
+    };
+
     onMounted(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
         map.value = L.map('mapa-detalle', {
@@ -330,12 +394,15 @@ export default {
       if (navigator.share) {
         canShare.value = true;
       }
+
+      actualizarMetadatos();
     });
 
     onUnmounted(() => {
       if (captchaWidget.value) {
         captchaWidget.value.destroy();
       }
+      restaurarMetadatos();
     });
 
     const compartir = () => {
