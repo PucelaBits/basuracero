@@ -131,26 +131,32 @@
       </v-card-text>
 
       <v-card-actions class="flex-column">
-        <v-btn
-          v-if="incidencia.estado === 'activa'"
-          @click="mostrarDialogoConfirmacion = true"
-          :loading="reportando"
-          :disabled="reportando"
-          color="success"
-          class="mb-2 w-100"
-        >
-          <v-icon left>mdi-check-circle</v-icon>
-          <span style="margin-left: 5px;">{{ reportando ? 'Marcando...' : 'Marcar como solucionada' }}</span>
-        </v-btn>
-        <v-btn
-          @click="mostrarDialogoWhatsApp = true"
-          color="primary"
-          class="w-100"
-          v-if="incidencia.estado !== 'spam'"
-        >
-          <v-icon left>mdi-whatsapp</v-icon>
-          <span style="margin-left: 5px;">Informar al ayuntamiento</span>
-        </v-btn>
+        <v-row class="mb-2">
+          <v-col cols="6">
+            <v-btn
+              v-if="incidencia.estado === 'activa'"
+              @click="mostrarDialogoConfirmacion = true"
+              :loading="reportando"
+              :disabled="reportando"
+              color="success"
+              class="w-100"
+            >
+              <v-icon left>mdi-check-circle</v-icon>
+              <span style="margin-left: 5px;">{{ reportando ? 'Resolviendo...' : 'Resolver' }}</span>
+            </v-btn>
+          </v-col>
+          <v-col cols="6">
+            <v-btn
+              @click="mostrarDialogoWhatsApp = true"
+              color="primary"
+              class="w-100"
+              v-if="incidencia.estado !== 'spam'"
+            >
+              <v-icon left>mdi-whatsapp</v-icon>
+              <span style="margin-left: 5px;">Informar ayto</span>
+            </v-btn>
+          </v-col>
+        </v-row>
         <v-btn
           v-if="canShare && incidencia.estado !== 'spam'"
           @click="compartir"
