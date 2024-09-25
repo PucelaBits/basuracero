@@ -65,22 +65,25 @@
           <!-- Dirección -->
           <v-row v-if="incidencia.direccion" align="center" class="mt-2">
             <v-col cols="12">
-              <div class="d-flex align-center text-caption">
-                <v-icon small class="mr-1">mdi-map-marker</v-icon>
-                <span>{{ incidencia.direccion }}</span>
-              </div>
+              <a :href="geoLink" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                <div class="d-flex align-center text-caption">
+                  <v-icon small class="mr-1">mdi-map-marker</v-icon>
+                  <span>{{ incidencia.direccion }}</span>
+                  <v-icon small class="ml-1">mdi-directions</v-icon>
+                </div>
+              </a>
             </v-col>
           </v-row>
 
           <!-- Estado -->
-          <v-row align="center" class="mt-2" v-if="incidencia.estado !== 'spam'">
+          <v-row align="center" class="mt-2" v-if="incidencia.estado === 'solucionada' && incidencia.estado !== 'spam'">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
-                <v-icon :color="incidencia.estado === 'activa' ? 'error' : 'success'" small class="mr-1">
-                  {{ incidencia.estado === 'activa' ? 'mdi-alert-circle' : 'mdi-check-circle' }}
+                <v-icon color="success" small class="mr-1">
+                  mdi-check-circle
                 </v-icon>
-                <span :class="{ 'error--text': incidencia.estado === 'activa', 'success--text': incidencia.estado === 'solucionada' }">
-                  {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
+                <span class="success--text">
+                  Solucionada
                 </span>
               </div>
             </v-col>
@@ -98,7 +101,7 @@
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon small class="mr-1">mdi-account-group</v-icon>
-                <span>{{ incidencia.reportes_solucion === 1 ? '1 persona ha indicado que está solucionado' : `${incidencia.reportes_solucion} personas han indicado que está solucionado` }}</span>
+                <span>{{ incidencia.reportes_solucion === 1 ? '1 persona ha indicado que está solucionada' : `${incidencia.reportes_solucion} personas han indicado que está solucionada` }}</span>
               </div>
             </v-col>
           </v-row>
@@ -265,7 +268,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import L from 'leaflet';
@@ -306,6 +309,13 @@ export default {
     const captchaWidgetInadecuado = ref(null);
 
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
+
+    const geoLink = computed(() => {
+      if (props.incidencia.latitud && props.incidencia.longitud) {
+        return `geo:${props.incidencia.latitud},${props.incidencia.longitud}?q=${props.incidencia.latitud},${props.incidencia.longitud}`;
+      }
+      return '#';
+    });
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -596,12 +606,18 @@ export default {
       reportarContenidoInadecuado,
       captchaContainerInadecuado,
       friendlyCaptchaSiteKey,
+      geoLink,
     };
   }
 };
 </script>
 
 <style scoped>
+
+a {
+  color: #000;
+}
+
 .detalle-incidencia {
   display: flex;
   flex-direction: column;
