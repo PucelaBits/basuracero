@@ -1,6 +1,8 @@
-## **Basura Cero: Tu herramienta para mejorar Valladolid**
+## **Basura Cero: Tu herramienta para mejorar tu ciudad**
 
-**[Basura Cero](https://basuracero.pucelabits.org)** es una aplicación sencilla y colaborativa que te permite reportar problemas sin solucionar en la ciudad, como basura, baches o áreas verdes descuidadas. Con solo unos clics, ayudas a reclamar que Valladolid esté más limpia y en mejores condiciones. **Juntos, podemos exigir que nuestra ciudad sea un lugar más agradable para todos.**
+**[Basura Cero](https://basuracero.pucelabits.org)** es una aplicación sencilla y colaborativa que te permite reportar problemas sin solucionar en la ciudad, como basura, baches o áreas verdes descuidadas. Con solo unos clics, ayudas a reclamar que tu ciudad esté más limpia y en mejores condiciones. **Juntos, podemos exigir que nuestra ciudad sea un lugar más agradable para todos.**
+
+Actualmente está configurada para aceptar sólo incidencias en la ciudad de Valladolid, pero puedes modificar la configuración para que acepte incidencias en tu ciudad.
 
 ### **¿Cómo funciona?**
 
@@ -25,17 +27,17 @@
 ### **¿Por qué usar Basura Cero?**
 
 - **Rápido y sencillo**: Solo necesitas unos segundos para reportar un problema y contribuir a una ciudad mejor.
-- **Colaborativo**: Todos los ciudadanos participan para que Valladolid esté más limpia y en buen estado.
+- **Colaborativo**: Todos los ciudadanos participan para que nuestra ciudad esté más limpia y en buen estado.
 - **Transparente**: Consulta fácilmente el estado de los reportes y los solucionados.
 - **Seguro**: No compartimos tus datos personales con nadie.
 
-Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a visibilizarlos y a asegurar que se solucionen. Además, puedes enviar tus reportes directamente al sistema oficial del ayuntamiento. **Cuantos más participemos, más limpia y ordenada estará Valladolid.**
+Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a visibilizarlos y a asegurar que se solucionen. Además, puedes enviar tus reportes directamente al sistema oficial del ayuntamiento. **Cuantos más participemos, más limpia y ordenada estará nuestra ciudad.**
 
 ## Desarrollo
 
 **Antes de empezar**
 
-Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env` y rellenar los datos del API de [friendly captcha](https://friendlycaptcha.com).
+Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env` y rellenar los datos del API de [friendly captcha](https://friendlycaptcha.com), así como el área en el que se pueden crear incidencias.
 
 ```bash
 cp .env.sample .env
@@ -73,11 +75,13 @@ Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos
 
 ### Dominio personalizado
 
-Puedes hacer accesible la web desde un proxy con Nginx con tu dominio, por ejemplo:
+Puedes hacer accesible la web desde un proxy con Nginx usando un dominio personalizado.
+
+Ejemplo que incluye el cache de diferentes rutas y asume que has creado un certificado SSL con [certbot de Let's Encrypt](https://certbot.eff.org/).
 
 ```
 server {
-    listen 443;
+    listen 443 ssl;
     server_name basuracero.pucelabits.org;
     access_log /var/log/nginx/basuracero.pucelabits.org.access.log;
     error_log /var/log/nginx/basuracero.pucelabits.org.error.log;
@@ -106,14 +110,49 @@ server {
 
     # Agrega el encabezado CORS para todas las ubicaciones
     add_header 'Access-Control-Allow-Origin' '*';
-   
+
+    # Tipos de incidencias
+    location /api/incidencias/tipos {
+        proxy_pass http://localhost:5050;
+        proxy_cache my_cache;
+        proxy_cache_valid 200 1h;
+        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+    }
+
+    # Obtener todas las incidencias (tiempo de caché reducido)
+    location /api/incidencias/todas {
+        proxy_pass http://localhost:5050;
+        proxy_cache my_cache;
+        proxy_cache_valid 200 30s;
+        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+    }
+
+    # Obtener incidencias paginadas (con bypass de caché)
+    location /api/incidencias {
+        proxy_pass http://localhost:5050;
+        proxy_cache my_cache;
+        proxy_cache_valid 200 1m;
+        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+        proxy_cache_bypass $query_string;
+        proxy_no_cache $query_string;
+    }
+
+    # Archivos estáticos
+    location /uploads/ {
+        proxy_pass http://localhost:5050;
+        proxy_cache my_cache;
+        proxy_cache_valid 200 24h;
+        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+    }
+
+    # Configuración general para otras rutas
     location / {
         proxy_pass http://localhost:5050/;
-	proxy_http_version 1.1;
+        proxy_http_version 1.1;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Upgrade $http_upgrade;
-	proxy_set_header X-Real-IP $remote_addr;
-	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
 ```
