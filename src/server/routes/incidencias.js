@@ -9,6 +9,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { obtenerIP } = require('../utils/ip');
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
 
 const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
 const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
@@ -24,6 +25,37 @@ if (!fs.existsSync(uploadsDir)){
 
 // Configurar Multer para la subida de archivos
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Configurar el limitador de tasa
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 200, // límite de 200 solicitudes por ventana por IP
+  standardHeaders: true, // Devuelve info de rate limit en los headers `RateLimit-*`
+  legacyHeaders: false, // Deshabilita los headers `X-RateLimit-*`
+  keyGenerator: (req) => {
+    return req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+  }
+});
+
+// Aplicar el limitador a todas las rutas
+router.use(limiter);
+
+// Limitadores específicos para rutas sensibles
+const crearIncidenciaLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 20, // máximo 20 incidencias por hora por IP
+  keyGenerator: (req) => {
+    return req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+  }
+});
+
+const reporteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 50, // máximo 50 reportes por hora por IP
+  keyGenerator: (req) => {
+    return req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+  }
+});
 
 // Función de validación
 const validarIncidencia = (incidencia) => {
@@ -66,7 +98,7 @@ router.get('/tipos', (req, res) => {
 });
 
 // Crear una nueva incidencia
-router.post('/', upload.single('imagen'), async (req, res) => {
+router.post('/', crearIncidenciaLimiter, upload.single('imagen'), async (req, res) => {
   const { tipo_id, descripcion, latitud, longitud, nombre, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
 
   const errores = validarIncidencia(req.body);
@@ -256,7 +288,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Reportar incidencia como solucionada
-router.post('/:id/solucionada', async (req, res) => {
+router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
   const incidenciaId = req.params.id;
   const ip = obtenerIP(req);
   const { 'frc-captcha-solution': captchaSolution } = req.body;
@@ -318,7 +350,7 @@ router.post('/:id/solucionada', async (req, res) => {
 });
 
 // Reportar incidencia como contenido inadecuado o spam
-router.post('/:id/inadecuado', async (req, res) => {
+router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
   const incidenciaId = req.params.id;
   const ip = obtenerIP(req);
   const { 'frc-captcha-solution': captchaSolution } = req.body;
