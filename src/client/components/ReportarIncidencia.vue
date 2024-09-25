@@ -101,6 +101,10 @@
             required
             show-size
           ></v-file-input>
+          <div class="subtitle-text text-center">
+            <v-icon color="grey">mdi-information</v-icon>
+            <span color="grey">No incluya caras de personas, matrículas o info personal</span>
+          </div>
           
           <v-img v-if="previewUrl" :src="previewUrl" max-height="200" class="mb-4"></v-img>
 
