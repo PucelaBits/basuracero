@@ -270,12 +270,12 @@ export default {
         formData.append('direccion', direccion.value)
         formData.append('frc-captcha-solution', captchaSolution.value)
 
-        await axios.post('/api/incidencias', formData, {
+        const response = await axios.post('/api/incidencias', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
-        })
-        emit('incidencia-creada')
-        cerrar()
-        resetForm()
+        });
+        emit('incidencia-creada', response.data.id);
+        cerrar();
+        resetForm();
       } catch (error) {
         console.error('Error al enviar incidencia:', error)
         alert('Hubo un error al enviar la incidencia. Por favor, intente de nuevo.')

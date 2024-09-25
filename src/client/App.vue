@@ -320,16 +320,19 @@ export default {
     // Exponer la función globalmente
     window.openImageModal = openImageModal
 
-    const incidenciaCreada = () => {
+    const incidenciaCreada = (id) => {
       obtenerIncidencias(currentPage.value, true);
       obtenerTodasLasIncidencias(true);
-      ultimaActualizacionLocal.value = Date.now(); // Actualizar el timestamp local
+      ultimaActualizacionLocal.value = Date.now();
       mostrarFormulario.value = false;
       mensajeExito.value = 'Incidencia añadida con éxito';
       mostrarMensajeExito.value = true;
       setTimeout(() => {
         mensajeExito.value = '';
       }, 3000);
+      
+      // Abrir la URL de la incidencia
+      router.push({ name: 'DetalleIncidencia', params: { id: id } });
     }
 
     const abrirDetalleIncidencia = (incidencia) => {
