@@ -166,7 +166,7 @@
         <v-card-text>
           ¿Has verificado presencialmente que la incidencia ha sido solucionada?
           <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
-          <v-subtitle style="color: grey; font-size: smaller;">Se guardará una versión anonimizada de tu IP para evitar abusos</v-subtitle>
+          <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -218,9 +218,9 @@
           Informar por WhatsApp
         </v-card-title>
         <v-card-text>
-          Cuando pulse aceptar se le redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
+          Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
           <br>
-          <br><strong>Nota:</strong> Necesitará mandarle primero un "Hola" si nunca ha utilizado el bot antes
+          <br><span class="subtitle-text"><strong>Nota:</strong> Si es la primera vez que hablas con el bot necesitarás mandarle primero "Hola" para activarle</span>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -252,7 +252,7 @@
         <v-card-text>
           ¿Estás seguro de que quieres marcar este contenido como inadecuado o spam?
           <div ref="captchaContainerInadecuado" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
-          <v-subtitle style="color: grey; font-size: smaller;">Se guardará una versión anonimizada de tu IP para evitar abusos</v-subtitle>
+          <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -726,5 +726,10 @@ export default {
   align-items: center;
   background-color: #f0f0f0;
   height: 270px;
+}
+
+.subtitle-text {
+  color: grey;
+  font-size: smaller;
 }
 </style>

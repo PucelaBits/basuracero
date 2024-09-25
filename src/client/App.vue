@@ -227,7 +227,6 @@ export default {
     })
 
     watch(() => route.params.id, (newId) => {
-      console.log('Nuevo ID de incidencia:', newId)
       if (newId) {
         abrirDetalleIncidenciaPorId(newId)
       }
@@ -289,7 +288,6 @@ export default {
     }
 
     const abrirDetalleIncidencia = (incidencia) => {
-      console.log('Abriendo detalle de incidencia:', incidencia);
       incidenciaSeleccionada.value = incidencia;
       mostrarDetalleIncidencia.value = true;
     }

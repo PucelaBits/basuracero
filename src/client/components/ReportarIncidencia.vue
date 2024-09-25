@@ -106,7 +106,7 @@
 
           <div ref="captchaContainer" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
 
-          <v-subtitle style="color: grey; font-size: smaller;">Se guardará una versión anonimizada de tu IP para evitar abusos</v-subtitle>
+          <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
 
           <v-row justify="center">
             <v-col cols="12" class="text-center">
@@ -372,5 +372,11 @@ export default {
 
 .frc-captcha {
   margin: 0.5em auto 1.5em auto;
+}
+
+.subtitle-text {
+  color: grey;
+  font-size: smaller;
+  margin-bottom: 1.5em;
 }
 </style>
