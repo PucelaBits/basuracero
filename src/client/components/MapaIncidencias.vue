@@ -128,8 +128,8 @@ export default {
             <div class="popup-content">
               <p class="popup-description">${incidencia.descripcion}</p>
               <div class="popup-footer">
-                <span><i class="fas fa-user"></i> ${incidencia.nombre}</span>
-                <span><i class="fas fa-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
+                <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
+                <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
               </div>
             </div>
           `
