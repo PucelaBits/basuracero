@@ -104,7 +104,7 @@
           
           <v-img v-if="previewUrl" :src="previewUrl" max-height="200" class="mb-4"></v-img>
 
-          <div ref="captchaContainer" class="frc-captcha" data-sitekey="FCMTJ4IT4QME8NVH" data-lang="es"></div>
+          <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSitekey" data-lang="es"></div>
 
           <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
 
@@ -167,6 +167,7 @@ export default {
     const captchaContainer = ref(null)
     const captchaSolution = ref(null)
     const captchaWidget = ref(null)
+    const friendlyCaptchaSitekey = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY)
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -362,7 +363,8 @@ export default {
       smAndDown,
       xs,
       validarCoordenadas,
-      seleccionarEnMapa
+      seleccionarEnMapa,
+      friendlyCaptchaSitekey
     }
   }
 }
