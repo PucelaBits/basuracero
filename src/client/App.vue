@@ -229,16 +229,33 @@ export default {
 
     let intervalId;
 
+    const ultimaActualizacionLocal = ref(Date.now());
+
+    const verificarActualizaciones = async () => {
+      try {
+        const response = await axios.get('/api/incidencias/ultima-actualizacion');
+        const ultimaActualizacion = response.data.ultimaActualizacion;
+        
+        if (ultimaActualizacion > ultimaActualizacionLocal.value) {
+          console.log('Se detectaron nuevas actualizaciones');
+          obtenerIncidencias(currentPage.value, true);
+          obtenerTodasLasIncidencias(true);
+          ultimaActualizacionLocal.value = ultimaActualizacion;
+        } else {
+          // No hay nuevas actualizaciones
+        }
+      } catch (error) {
+        console.error('Error al verificar actualizaciones:', error);
+      }
+    };
+
     onMounted(() => {
       obtenerIncidencias();
       obtenerTodasLasIncidencias();
       obtenerTipos();
       
-      // Actualizar cada 30 segundos
-      intervalId = setInterval(() => {
-        obtenerIncidencias(currentPage.value);
-        obtenerTodasLasIncidencias();
-      }, 30000);
+      // Verificar actualizaciones cada 30 segundos
+      intervalId = setInterval(verificarActualizaciones, 30000);
     });
 
     onUnmounted(() => {
@@ -306,6 +323,7 @@ export default {
     const incidenciaCreada = () => {
       obtenerIncidencias(currentPage.value, true);
       obtenerTodasLasIncidencias(true);
+      ultimaActualizacionLocal.value = Date.now(); // Actualizar el timestamp local
       mostrarFormulario.value = false;
       mensajeExito.value = 'Incidencia añadida con éxito';
       mostrarMensajeExito.value = true;

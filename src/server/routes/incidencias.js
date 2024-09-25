@@ -252,6 +252,24 @@ router.get('/todas', (req, res) => {
   });
 });
 
+router.get('/ultima-actualizacion', (req, res) => {
+  db.get('SELECT fecha FROM incidencias ORDER BY datetime(fecha) DESC LIMIT 1', (err, row) => {
+    if (err) {
+      console.error('Error al obtener la última actualización:', err);
+      return res.status(500).json({ error: 'Error al obtener la última actualización' });
+    }
+    console.log('Resultado de la consulta:', row);
+    if (row && row.fecha) {
+      // Convertir la fecha a timestamp para el cliente
+      const timestamp = new Date(row.fecha).getTime();
+      res.json({ ultimaActualizacion: timestamp });
+    } else {
+      res.json({ ultimaActualizacion: null });
+    }
+  });
+});
+
+
 // Obtener incidencia por ID
 router.get('/:id', (req, res) => {
   const incidenciaId = req.params.id;
