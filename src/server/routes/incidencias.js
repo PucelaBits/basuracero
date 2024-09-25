@@ -127,14 +127,17 @@ router.get('/', (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
-  const tipo = req.query.tipo;
+  const tipo = parseInt(req.query.tipo); // Convertir a número
 
-  let whereClause = 'WHERE i.estado != "spam"';
+  let whereClause = 'WHERE i.estado != ?';
+  let params = ['spam'];
   if (!incluirSolucionadas) {
-    whereClause += ' AND i.estado = "activa"';
+    whereClause += ' AND i.estado = ?';
+    params.push('activa');
   }
-  if (tipo) {
-    whereClause += ` AND i.tipo_id = ${tipo}`;
+  if (tipo && !isNaN(tipo)) {
+    whereClause += ' AND i.tipo_id = ?';
+    params.push(tipo);
   }
 
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
@@ -150,7 +153,7 @@ router.get('/', (req, res) => {
     LIMIT ? OFFSET ?
   `;
   
-  db.get(countSql, [], (err, row) => {
+  db.get(countSql, params, (err, row) => {
     if (err) {
       console.error('Error al obtener el total de incidencias:', err);
       res.status(500).json({ error: 'Error interno del servidor' });
@@ -160,7 +163,7 @@ router.get('/', (req, res) => {
     const total = row.total;
     const totalPages = Math.ceil(total / limit);
 
-    db.all(dataSql, [limit, offset], (err, rows) => {
+    db.all(dataSql, [...params, limit, offset], (err, rows) => {
       if (err) {
         console.error('Error al obtener incidencias:', err);
         res.status(500).json({ error: 'Error interno del servidor' });
