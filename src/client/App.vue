@@ -126,7 +126,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useTheme } from 'vuetify'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
@@ -187,16 +187,20 @@ export default {
       }
     }
 
-    const obtenerIncidencias = async (page = currentPage.value) => {
+    const obtenerIncidencias = async (page = currentPage.value, forzarActualizacion = false) => {
       try {
-        const response = await axios.get(`/api/incidencias`, {
-          params: {
-            page: page,
-            limit: itemsPerPage,
-            incluirSolucionadas: incluirSolucionadas.value,
-            tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value
-          }
-        });
+        const params = {
+          page: page,
+          limit: itemsPerPage,
+          incluirSolucionadas: incluirSolucionadas.value,
+          tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
+        };
+        
+        if (forzarActualizacion) {
+          params._ = Date.now(); // Añadir timestamp solo cuando sea necesario
+        }
+        
+        const response = await axios.get(`/api/incidencias`, { params });
         incidencias.value = response.data.incidencias;
         currentPage.value = response.data.currentPage;
         totalPages.value = response.data.totalPages;
@@ -206,19 +210,41 @@ export default {
       }
     };
 
-    const obtenerTodasLasIncidencias = async () => {
+    const obtenerTodasLasIncidencias = async (forzarActualizacion = false) => {
       try {
-        const response = await axios.get(`/api/incidencias/todas?incluirSolucionadas=${incluirSolucionadas.value}`)
-        todasLasIncidencias.value = response.data.incidencias
+        const params = {
+          incluirSolucionadas: incluirSolucionadas.value,
+        };
+        
+        if (forzarActualizacion) {
+          params._ = Date.now();
+        }
+        
+        const response = await axios.get(`/api/incidencias/todas`, { params });
+        todasLasIncidencias.value = response.data.incidencias;
       } catch (error) {
-        console.error('Error al obtener todas las incidencias:', error.response ? error.response.data : error.message)
+        console.error('Error al obtener todas las incidencias:', error.response ? error.response.data : error.message);
       }
     }
+
+    let intervalId;
 
     onMounted(() => {
       obtenerIncidencias();
       obtenerTodasLasIncidencias();
       obtenerTipos();
+      
+      // Actualizar cada 30 segundos
+      intervalId = setInterval(() => {
+        obtenerIncidencias(currentPage.value);
+        obtenerTodasLasIncidencias();
+      }, 30000);
+    });
+
+    onUnmounted(() => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     });
 
     watch(() => incluirSolucionadas.value, () => {
@@ -278,13 +304,14 @@ export default {
     window.openImageModal = openImageModal
 
     const incidenciaCreada = () => {
-      obtenerIncidencias()
-      mostrarFormulario.value = false
-      mensajeExito.value = 'Incidencia añadida con éxito'
-      mostrarMensajeExito.value = true
+      obtenerIncidencias(currentPage.value, true);
+      obtenerTodasLasIncidencias(true);
+      mostrarFormulario.value = false;
+      mensajeExito.value = 'Incidencia añadida con éxito';
+      mostrarMensajeExito.value = true;
       setTimeout(() => {
-        mensajeExito.value = ''
-      }, 3000)
+        mensajeExito.value = '';
+      }, 3000);
     }
 
     const abrirDetalleIncidencia = (incidencia) => {
