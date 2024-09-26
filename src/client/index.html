@@ -8,6 +8,17 @@
     <!-- Favicon -->
     <link rel="icon" href="/favicon.png" type="image/png">
     
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Theme color -->
+    <meta name="theme-color" content="#4b3481">
+    
+    <!-- iOS support -->
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
     <!-- Metaetiquetas para redes sociales -->
     <meta property="og:title" content="Basura Cero">
     <meta property="og:description" content="Sistema colaborativo de incidencias urbanas en Valladolid">
@@ -46,5 +57,18 @@
 <body>
     <div id="app"></div>
     <script type="module" src="./main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registrado con éxito:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Error al registrar el Service Worker:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>

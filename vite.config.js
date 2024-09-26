@@ -2,12 +2,29 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import dotenv from 'dotenv'
+import { copyFileSync } from 'fs'
 
 // Cargar las variables de entorno desde el archivo .env
 dotenv.config()
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    {
+      name: 'copy-pwa-assets',
+      writeBundle() {
+        const publicDir = path.resolve(__dirname, 'public')
+        const outDir = path.resolve(__dirname, 'dist')
+        
+        // Lista de archivos a copiar
+        const filesToCopy = ['manifest.json', 'sw.js', 'favicon.png']
+        
+        filesToCopy.forEach(file => {
+          copyFileSync(path.join(publicDir, file), path.join(outDir, file))
+        })
+      }
+    }
+  ],
   root: path.resolve(__dirname, 'src/client'),
   build: {
     outDir: path.resolve(__dirname, 'dist'),
