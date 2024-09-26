@@ -156,6 +156,33 @@
         </v-col>
       </v-row>
     </v-footer>
+
+    <!-- Diálogo para iOS -->
+    <v-dialog v-model="mostrarDialogoIOS" max-width="400">
+      <v-card>
+        <v-card-title class="headline">
+          <v-icon>mdi-cellphone</v-icon> Cómo añadir en iOS
+        </v-card-title>
+        <v-card-text>
+          Para añadir la aplicación en tu dispositivo iOS:
+          <br>
+          <br>
+          <v-icon>mdi-share</v-icon> Toca el icono de compartir en Safari
+          <br>
+          <v-icon>mdi-plus</v-icon> Desplázate y selecciona "Añadir a la pantalla de inicio"
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            text
+            @click="mostrarDialogoIOS = false"
+          >
+            Entendido
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -284,10 +311,22 @@ export default {
     };
 
     const mostrarAviso = ref(false);
+    const esIOS = ref(false);
+    const mostrarDialogoIOS = ref(false);
     let eventoInstalacion = null;
 
+    const detectarIOS = () => {
+      const userAgent = window.navigator.userAgent;
+      esIOS.value = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+      if (esIOS.value && localStorage.getItem('avisoInstalacionCerrado') !== 'true') {
+        mostrarAviso.value = true;
+      }
+    };
+
     const instalarPWA = () => {
-      if (eventoInstalacion) {
+      if (esIOS.value) {
+        mostrarDialogoIOS.value = true;
+      } else if (eventoInstalacion) {
         eventoInstalacion.prompt();
         eventoInstalacion.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
@@ -310,7 +349,7 @@ export default {
       e.preventDefault();
       eventoInstalacion = e;
       const avisoInstalacionCerrado = localStorage.getItem('avisoInstalacionCerrado');
-      if (avisoInstalacionCerrado !== 'true') {
+      if (avisoInstalacionCerrado !== 'true' || esIOS.value) {
         mostrarAviso.value = true;
       }
     };
@@ -323,6 +362,7 @@ export default {
       // Verificar actualizaciones cada 30 segundos
       intervalId = setInterval(verificarActualizaciones, 30000);
 
+      detectarIOS();
       window.addEventListener('beforeinstallprompt', manejarEventoInstalacion);
     });
 
@@ -468,6 +508,8 @@ export default {
       mostrarAviso,
       instalarPWA,
       cerrarAviso,
+      esIOS,
+      mostrarDialogoIOS,
     }
   }
 }
