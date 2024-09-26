@@ -42,6 +42,37 @@
           </v-card-text>
         </v-card>
         
+        <!-- Nuevo bloque para el aviso de instalación -->
+        <v-card v-if="mostrarAviso" class="ma-4 custom-banner" color="primary">
+          <v-card-text>
+            <v-row>
+              <v-col cols="auto" class="d-flex justify-center align-center">
+                <v-icon>mdi-cellphone</v-icon>
+              </v-col>
+              <v-col class="text-center">
+                <span>Añademe a tu pantalla principal</span>
+              </v-col>
+              <v-col class="text-right">
+                <v-btn
+                  color="white"
+                  text
+                  @click="instalarPWA"
+                >
+                  OK
+                </v-btn>
+                <v-btn
+                  color="white"
+                  icon="mdi-close"
+                  size="small"
+                  class="ml-2"
+                  @click="cerrarAviso"
+                >
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
         <v-card class="ma-4">
           <v-card-text>
             <v-switch
@@ -252,6 +283,38 @@ export default {
       }
     };
 
+    const mostrarAviso = ref(false);
+    let eventoInstalacion = null;
+
+    const instalarPWA = () => {
+      if (eventoInstalacion) {
+        eventoInstalacion.prompt();
+        eventoInstalacion.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('Usuario aceptó la instalación');
+            mostrarAviso.value = false;
+          } else {
+            console.log('Usuario rechazó la instalación');
+          }
+          eventoInstalacion = null;
+        });
+      }
+    };
+
+    const cerrarAviso = () => {
+      mostrarAviso.value = false;
+      localStorage.setItem('avisoInstalacionCerrado', 'true');
+    };
+
+    const manejarEventoInstalacion = (e) => {
+      e.preventDefault();
+      eventoInstalacion = e;
+      const avisoInstalacionCerrado = localStorage.getItem('avisoInstalacionCerrado');
+      if (avisoInstalacionCerrado !== 'true') {
+        mostrarAviso.value = true;
+      }
+    };
+
     onMounted(() => {
       obtenerIncidencias();
       obtenerTodasLasIncidencias();
@@ -259,12 +322,16 @@ export default {
       
       // Verificar actualizaciones cada 30 segundos
       intervalId = setInterval(verificarActualizaciones, 30000);
+
+      window.addEventListener('beforeinstallprompt', manejarEventoInstalacion);
     });
 
     onUnmounted(() => {
       if (intervalId) {
         clearInterval(intervalId);
       }
+
+      window.removeEventListener('beforeinstallprompt', manejarEventoInstalacion);
     });
 
     watch(() => incluirSolucionadas.value, () => {
@@ -398,6 +465,9 @@ export default {
       tiposIncidencias,
       obtenerIncidencias,
       scrollToTop,
+      mostrarAviso,
+      instalarPWA,
+      cerrarAviso,
     }
   }
 }
@@ -541,6 +611,6 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-right: 37px; /* Compensa el margen del avatar */
+  margin-right: 60px; /* Compensa el margen del avatar */
 }
 </style>
