@@ -480,14 +480,13 @@ export default {
       obtenerTodasLasIncidencias(true);
       ultimaActualizacionLocal.value = Date.now();
       mostrarFormulario.value = false;
-      mensajeExito.value = 'Incidencia añadida con éxito';
-      mostrarMensajeExito.value = true;
-      setTimeout(() => {
-        mensajeExito.value = '';
-      }, 3000);
       
-      // Abrir la URL de la incidencia
-      router.push({ name: 'DetalleIncidencia', params: { id: id } });
+      // Abrir la URL de la incidencia y pasar un parámetro para mostrar el diálogo
+      router.push({ 
+        name: 'DetalleIncidencia', 
+        params: { id: id },
+        query: { mostrarDialogoExito: 'true' }
+      });
     }
 
     const abrirDetalleIncidencia = (incidencia) => {

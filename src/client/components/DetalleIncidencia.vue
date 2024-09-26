@@ -164,6 +164,23 @@
           <span style="margin-left: 5px;">Informar al ayuntamiento</span>
         </v-btn>
       </v-card-actions>
+
+      <v-dialog v-model="mostrarDialogoExito" max-width="400">
+        <v-card>
+          <v-card-text class="text-center pa-4">
+            <v-icon color="success" size="64" class="mb-4">mdi-check-circle</v-icon>
+            <h2 class="text-h5 mb-4">Incidencia creada</h2>
+            <p class="mb-4"><v-icon left>mdi-share</v-icon><strong>Compartela</strong> con tus vecinos en redes sociales o grupos de chat</p>
+            <p>No olvides <v-icon left>mdi-whatsapp</v-icon> <strong>informar al ayuntamiento</strong> para que se registre oficialmente, anima a tus vecinos a que lo hagan también</p>
+            <p class="mt-4">Cuando se haya solucionado vuelve y márcala como <v-icon left>mdi-check-circle</v-icon> <strong>resuelta</strong></p>
+            <p class="mt-4">Fácil y rápido, usa los botones de parte inferior</p>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="mostrarDialogoExito = false">Entendido</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-card>
 
     <v-dialog v-model="mostrarDialogoConfirmacion" max-width="500px">
@@ -272,7 +289,7 @@
 
 <script>
 import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -310,6 +327,8 @@ export default {
     const captchaContainerInadecuado = ref(null);
     const captchaSolutionInadecuado = ref(null);
     const captchaWidgetInadecuado = ref(null);
+    const mostrarDialogoExito = ref(false);
+    const route = useRoute();
 
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
 
@@ -504,6 +523,10 @@ export default {
       }
 
       actualizarMetadatos();
+
+      if (route.query.mostrarDialogoExito === 'true') {
+        mostrarDialogoExito.value = true;
+      }
     });
 
     onUnmounted(() => {
@@ -622,6 +645,7 @@ export default {
       captchaContainerInadecuado,
       friendlyCaptchaSiteKey,
       geoLink,
+      mostrarDialogoExito,
     };
   }
 };
