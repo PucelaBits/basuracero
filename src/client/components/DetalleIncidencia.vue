@@ -394,6 +394,7 @@ export default {
       mostrarDialogoConfirmacion.value = false;
       reportando.value = true;
       try {
+        enviarEventoMatomo('Incidencia', 'Resolver', `ID: ${props.incidencia.id}`);
         const response = await axios.post(`/api/incidencias/${props.incidencia.id}/solucionada`, {
           'frc-captcha-solution': captchaSolution.value
         });
@@ -557,6 +558,7 @@ export default {
       `.trim();
 
       if (navigator.share) {
+        enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
         navigator.share({
           title: 'Basura Cero',
           text: textoCompartir,
@@ -627,6 +629,12 @@ export default {
       }
     });
 
+    const enviarEventoMatomo = (categoria, accion, nombre = null, valor = null) => {
+      if (window._paq) {
+        window._paq.push(['trackEvent', categoria, accion, nombre, valor]);
+      }
+    };
+
     return {
       dialog,
       cerrar,
@@ -653,6 +661,7 @@ export default {
       geoLink,
       mostrarDialogoExito,
       cerrarDialogoExito,
+      enviarEventoMatomo,
     };
   }
 };
