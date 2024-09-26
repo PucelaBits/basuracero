@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const incidenciasRoutes = require('./routes/incidencias');
+const rssRoutes = require('./routes/rss');
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -16,6 +17,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')))
 app.use(express.static(path.join(__dirname, '..', '..', 'dist')));
 
 app.use('/api/incidencias', incidenciasRoutes);
+app.use('/api/rss', rssRoutes);
 
 // Manejar todas las demás rutas y servir index.html
 app.get('*', (req, res) => {
