@@ -74,9 +74,26 @@ const db = new sqlite3.Database(dbPath, (err) => {
             'Otros'
           ];
 
-          const stmt = db.prepare('INSERT OR IGNORE INTO tipos_incidencias (nombre) VALUES (?)');
-          tiposIncidencias.forEach(tipo => stmt.run(tipo));
-          stmt.finalize();
+          // Usar una promesa para asegurar que todas las inserciones se completen
+          const insertarTipos = new Promise((resolve, reject) => {
+            const stmt = db.prepare('INSERT OR IGNORE INTO tipos_incidencias (nombre) VALUES (?)');
+            let contador = 0;
+
+            tiposIncidencias.forEach(tipo => {
+              stmt.run(tipo, (err) => {
+                if (err) reject(err);
+                contador++;
+                if (contador === tiposIncidencias.length) {
+                  stmt.finalize();
+                  resolve();
+                }
+              });
+            });
+          });
+
+          insertarTipos
+            .then(() => console.log('Todos los tipos de incidencias han sido insertados'))
+            .catch(err => console.error('Error al insertar tipos de incidencias:', err));
         }
       });
     });

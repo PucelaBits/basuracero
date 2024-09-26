@@ -36,7 +36,7 @@
       <v-card-text class="flex-grow-1 overflow-y-auto pa-0">
         <v-container class="px-4 py-6">
           <v-card flat class="mb-6" v-if="incidencia.estado !== 'spam'">
-            <v-card-text class="text-body-1">
+            <v-card-text class="text-body-3">
               {{ incidencia.descripcion }}
             </v-card-text>
           </v-card>
