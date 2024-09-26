@@ -130,41 +130,38 @@
         </div>
       </v-card-text>
 
-      <v-card-actions class="flex-column">
-        <v-row class="mb-2">
-          <v-col cols="6">
+      <v-card-actions class="flex-column" id="botones-detalle" v-if="incidencia.estado !== 'spam'">
+        <v-row class="mb-0">
+          <v-col cols="auto" class="pt-2 pb-1">
             <v-btn
               v-if="incidencia.estado === 'activa'"
               @click="mostrarDialogoConfirmacion = true"
               :loading="reportando"
               :disabled="reportando"
               color="success"
-              class="w-100"
             >
               <v-icon left>mdi-check-circle</v-icon>
-              <span style="margin-left: 5px;">{{ reportando ? 'Resolviendo...' : 'Resolver' }}</span>
+              <span>{{ reportando ? 'Resolviendo...' : 'Resolver' }}</span>
             </v-btn>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="auto" class="pt-2 pb-1" v-if="canShare">
             <v-btn
-              @click="mostrarDialogoWhatsApp = true"
-              color="primary"
-              class="w-100"
-              v-if="incidencia.estado !== 'spam'"
+              @click="compartir"
+              color="info"
             >
-              <v-icon left>mdi-whatsapp</v-icon>
-              <span style="margin-left: 5px;">Informar ayto</span>
+              <v-icon left>mdi-share</v-icon>
+              <span>Compartir</span>
             </v-btn>
           </v-col>
         </v-row>
         <v-btn
-          v-if="canShare && incidencia.estado !== 'spam'"
-          @click="compartir"
-          color="info"
+          @click="mostrarDialogoWhatsApp = true"
+          v-if="incidencia.estado == 'activa'"
+          color="primary"
           class="w-100"
         >
-          <v-icon left>mdi-share</v-icon>
-          <span style="margin-left: 5px;">Compartir</span>
+          <v-icon left>mdi-whatsapp</v-icon>
+          <span style="margin-left: 5px;">Informar al ayuntamiento</span>
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -736,6 +733,7 @@ a {
 
 .mapa-container {
   position: relative;
+  height: 40vh;
 }
 
 .frc-captcha {
@@ -753,5 +751,9 @@ a {
 .subtitle-text {
   color: grey;
   font-size: smaller;
+}
+
+#botones-detalle {
+  gap: 0px !important;
 }
 </style>

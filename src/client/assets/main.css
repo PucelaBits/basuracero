@@ -226,11 +226,6 @@ h1 span {
 }
 
 /* Estilos para el mapa */
-.mapa-container {
-  position: relative;
-  height: 50vh;
-  width: 100%;
-}
 
 .mapa-incidencias {
   height: 100%;

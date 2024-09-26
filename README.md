@@ -1,4 +1,4 @@
-## **Basura Cero: Tu herramienta para mejorar tu ciudad**
+## **Basura Cero: La app para mejorar tu ciudad**
 
 **[Basura Cero](https://basuracero.pucelabits.org)** es una aplicación sencilla y colaborativa que te permite reportar problemas sin solucionar en la ciudad, como basura, baches o áreas verdes descuidadas. Con solo unos clics, ayudas a reclamar que tu ciudad esté más limpia y en mejores condiciones. **Juntos, podemos exigir que nuestra ciudad sea un lugar más agradable para todos.**
 
