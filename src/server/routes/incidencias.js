@@ -279,12 +279,15 @@ router.get('/usuarios/ranking', (req, res) => {
   }
 
   const sql = `
-    SELECT LOWER(nombre) as nombre, COUNT(*) as incidencias
+    SELECT 
+      COALESCE(LOWER(nombre), 'usuario anónimo') as nombre_lower,
+      MAX(nombre) as nombre,
+      COUNT(*) as incidencias
     FROM incidencias
     WHERE estado != 'spam'
-    GROUP BY LOWER(nombre)
+    GROUP BY COALESCE(LOWER(nombre), 'usuario anónimo')
     HAVING COUNT(*) >= ?
-    ORDER BY incidencias DESC
+    ORDER BY incidencias DESC, nombre_lower
     LIMIT 10
   `;
 
