@@ -12,11 +12,10 @@ export default defineConfig({
     vue(),
     {
       name: 'copy-pwa-assets',
-      writeBundle() {
+      closeBundle() {
         const publicDir = path.resolve(__dirname, 'public')
         const outDir = path.resolve(__dirname, 'dist')
         
-        // Lista de archivos a copiar
         const filesToCopy = ['manifest.json', 'sw.js', 'favicon.png']
         
         filesToCopy.forEach(file => {
@@ -32,14 +31,19 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'src/client/index.html')
+      },
+      output: {
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
       }
     }
   },
   publicDir: path.resolve(__dirname, 'public'),
   server: {
     proxy: {
-      '/api': process.env.NODE_ENV === 'production' ? 'http://localhost:5050' : 'http://localhost:5050',
-      '/uploads': process.env.NODE_ENV === 'production' ? 'http://localhost:5050' : 'http://localhost:5050'
+      '/api': 'http://localhost:5050',
+      '/uploads': 'http://localhost:5050'
     }
   },
   resolve: {
