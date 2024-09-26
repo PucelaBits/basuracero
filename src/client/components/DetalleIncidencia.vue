@@ -177,7 +177,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" @click="mostrarDialogoExito = false">Entendido</v-btn>
+            <v-btn color="primary" @click="cerrarDialogoExito">Entendido</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -492,6 +492,12 @@ export default {
       restoreMetaTag('meta[name="twitter:image"]', 'content', originalMetaTags.value.twitterImage);
     };
 
+    const cerrarDialogoExito = () => {
+      mostrarDialogoExito.value = false;
+      // Eliminar el parámetro de la URL
+      router.replace({ query: {} });
+    };
+
     onMounted(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
         map.value = L.map('mapa-detalle', {
@@ -646,6 +652,7 @@ export default {
       friendlyCaptchaSiteKey,
       geoLink,
       mostrarDialogoExito,
+      cerrarDialogoExito,
     };
   }
 };
