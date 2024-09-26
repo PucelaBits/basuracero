@@ -12,11 +12,11 @@ router.get('/', (req, res) => {
     language: "es",
     image: "https://basuracero.pucelabits.org/favicon.png",
     favicon: "https://basuracero.pucelabits.org/favicon.png",
-    copyright: "2023 Basura Cero"
+    copyright: "Basura Cero"
   });
 
   const sql = `
-    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado
+    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.direccion
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     WHERE i.estado != 'spam'
@@ -32,21 +32,18 @@ router.get('/', (req, res) => {
     }
 
     rows.forEach(incidencia => {
+      const direccion = incidencia.direccion ? incidencia.direccion.split(',').slice(0, 2).join(',') : 'Dirección no disponible';
       feed.addItem({
         title: `${incidencia.tipo}: ${incidencia.descripcion.substring(0, 100)}...`,
         id: `https://basuracero.pucelabits.org/incidencia/${incidencia.id}`,
         link: `https://basuracero.pucelabits.org/incidencia/${incidencia.id}`,
         description: incidencia.descripcion,
         content: `
-          <p>${incidencia.descripcion}</p>
-          <p>Estado: ${incidencia.estado}</p>
-          <img src="https://basuracero.pucelabits.org/uploads/${incidencia.imagen}" alt="${incidencia.tipo}">
+            <p>📍 ${direccion}</p>
+            <p>👤 ${incidencia.nombre}</p>
+            <p>💬 ${incidencia.descripcion}</p>
+            <img src="https://basuracero.pucelabits.org/uploads/${incidencia.imagen}" alt="${incidencia.tipo}">
         `,
-        author: [
-          {
-            name: incidencia.nombre,
-          }
-        ],
         date: new Date(incidencia.fecha),
         image: `https://basuracero.pucelabits.org/uploads/${incidencia.imagen}`
       });
