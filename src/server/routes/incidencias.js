@@ -258,7 +258,6 @@ router.get('/ultima-actualizacion', (req, res) => {
       console.error('Error al obtener la última actualización:', err);
       return res.status(500).json({ error: 'Error al obtener la última actualización' });
     }
-    console.log('Resultado de la consulta:', row);
     if (row && row.fecha) {
       // Convertir la fecha a timestamp para el cliente
       const timestamp = new Date(row.fecha).getTime();
@@ -269,6 +268,41 @@ router.get('/ultima-actualizacion', (req, res) => {
   });
 });
 
+router.get('/usuarios/ranking', (req, res) => {
+  let minIncidencias = parseInt(req.query.minIncidencias);
+  
+  // Validación y sanitización
+  if (isNaN(minIncidencias) || minIncidencias < 1) {
+    minIncidencias = 1;
+  } else if (minIncidencias > 1000) {
+    minIncidencias = 1000;
+  }
+
+  const sql = `
+    SELECT LOWER(nombre) as nombre, COUNT(*) as incidencias
+    FROM incidencias
+    WHERE estado != 'spam'
+    GROUP BY LOWER(nombre)
+    HAVING COUNT(*) >= ?
+    ORDER BY incidencias DESC
+    LIMIT 10
+  `;
+
+  db.all(sql, [minIncidencias], (err, rows) => {
+    if (err) {
+      console.error('Error al obtener el ranking de usuarios:', err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+      return;
+    }
+
+    const ranking = rows.map((row, index) => ({
+      posicion: index + 1,
+      nombre: row.nombre || 'Usuario anónimo',
+      incidencias: row.incidencias
+    }));
+    res.json({ ranking });
+  });
+});
 
 // Obtener incidencia por ID
 router.get('/:id', (req, res) => {

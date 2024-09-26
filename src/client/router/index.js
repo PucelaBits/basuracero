@@ -1,5 +1,6 @@
 import App from '../App.vue'
 import DetalleIncidencia from '../components/DetalleIncidencia.vue'
+import RankingUsuarios from '../components/RankingUsuarios.vue'
 
 const routes = [
   {
@@ -12,6 +13,11 @@ const routes = [
     name: 'DetalleIncidencia',
     component: DetalleIncidencia,
     props: true
+  },
+  {
+    path: '/ranking',
+    name: 'RankingUsuarios',
+    component: RankingUsuarios
   }
 ]
 

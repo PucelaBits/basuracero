@@ -9,8 +9,26 @@
           <v-toolbar-title class="text-h6 font-weight-bold titulo">Basura Cero</v-toolbar-title>
           <span class="subtitulo text-caption d-block">Pucela</span>
         </div>
+        <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       </v-container>
     </v-app-bar>
+
+    <v-navigation-drawer v-model="drawer" location="right" temporary>
+      <v-list>
+        <v-list-item @click="compartir">
+          <template v-slot:prepend>
+            <v-icon>mdi-share-variant</v-icon>
+          </template>
+          <v-list-item-title>Compartir</v-list-item-title>
+        </v-list-item>
+        <v-list-item @click="abrirRanking">
+          <template v-slot:prepend>
+            <v-icon>mdi-trophy</v-icon>
+          </template>
+          <v-list-item-title>Ranking de usuarios</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
 
     <v-main class="bg-grey-lighten-4">
       <v-container fluid class="pa-0">
@@ -49,7 +67,7 @@
               <v-col cols="auto" class="d-flex justify-center align-center">
                 <v-icon>mdi-cellphone</v-icon>
               </v-col>
-              <v-col class="text-center">
+              <v-col class="text-center mx-auto">
                 <span>Añademe a tu pantalla principal</span>
               </v-col>
               <v-col class="text-right">
@@ -183,6 +201,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <RankingUsuarios />
   </v-app>
 </template>
 
@@ -196,6 +216,7 @@ import ListaIncidencias from './components/ListaIncidencias.vue'
 import MapaIncidencias from './components/MapaIncidencias.vue'
 import ImageModal from './components/ImageModal.vue'
 import DetalleIncidencia from './components/DetalleIncidencia.vue'
+import RankingUsuarios from './components/RankingUsuarios.vue'
 // Importar el método para obtener los tipos de incidencias
 import { obtenerTiposIncidencias } from './utils/api'
 
@@ -206,7 +227,8 @@ export default {
     ListaIncidencias,
     MapaIncidencias,
     ImageModal,
-    DetalleIncidencia
+    DetalleIncidencia,
+    RankingUsuarios
   },
   setup() {
     const incidencias = ref([])
@@ -353,6 +375,29 @@ export default {
         mostrarAviso.value = true;
       }
     };
+
+    const drawer = ref(false);
+
+    const compartir = () => {
+      if (navigator.share) {
+        navigator.share({
+          title: 'Basura Cero Pucela',
+          text: 'Ayuda a mantener limpia tu ciudad con Basura Cero Pucela',
+          url: window.location.href,
+        })
+        .then(() => console.log('Contenido compartido exitosamente'))
+        .catch((error) => console.log('Error al compartir:', error));
+      } else {
+        alert('La API de compartir no está disponible en este dispositivo');
+      }
+    };
+
+    const mostrarRanking = ref(false);
+
+    const abrirRanking = () => {
+      router.push('/ranking')
+      drawer.value = false // Cerrar el drawer después de la navegación
+    }
 
     onMounted(() => {
       obtenerIncidencias();
@@ -510,6 +555,10 @@ export default {
       cerrarAviso,
       esIOS,
       mostrarDialogoIOS,
+      drawer,
+      compartir,
+      mostrarRanking,
+      abrirRanking,
     }
   }
 }
@@ -653,6 +702,13 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-right: 60px; /* Compensa el margen del avatar */
+}
+
+.v-app-bar-nav-icon {
+  margin-left: auto;
+}
+
+.v-navigation-drawer {
+  width: 250px;
 }
 </style>
