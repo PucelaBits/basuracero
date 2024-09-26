@@ -516,9 +516,21 @@ export default {
     });
 
     const compartir = () => {
+      // Asumiendo que tienes acceso a estas propiedades
+      const tipoIncidencia = props.incidencia.tipo;
+      const direccionCompleta = props.incidencia.direccion;
+
+      // Extraer los dos primeros elementos de la dirección
+      const direccionCorta = direccionCompleta.split(',').slice(0, 2).join(',');
+
+      const textoCompartir = `
+        ${tipoIncidencia} en ${direccionCorta}
+      `.trim();
+
       if (navigator.share) {
         navigator.share({
-          title: document.title,
+          title: 'Basura Cero',
+          text: textoCompartir,
           url: window.location.href
         }).catch((error) => {
           console.error('Error al compartir:', error);
