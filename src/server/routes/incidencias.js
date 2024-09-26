@@ -99,9 +99,10 @@ router.get('/tipos', (req, res) => {
 
 // Crear una nueva incidencia
 router.post('/', crearIncidenciaLimiter, upload.single('imagen'), async (req, res) => {
-  const { tipo_id, descripcion, latitud, longitud, nombre, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
+  const { tipo_id, descripcion, latitud, longitud, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
+  const nombre = req.body.nombre ? req.body.nombre.trim() : '';
 
-  const errores = validarIncidencia(req.body);
+  const errores = validarIncidencia({...req.body, nombre});
   if (errores.length > 0) {
     return res.status(400).json({ errores });
   }
@@ -280,12 +281,12 @@ router.get('/usuarios/ranking', (req, res) => {
 
   const sql = `
     SELECT 
-      COALESCE(LOWER(nombre), 'usuario anónimo') as nombre_lower,
-      MAX(nombre) as nombre,
+      COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo') as nombre_lower,
+      MAX(TRIM(nombre)) as nombre,
       COUNT(*) as incidencias
     FROM incidencias
     WHERE estado != 'spam'
-    GROUP BY COALESCE(LOWER(nombre), 'usuario anónimo')
+    GROUP BY COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo')
     HAVING COUNT(*) >= ?
     ORDER BY incidencias DESC, nombre_lower
     LIMIT 10
