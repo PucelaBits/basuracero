@@ -40,7 +40,7 @@ router.get('/', (req, res) => {
         content: `
           <p>${incidencia.descripcion}</p>
           <p>Estado: ${incidencia.estado}</p>
-          <img src="https://basuracero.pucelabits.org${incidencia.imagen}" alt="${incidencia.tipo}">
+          <img src="https://basuracero.pucelabits.org/uploads/${incidencia.imagen}" alt="${incidencia.tipo}">
         `,
         author: [
           {
@@ -48,7 +48,7 @@ router.get('/', (req, res) => {
           }
         ],
         date: new Date(incidencia.fecha),
-        image: `https://basuracero.pucelabits.org${incidencia.imagen}`
+        image: `https://basuracero.pucelabits.org/uploads/${incidencia.imagen}`
       });
     });
 
