@@ -27,6 +27,12 @@
           </template>
           <v-list-item-title>Ranking de usuarios</v-list-item-title>
         </v-list-item>
+        <v-list-item href="https://t.me/basuraceroapp" target="_blank">
+          <template v-slot:prepend>
+            <v-icon>mdi-account-group</v-icon>
+          </template>
+          <v-list-item-title>Comunidad</v-list-item-title>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
