@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const dbPath = path.join(__dirname, '../../../data/incidencias.sqlite');
 
-const dataDir = path.join(__dirname, '../../../data');
+const dataDir = path.join(__dirname, '..', '..', '..', 'data');
 if (!fs.existsSync(dataDir)){
     fs.mkdirSync(dataDir, { recursive: true });
 }
