@@ -126,7 +126,8 @@ export default {
               </div>
             </div>
             <div class="popup-content">
-              <p class="popup-description">${incidencia.descripcion}</p>
+              <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion.split(',').slice(0, 2).join(',')}</span></div>
+              <p class="popup-description mt-2">${incidencia.descripcion}</p>
               <div class="popup-footer">
                 <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
                 <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
@@ -381,11 +382,20 @@ export default {
   padding: 10px;
 }
 
+.popup-direccion {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .popup-description {
   font-size: 14px;
   line-height: 1;
   margin-bottom: 10px;
   margin-top: 1px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .popup-footer {
