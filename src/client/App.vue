@@ -1,11 +1,14 @@
 <template>
   <v-app>
     <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact" @click="scrollToTop" class="clickable-header">
-      <v-container class="d-flex justify-center align-center">
-        <v-avatar size="26" rounded="circle" class="mr-auto avatar-logo">
+      <v-container class="d-flex align-center pa-0">
+        <v-avatar size="26" rounded="circle" class="avatar-logo">
           <img src="/favicon.png" alt="Favicon" class="favicon">
         </v-avatar>
-        <v-toolbar-title class="text-h6 font-weight-bold titulo">Basura Cero</v-toolbar-title>
+        <div class="flex-grow-1 text-center">
+          <v-toolbar-title class="text-h6 font-weight-bold titulo">Basura Cero</v-toolbar-title>
+          <span class="subtitulo text-caption d-block">Pucela</span>
+        </div>
       </v-container>
     </v-app-bar>
 
@@ -405,7 +408,18 @@ export default {
   font-size: 0.85em !important;
   text-transform: uppercase !important;
   text-shadow: 1px 1px 10px #000 !important;
-  margin-left: -25px;
+  line-height: 1.2 !important;
+  margin-bottom: 4px !important;
+}
+
+.subtitulo {
+  font-size: 0.7em !important;
+  opacity: 0.8;
+  text-transform: uppercase !important;
+  background-color: #7361a0;
+  border-radius: 5px;
+  margin: auto;
+  padding: 0px 6px;
 }
 
 .favicon {
@@ -517,5 +531,16 @@ export default {
 
 .avatar-logo {
   height: 25px !important;
+  flex-shrink: 0;
+  margin-right: 26px; /* Añade margen derecho igual al ancho del avatar */
+  margin-left: 15px;
+}
+
+/* Clase personalizada para centrar el contenido */
+.flex-grow-1 {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-right: 37px; /* Compensa el margen del avatar */
 }
 </style>
