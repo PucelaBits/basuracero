@@ -168,7 +168,7 @@ export default {
         })
 
         if (props.seguirUsuario && props.ubicacionUsuario) {
-          map.setView([props.ubicacionUsuario.latitud, props.ubicacionUsuario.longitud], 17)
+          map.setView([props.ubicacionUsuario.latitud, props.ubicacionUsuario.longitud], 16)
         }
       }
     }
@@ -312,7 +312,7 @@ export default {
         const data = await response.json()
         if (Array.isArray(data) && data.length > 0) {
           const result = data[0]
-          map.setView([result.lat, result.lon], 17)
+          map.setView([result.lat, result.lon], 16)
           addTempMarker(result.lat, result.lon)
         } else {
           console.log('No se encontraron resultados')
@@ -407,11 +407,11 @@ export default {
             radius: 50
           }).addTo(map)
 
-          map.setView(newLatLng, 17, { animate: true, duration: 1 })
+          map.setView(newLatLng, 16, { animate: true, duration: 1 })
         } else {
           userMarker.setLatLng(newLatLng)
           userCircle.setLatLng(newLatLng)
-          map.setView(newLatLng, 17, { animate: true, duration: 1 })
+          map.setView(newLatLng, 16, { animate: true, duration: 1 })
         }
       }
     }
