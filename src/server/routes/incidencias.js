@@ -222,7 +222,10 @@ router.get('/', (req, res) => {
 router.get('/todas', (req, res) => {
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
 
-  const whereClause = incluirSolucionadas ? '' : 'WHERE i.estado = "activa"';
+  let whereClause = 'WHERE i.estado != "spam"';
+  if (!incluirSolucionadas) {
+    whereClause += ' AND i.estado = "activa"';
+  }
 
   const sql = `
     SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,

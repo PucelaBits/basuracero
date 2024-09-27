@@ -21,6 +21,12 @@
           </template>
           <v-list-item-title>Compartir</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/cercanas">
+          <template v-slot:prepend>
+            <v-icon>mdi-map-marker-radius</v-icon>
+          </template>
+          <v-list-item-title>Validar cercanas</v-list-item-title>
+        </v-list-item>
         <v-list-item @click="abrirRanking">
           <template v-slot:prepend>
             <v-icon>mdi-trophy</v-icon>
@@ -41,6 +47,7 @@
         <MapaIncidencias 
           :incidencias="todasLasIncidencias" 
           :incluirSolucionadas="incluirSolucionadas"
+          :seguirUsuario="false"
           @ubicacion-seleccionada="actualizarUbicacion"
           @abrir-formulario="mostrarFormulario = true"
           @incidencia-seleccionada="abrirDetalleIncidencia"
@@ -213,6 +220,7 @@
     </v-dialog>
 
     <RankingUsuarios />
+    <IncidenciasCercanas :incidencias="todasLasIncidencias" />
   </v-app>
 </template>
 
@@ -227,6 +235,8 @@ import MapaIncidencias from './components/MapaIncidencias.vue'
 import ImageModal from './components/ImageModal.vue'
 import DetalleIncidencia from './components/DetalleIncidencia.vue'
 import RankingUsuarios from './components/RankingUsuarios.vue'
+import IncidenciasCercanas from './components/IncidenciasCercanas.vue'
+
 // Importar el método para obtener los tipos de incidencias
 import { obtenerTiposIncidencias } from './utils/api'
 
@@ -238,7 +248,8 @@ export default {
     MapaIncidencias,
     ImageModal,
     DetalleIncidencia,
-    RankingUsuarios
+    RankingUsuarios,
+    IncidenciasCercanas
   },
   setup() {
     const incidencias = ref([])

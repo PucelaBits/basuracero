@@ -1,6 +1,6 @@
 <template>
   <div class="mapa-container">
-    <div id="map" class="mapa-incidencias"></div>
+    <div ref="mapContainer" class="mapa-incidencias"></div>
     <div class="search-container" :class="{ 'active': isSearchActive }">
       <input 
         type="text" 
@@ -21,9 +21,77 @@
 </template>
 
 <script>
-import { onMounted, onUnmounted, watch, ref } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import L from 'leaflet'
 import { useRouter } from 'vue-router'
+
+// Extensión para animación suave de marcadores
+L.Marker.include({
+  slideTo: function (latlng, options) {
+    const duration = options.duration || 1000
+    const keepAtCenter = options.keepAtCenter || false
+
+    const start = this.getLatLng()
+    const end = L.latLng(latlng)
+
+    const startTime = performance.now()
+
+    const animate = (currentTime) => {
+      const elapsedTime = currentTime - startTime
+      if (elapsedTime < duration) {
+        const t = elapsedTime / duration
+        const lat = start.lat + (end.lat - start.lat) * t
+        const lng = start.lng + (end.lng - start.lng) * t
+        const newLatLng = L.latLng(lat, lng)
+
+        this.setLatLng(newLatLng)
+
+        if (keepAtCenter) {
+          this._map.setView(newLatLng, this._map.getZoom(), { animate: false })
+        }
+
+        requestAnimationFrame(animate)
+      } else {
+        this.setLatLng(end)
+        if (keepAtCenter) {
+          this._map.setView(end, this._map.getZoom(), { animate: false })
+        }
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }
+})
+
+// Extensión para animación suave de círculos
+L.Circle.include({
+  slideTo: function (latlng, options) {
+    const duration = options.duration || 1000
+
+    const start = this.getLatLng()
+    const end = L.latLng(latlng)
+
+    const startTime = performance.now()
+
+    const animate = (currentTime) => {
+      const elapsedTime = currentTime - startTime
+      if (elapsedTime < duration) {
+        const t = elapsedTime / duration
+        const lat = start.lat + (end.lat - start.lat) * t
+        const lng = start.lng + (end.lng - start.lng) * t
+        const newLatLng = L.latLng(lat, lng)
+
+        this.setLatLng(newLatLng)
+
+        requestAnimationFrame(animate)
+      } else {
+        this.setLatLng(end)
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }
+})
 
 export default {
   name: 'MapaIncidencias',
@@ -39,14 +107,29 @@ export default {
     ubicacionSeleccionada: {
       type: Object,
       default: () => ({})
+    },
+    ubicacionUsuario: {
+      type: Object,
+      default: null
+    },
+    seguirUsuario: {
+      type: Boolean,
+      default: false
+    },
+    deshabilitarNuevaIncidencia: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada'],
+  emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion'],
   setup(props, { emit }) {
     const router = useRouter();
+    const mapContainer = ref(null)
     let map = null
     let markers = []
     let tempMarker = null
+    let userMarker = null
+    let userCircle = null
     const isSearchActive = ref(false)
     const searchQuery = ref('')
     const searchResults = ref([])
@@ -72,16 +155,22 @@ export default {
     };
 
     const initMap = () => {
-      map = L.map('map').setView([41.652251, -4.724532], 13)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-      }).addTo(map)
+      if (mapContainer.value && !map) {
+        map = L.map(mapContainer.value).setView([41.652251, -4.724532], 13)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 20
+        }).addTo(map)
 
-      map.on('click', (event) => {
-        addTempMarker(event.latlng.lat, event.latlng.lng)
-      })
+        map.on('click', (event) => {
+          addTempMarker(event.latlng.lat, event.latlng.lng)
+        })
+
+        if (props.seguirUsuario && props.ubicacionUsuario) {
+          map.setView([props.ubicacionUsuario.latitud, props.ubicacionUsuario.longitud], 17)
+        }
+      }
     }
 
     const addTempMarker = (lat, lng) => {
@@ -96,67 +185,74 @@ export default {
           iconAnchor: [15, 42]
         })
       }).addTo(map)
-      const popupContent = L.DomUtil.create('div')
-      const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent)
-      addButton.innerHTML = 'Añadir incidencia aquí'
-      L.DomEvent.on(addButton, 'click', () => {
-        emit('ubicacion-seleccionada', { latitud: lat, longitud: lng })
-        emit('abrir-formulario')
-      })
-      tempMarker.bindPopup(popupContent, {
-        closeButton: false,
-        className: 'custom-popup-class'
-      }).openPopup()
+      
+      if (!props.deshabilitarNuevaIncidencia) {
+        const popupContent = L.DomUtil.create('div')
+        const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent)
+        addButton.innerHTML = 'Añadir incidencia aquí'
+        L.DomEvent.on(addButton, 'click', () => {
+          emit('ubicacion-seleccionada', { latitud: lat, longitud: lng })
+          emit('abrir-formulario')
+        })
+        tempMarker.bindPopup(popupContent, {
+          closeButton: false,
+          className: 'custom-popup-class'
+        }).openPopup()
+      }
     }
 
     const updateMarkers = () => {
-      markers.forEach(marker => map.removeLayer(marker))
-      markers = []
+      if (map && props.incidencias) {
+        // Limpiar marcadores existentes
+        markers.forEach(marker => map.removeLayer(marker))
+        markers = []
 
-      props.incidencias.forEach(incidencia => {
-        if (incidencia.estado === 'activa' || (incidencia.estado === 'solucionada' && props.incluirSolucionadas)) {
-          const popupContent = L.DomUtil.create('div', 'custom-popup')
-          
-          popupContent.innerHTML = `
-            <div class="popup-header">
-              <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image">
-              <div class="popup-chips">
-                <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
-                <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
+        // Añadir nuevos marcadores
+        props.incidencias.forEach(incidencia => {
+          if (props.incluirSolucionadas || incidencia.estado !== 'solucionada') {
+            const popupContent = L.DomUtil.create('div', 'custom-popup')
+            
+            popupContent.innerHTML = `
+              <div class="popup-header">
+                <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image">
+                <div class="popup-chips">
+                  <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
+                  <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
+                </div>
               </div>
-            </div>
-            <div class="popup-content">
-              <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion.split(',').slice(0, 2).join(',')}</span></div>
-              <p class="popup-description mt-2">${incidencia.descripcion}</p>
-              <div class="popup-footer">
-                <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
-                <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
+              <div class="popup-content">
+                <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion.split(',').slice(0, 2).join(',')}</span></div>
+                <p class="popup-description mt-2">${incidencia.descripcion}</p>
+                <div class="popup-footer">
+                  <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
+                  <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
+                </div>
               </div>
-            </div>
-          `
+            `
 
-          const marker = L.marker([incidencia.latitud, incidencia.longitud], {
-            icon: createCustomIcon(incidencia.estado)
-          }).addTo(map)
+            const marker = L.marker([incidencia.latitud, incidencia.longitud], {
+              icon: createCustomIcon(incidencia.estado)
+            }).addTo(map)
 
-          marker.bindPopup(popupContent, { 
-            maxWidth: 250, 
-            minWidth: 250,
-            className: 'custom-popup-class' 
-          })
+            marker.bindPopup(popupContent, { 
+              maxWidth: 250, 
+              minWidth: 250,
+              className: 'custom-popup-class' 
+            })
 
-          L.DomEvent.on(popupContent.querySelector('.popup-image'), 'click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            abrirDetalle(incidencia);
-          })
+            L.DomEvent.on(popupContent.querySelector('.popup-image'), 'click', (e) => {
+              L.DomEvent.stopPropagation(e);
+              abrirDetalle(incidencia);
+            })
 
-          markers.push(marker)
+            markers.push(marker)
+          }
+        })
+
+        if (markers.length > 0) {
+          const bounds = L.latLngBounds(markers.map(marker => marker.getLatLng()))
+          map.fitBounds(bounds)
         }
-      })
-
-      if (markers.length > 0) {
-        const bounds = L.latLngBounds(markers.map(marker => marker.getLatLng()))
-        map.fitBounds(bounds)
       }
     }
 
@@ -226,15 +322,132 @@ export default {
       }
     }
 
+    const watchId = ref(null)
+    const lastPosition = ref(null)
+    const lastUpdateTime = ref(0)
+
+    const startWatchingUserLocation = () => {
+      if (props.seguirUsuario && "geolocation" in navigator) {
+        watchId.value = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords
+            const newPosition = { latitud: latitude, longitud: longitude }
+            const currentTime = Date.now()
+            
+            // Verificar si la posición ha cambiado significativamente o si han pasado 10 segundos
+            if (!lastPosition.value || 
+                calculateDistance(lastPosition.value, newPosition) > 10 ||
+                currentTime - lastUpdateTime.value >= 10000) {
+              lastPosition.value = newPosition
+              lastUpdateTime.value = currentTime
+              emit('solicitar-actualizacion-ubicacion', newPosition)
+              updateUserLocation(newPosition)
+            }
+          },
+          (error) => {
+            console.error("Error al obtener la ubicación:", error.message)
+          },
+          { 
+            enableHighAccuracy: true, 
+            timeout: 5000, 
+            maximumAge: 0
+          }
+        )
+
+        // Forzar actualización cada 10 segundos
+        const forceUpdateInterval = setInterval(() => {
+          if (lastPosition.value && Date.now() - lastUpdateTime.value >= 10000) {
+            emit('solicitar-actualizacion-ubicacion', lastPosition.value)
+            updateUserLocation(lastPosition.value)
+            lastUpdateTime.value = Date.now()
+          }
+        }, 10000)
+
+        // Limpiar el intervalo cuando se desmonte el componente
+        onUnmounted(() => {
+          clearInterval(forceUpdateInterval)
+        })
+      }
+    }
+
+    const calculateDistance = (pos1, pos2) => {
+      // Implementar cálculo de distancia entre dos puntos
+      // Puedes usar la fórmula de Haversine para mayor precisión
+      const R = 6371e3; // Radio de la Tierra en metros
+      const φ1 = pos1.latitud * Math.PI/180;
+      const φ2 = pos2.latitud * Math.PI/180;
+      const Δφ = (pos2.latitud - pos1.latitud) * Math.PI/180;
+      const Δλ = (pos2.longitud - pos1.longitud) * Math.PI/180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      return R * c;
+    }
+
+    const updateUserLocation = (newPosition) => {
+      if (map && newPosition && props.seguirUsuario) {
+        const { latitud, longitud } = newPosition
+        const newLatLng = L.latLng(latitud, longitud)
+        
+        if (!userMarker) {
+          userMarker = L.marker(newLatLng, {
+            icon: L.divIcon({
+              className: 'user-location-marker',
+              html: '<div class="user-location-dot"></div>'
+            })
+          }).addTo(map)
+          
+          userCircle = L.circle(newLatLng, {
+            color: '#3388ff',
+            fillColor: '#3388ff',
+            fillOpacity: 0.2,
+            radius: 50
+          }).addTo(map)
+
+          map.setView(newLatLng, 17, { animate: true, duration: 1 })
+        } else {
+          userMarker.setLatLng(newLatLng)
+          userCircle.setLatLng(newLatLng)
+          map.setView(newLatLng, 17, { animate: true, duration: 1 })
+        }
+      }
+    }
+
+    const removeUserMarker = () => {
+      if (userMarker) {
+        map.removeLayer(userMarker)
+        userMarker = null
+      }
+      if (userCircle) {
+        map.removeLayer(userCircle)
+        userCircle = null
+      }
+    }
+
+    const stopWatchingUserLocation = () => {
+      if (watchId.value !== null) {
+        navigator.geolocation.clearWatch(watchId.value)
+        watchId.value = null
+      }
+    }
+
     onMounted(() => {
       initMap()
       updateMarkers()
+      if (props.seguirUsuario) {
+        startWatchingUserLocation()
+      }
     })
 
     onUnmounted(() => {
       if (map) {
         map.remove()
+        map = null
       }
+      stopWatchingUserLocation()
     })
 
     watch(() => props.incidencias, updateMarkers, { deep: true })
@@ -244,8 +457,22 @@ export default {
         updateUbicacion(newUbicacion.latitud, newUbicacion.longitud)
       }
     })
+    watch(() => props.ubicacionUsuario, (newValue) => {
+      if (newValue && props.seguirUsuario) {
+        updateUserLocation(newValue)
+      }
+    })
+    watch(() => props.seguirUsuario, (newValue) => {
+      if (newValue) {
+        startWatchingUserLocation()
+      } else {
+        stopWatchingUserLocation()
+        removeUserMarker()
+      }
+    })
 
     return {
+      mapContainer,
       updateUbicacion,
       detectarUbicacion,
       removeTempMarker,
@@ -505,5 +732,19 @@ export default {
 .custom-popup .popup-content {
   position: relative;
   padding-bottom: 20px;
+}
+
+.user-location-marker {
+  width: 20px;
+  height: 20px;
+}
+
+.user-location-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #3388ff;
+  border: 2px solid white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 </style>
