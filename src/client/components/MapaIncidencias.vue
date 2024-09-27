@@ -407,11 +407,12 @@ export default {
             radius: 50
           }).addTo(map)
 
+          // Solo centramos y hacemos zoom la primera vez
           map.setView(newLatLng, 16, { animate: true, duration: 1 })
         } else {
-          userMarker.setLatLng(newLatLng)
-          userCircle.setLatLng(newLatLng)
-          map.setView(newLatLng, 16, { animate: true, duration: 1 })
+          // En actualizaciones posteriores, solo movemos el marcador y el círculo
+          userMarker.slideTo(newLatLng, { duration: 1000 })
+          userCircle.slideTo(newLatLng, { duration: 1000 })
         }
       }
     }
