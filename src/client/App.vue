@@ -150,9 +150,11 @@
         v-model="mostrarFormulario"
         :ubicacionSeleccionada="ubicacionSeleccionada"
         :datosFormulario="datosFormulario"
+        :todasLasIncidencias="todasLasIncidencias"
         @incidencia-creada="incidenciaCreada"
         @seleccionar-en-mapa="seleccionarEnMapa"
         @actualizar-datos="actualizarDatosFormulario"
+        @incidencia-seleccionada="abrirDetalleIncidencia"
       />
     </v-dialog>
 

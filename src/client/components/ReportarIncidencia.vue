@@ -1,144 +1,180 @@
 <template>
-  <v-dialog 
-    v-model="dialog" 
-    :max-width="$vuetify.display.smAndDown ? '99%' : '600px'"
-    :fullscreen="$vuetify.display.xs"
-  >
-    <v-card>
-      <v-card-title class="d-flex justify-space-between align-center">
-        Enviar incidencia
-        <v-btn icon @click="cerrar">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-card-title>
-      <v-card-text>
-        <v-form ref="form" @submit.prevent="enviarIncidencia" v-model="formValido">
-          <v-text-field
-            v-model="incidencia.nombre"
-            label="Tu nombre"
-            :rules="[v => !!v || 'El nombre es requerido']"
-            required
-          ></v-text-field>
-          
-          <v-select
-            v-model="incidencia.tipo_id"
-            :items="tiposIncidencias"
-            item-title="nombre"
-            item-value="id"
-            label="Tipo"
-            :rules="[v => !!v || 'El tipo es requerido']"
-            required
-          ></v-select>
-          
-          <v-textarea
-            v-model="incidencia.descripcion"
-            label="Descripción"
-            :rules="[v => !!v || 'La descripción es requerida']"
-            required
-          ></v-textarea>
-          
-          <v-text-field
-            v-model="incidencia.latitud"
-            label="Latitud"
-            type="number"
-            step="any"
-            :rules="[v => !!v || 'La latitud es requerida']"
-            required
-            @input="obtenerDireccion"
-            v-show="false"
-          ></v-text-field>
-          
-          <v-text-field
-            v-model="incidencia.longitud"
-            label="Longitud"
-            type="number"
-            step="any"
-            :rules="[v => !!v || 'La longitud es requerida']"
-            required
-            @input="obtenerDireccion"
-            v-show="false"
-          ></v-text-field>
-          
-          <v-textarea
-            v-model="direccion"
-            label="Dirección"
-            readonly
-            dense
-            auto-grow
-            rows="2"
-            row-height="18"
-            class="mb-4"
-            :rules="[validarCoordenadas]"
-            :error-messages="validarCoordenadas() !== true ? [validarCoordenadas()] : []"
-          >
-            <template v-slot:prepend>
-              <v-icon>mdi-map-marker</v-icon>
-            </template>
-          </v-textarea>
-          
-          <v-row justify="center" class="mb-4">
-            <v-col cols="12" class="text-center">
-              <v-btn @click="obtenerUbicacion" color="primary" :loading="obteniendoUbicacion">
-                <v-icon left>mdi-map-marker</v-icon>
-                &nbsp;Usar tu ubicación
-              </v-btn>
-            </v-col>
-            <v-col cols="12" class="text-center">
-              <v-btn @click="seleccionarEnMapa" color="secondary">
-                <v-icon left>mdi-map</v-icon>
-                &nbsp;Seleccionar en mapa
-              </v-btn>
-            </v-col>
-          </v-row>
-          
-          <v-file-input
-            v-model="incidencia.imagen"
-            accept="image/*"
-            label="Hacer o subir foto"
-            prepend-icon="mdi-camera"
-            @change="onFileSelected"
-            :rules="[v => !!v || 'La imagen es requerida']"
-            required
-            show-size
-          ></v-file-input>
-          <div class="subtitle-text text-center">
-            <v-icon color="grey mr-2">mdi-information</v-icon>
-            <span color="grey">No incluya caras de personas, matrículas o info personal</span>
-          </div>
-          
-          <v-img v-if="previewUrl" :src="previewUrl" max-height="200" class="mb-4"></v-img>
+  <div>
+    <v-dialog 
+      v-model="dialog" 
+      :max-width="$vuetify.display.smAndDown ? '99%' : '600px'"
+      :fullscreen="$vuetify.display.xs"
+    >
+      <v-card>
+        <v-card-title class="d-flex justify-space-between align-center">
+          Enviar incidencia
+          <v-btn icon @click="cerrar">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <v-form ref="form" @submit.prevent="enviarIncidencia" v-model="formValido">
+            <v-text-field
+              v-model="incidencia.nombre"
+              label="Tu nombre"
+              :rules="[v => !!v || 'El nombre es requerido']"
+              required
+            ></v-text-field>
+            
+            <v-select
+              v-model="incidencia.tipo_id"
+              :items="tiposIncidencias"
+              item-title="nombre"
+              item-value="id"
+              label="Tipo"
+              :rules="[v => !!v || 'El tipo es requerido']"
+              required
+            ></v-select>
+            
+            <v-textarea
+              v-model="incidencia.descripcion"
+              label="Descripción"
+              :rules="[v => !!v || 'La descripción es requerida']"
+              required
+            ></v-textarea>
+            
+            <v-text-field
+              v-model="incidencia.latitud"
+              label="Latitud"
+              type="number"
+              step="any"
+              :rules="[v => !!v || 'La latitud es requerida']"
+              required
+              @input="obtenerDireccion"
+              v-show="false"
+            ></v-text-field>
+            
+            <v-text-field
+              v-model="incidencia.longitud"
+              label="Longitud"
+              type="number"
+              step="any"
+              :rules="[v => !!v || 'La longitud es requerida']"
+              required
+              @input="obtenerDireccion"
+              v-show="false"
+            ></v-text-field>
+            
+            <v-textarea
+              v-model="direccion"
+              label="Dirección"
+              readonly
+              dense
+              auto-grow
+              rows="2"
+              row-height="18"
+              class="mb-4"
+              :rules="[validarCoordenadas]"
+              :error-messages="validarCoordenadas() !== true ? [validarCoordenadas()] : []"
+            >
+              <template v-slot:prepend>
+                <v-icon>mdi-map-marker</v-icon>
+              </template>
+            </v-textarea>
+            
+            <v-row justify="center" class="mb-4">
+              <v-col cols="12" class="text-center">
+                <v-btn @click="obtenerUbicacion" color="primary" :loading="obteniendoUbicacion">
+                  <v-icon left>mdi-map-marker</v-icon>
+                  &nbsp;Usar tu ubicación
+                </v-btn>
+              </v-col>
+              <v-col cols="12" class="text-center">
+                <v-btn @click="seleccionarEnMapa" color="secondary">
+                  <v-icon left>mdi-map</v-icon>
+                  &nbsp;Seleccionar en mapa
+                </v-btn>
+              </v-col>
+            </v-row>
+            
+            <v-file-input
+              v-model="incidencia.imagen"
+              accept="image/*"
+              label="Hacer o subir foto"
+              prepend-icon="mdi-camera"
+              @change="onFileSelected"
+              :rules="[v => !!v || 'La imagen es requerida']"
+              required
+              show-size
+            ></v-file-input>
+            <div class="subtitle-text text-center">
+              <v-icon color="grey mr-2">mdi-information</v-icon>
+              <span color="grey">No incluya caras de personas, matrículas o info personal</span>
+            </div>
+            
+            <v-img v-if="previewUrl" :src="previewUrl" max-height="200" class="mb-4"></v-img>
 
-          <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSitekey" data-lang="es"></div>
+            <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSitekey" data-lang="es"></div>
 
-          <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
+            <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
 
-          <v-row justify="center">
-            <v-col cols="12" class="text-center">
-              <v-btn
-                color="primary"
-                @click="enviarIncidencia"
-                :loading="enviando"
-                :disabled="!formValido || enviando || !incidencia.imagen"
-              >
-                {{ enviando ? 'Enviando...' : 'Enviar' }}
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card-text>
-    </v-card>
-  </v-dialog>
+            <v-dialog v-model="mostrarDialogoIncidenciasCercanas" max-width="500px">
+              <v-card>
+                <v-card-title>
+                  Posible duplicada
+                </v-card-title>
+                <v-card-text>
+                  <p>Hay {{ incidenciasCercanas.length }} incidencia{{ incidenciasCercanas.length !== 1 ? 's' : '' }} cercana{{ incidenciasCercanas.length !== 1 ? 's' : '' }} similar{{ incidenciasCercanas.length !== 1 ? 'es' : '' }}. Por favor compruebela{{ incidenciasCercanas.length !== 1 ? 's' : '' }} primero y no rellene una duplicada.</p>
+                  
+                  <v-list>
+                    <v-list-item v-for="incidencia in incidenciasCercanas" :key="incidencia.id" @click="abrirIncidenciaCercana(incidencia.id)">
+                      <template v-slot:prepend>
+                        <v-avatar size="50">
+                          <v-img :src="incidencia.imagen" cover></v-img>
+                        </v-avatar>
+                      </template>
+                      <v-list-item-title>{{ incidencia.tipo }}</v-list-item-title>
+                      <v-list-item-subtitle>
+                        {{ incidencia.descripcion.substring(0, 50) }}...
+                      </v-list-item-subtitle>
+                      <v-list-item-subtitle class="mt-1">
+                        A {{ incidencia.distancia }} m.
+                      </v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn color="primary" text @click="cerrarDialogoIncidenciasCercanas">
+                    No, es una diferente
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
 
-  <v-dialog v-model="mostrarDialogoError" max-width="400px">
-    <v-card>
-      <v-card-title class="headline">Error de ubicación</v-card-title>
-      <v-card-text>{{ mensajeError }}</v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="mostrarDialogoError = false">Cerrar</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+            <v-row justify="center">
+              <v-col cols="12" class="text-center">
+                <v-btn
+                  color="primary"
+                  @click="enviarIncidencia"
+                  :loading="enviando"
+                  :disabled="!formValido || enviando || !incidencia.imagen"
+                >
+                  {{ enviando ? 'Enviando...' : 'Enviar' }}
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="mostrarDialogoError" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">Error de ubicación</v-card-title>
+        <v-card-text>{{ mensajeError }}</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="mostrarDialogoError = false">Cerrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script>
@@ -163,9 +199,13 @@ export default {
     datosFormulario: {
       type: Object,
       default: () => ({})
+    },
+    todasLasIncidencias: {
+      type: Array,
+      default: () => []
     }
   },
-  emits: ['update:modelValue', 'incidencia-creada', 'seleccionar-en-mapa', 'actualizar-datos'],
+  emits: ['update:modelValue', 'incidencia-creada', 'seleccionar-en-mapa', 'actualizar-datos', 'incidencia-seleccionada'],
   setup(props, { emit }) {
     const { smAndDown, xs } = useDisplay()
     const dialog = ref(props.modelValue)
@@ -183,6 +223,8 @@ export default {
     const mostrarDialogoError = ref(false)
     const mensajeError = ref('')
     const obteniendoUbicacion = ref(false)
+    const incidenciasCercanas = ref([])
+    const mostrarDialogoIncidenciasCercanas = ref(false)
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -342,6 +384,56 @@ export default {
       cerrar()
     }
 
+    const verificarIncidenciasCercanas = () => {
+      if (incidencia.value.tipo_id && incidencia.value.latitud && incidencia.value.longitud) {
+        incidenciasCercanas.value = props.todasLasIncidencias
+          .map(inc => {
+            const distancia = calcularDistancia(
+              incidencia.value.latitud, 
+              incidencia.value.longitud, 
+              inc.latitud, 
+              inc.longitud
+            );
+            if (inc.tipo_id === incidencia.value.tipo_id && distancia <= 50) {
+              return { ...inc, distancia: Math.round(distancia) };
+            }
+            return null;
+          })
+          .filter(Boolean);
+        if (incidenciasCercanas.value.length > 0) {
+          mostrarDialogoIncidenciasCercanas.value = true;
+        }
+      } else {
+        incidenciasCercanas.value = [];
+      }
+    };
+
+    const calcularDistancia = (lat1, lon1, lat2, lon2) => {
+      const R = 6371e3; // Radio de la Tierra en metros
+      const φ1 = lat1 * Math.PI/180;
+      const φ2 = lat2 * Math.PI/180;
+      const Δφ = (lat2-lat1) * Math.PI/180;
+      const Δλ = (lon2-lon1) * Math.PI/180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      return R * c; // en metros
+    };
+
+    const abrirIncidenciaCercana = (id) => {
+      const incidenciaSeleccionada = props.todasLasIncidencias.find(inc => inc.id === id);
+      if (incidenciaSeleccionada) {
+        emit('incidencia-seleccionada', incidenciaSeleccionada);
+      }
+    };
+
+    const cerrarDialogoIncidenciasCercanas = () => {
+      mostrarDialogoIncidenciasCercanas.value = false;
+    };
+
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal
     })
@@ -362,8 +454,19 @@ export default {
       emit('actualizar-datos', newValue);
     }, { deep: true });
 
+    watch([() => incidencia.value.tipo_id, () => incidencia.value.latitud, () => incidencia.value.longitud], 
+      () => {
+        verificarIncidenciasCercanas();
+      }
+    );
+
     onMounted(() => {
       obtenerTiposIncidencias();
+
+      // Verificar incidencias cercanas al cargar si los campos relevantes están rellenos
+      if (incidencia.value.tipo_id && incidencia.value.latitud && incidencia.value.longitud) {
+        verificarIncidenciasCercanas();
+      }
 
       if (import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true' && captchaContainer.value) {
         captchaWidget.value = new WidgetInstance(captchaContainer.value, {
@@ -407,7 +510,12 @@ export default {
       friendlyCaptchaSitekey,
       mostrarDialogoError,
       mensajeError,
-      obteniendoUbicacion
+      obteniendoUbicacion,
+      incidenciasCercanas,
+      mostrarDialogoIncidenciasCercanas,
+      verificarIncidenciasCercanas,
+      cerrarDialogoIncidenciasCercanas,
+      abrirIncidenciaCercana
     }
   }
 }
