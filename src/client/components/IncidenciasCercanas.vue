@@ -183,9 +183,9 @@ export default {
     }
 
     onMounted(() => {
-      actualizarUbicacionUsuario()
       if (route.name === 'IncidenciasCercanas') {
         dialogVisible.value = true
+        actualizarUbicacionUsuario()
       }
     })
 
