@@ -119,7 +119,7 @@
                   Posible duplicada
                 </v-card-title>
                 <v-card-text>
-                  <p>Hay {{ incidenciasCercanas.length }} incidencia{{ incidenciasCercanas.length !== 1 ? 's' : '' }} cercana{{ incidenciasCercanas.length !== 1 ? 's' : '' }} similar{{ incidenciasCercanas.length !== 1 ? 'es' : '' }}. Por favor compruebela{{ incidenciasCercanas.length !== 1 ? 's' : '' }} primero y no rellene una duplicada.</p>
+                  <p>Hay {{ incidenciasCercanas.length }} incidencia{{ incidenciasCercanas.length !== 1 ? 's' : '' }} cercana{{ incidenciasCercanas.length !== 1 ? 's' : '' }} similar{{ incidenciasCercanas.length !== 1 ? 'es' : '' }}. Por favor compruébela{{ incidenciasCercanas.length !== 1 ? 's' : '' }} primero y no rellene una duplicada.</p>
                   
                   <v-list>
                     <v-list-item v-for="incidencia in incidenciasCercanas" :key="incidencia.id" @click="abrirIncidenciaCercana(incidencia.id)">
@@ -182,6 +182,8 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import axios from 'axios'
 import { WidgetInstance } from 'friendly-challenge'
+import { useRouter } from 'vue-router';
+import DetalleIncidencia from './DetalleIncidencia.vue';
 
 const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
@@ -190,6 +192,9 @@ const CIUDAD_LON_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LON_MAX);
 
 export default {
   name: 'ReportarIncidencia',
+  components: {
+    DetalleIncidencia
+  },
   props: {
     modelValue: Boolean,
     ubicacionSeleccionada: {
@@ -225,6 +230,7 @@ export default {
     const obteniendoUbicacion = ref(false)
     const incidenciasCercanas = ref([])
     const mostrarDialogoIncidenciasCercanas = ref(false)
+    const router = useRouter();
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -427,6 +433,7 @@ export default {
       const incidenciaSeleccionada = props.todasLasIncidencias.find(inc => inc.id === id);
       if (incidenciaSeleccionada) {
         emit('incidencia-seleccionada', incidenciaSeleccionada);
+        router.push({ name: 'DetalleIncidencia', params: { id: incidenciaSeleccionada.id } });
       }
     };
 
