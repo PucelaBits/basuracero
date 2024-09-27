@@ -78,7 +78,7 @@
           
           <v-row justify="center" class="mb-4">
             <v-col cols="12" class="text-center">
-              <v-btn @click="obtenerUbicacion" color="primary">
+              <v-btn @click="obtenerUbicacion" color="primary" :loading="obteniendoUbicacion">
                 <v-icon left>mdi-map-marker</v-icon>
                 &nbsp;Usar tu ubicación
               </v-btn>
@@ -128,6 +128,17 @@
       </v-card-text>
     </v-card>
   </v-dialog>
+
+  <v-dialog v-model="mostrarDialogoError" max-width="400px">
+    <v-card>
+      <v-card-title class="headline">Error de ubicación</v-card-title>
+      <v-card-text>{{ mensajeError }}</v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" text @click="mostrarDialogoError = false">Cerrar</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -169,6 +180,9 @@ export default {
     const captchaSolution = ref(null)
     const captchaWidget = ref(null)
     const friendlyCaptchaSitekey = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY)
+    const mostrarDialogoError = ref(false)
+    const mensajeError = ref('')
+    const obteniendoUbicacion = ref(false)
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -240,19 +254,31 @@ export default {
 
     const obtenerUbicacion = () => {
       if ("geolocation" in navigator) {
+        obteniendoUbicacion.value = true;
+        const opciones = {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        };
+
         navigator.geolocation.getCurrentPosition(
           async (position) => {
-            incidencia.value.latitud = position.coords.latitude
-            incidencia.value.longitud = position.coords.longitude
-            await obtenerDireccion()
+            incidencia.value.latitud = position.coords.latitude;
+            incidencia.value.longitud = position.coords.longitude;
+            await obtenerDireccion();
+            obteniendoUbicacion.value = false;
           },
           (error) => {
-            console.error("Error al obtener la ubicación:", error.message)
-            alert("No se pudo obtener la ubicación. Por favor, ingrese las coordenadas manualmente.")
-          }
-        )
+            console.error("Error al obtener la ubicación:", error.message);
+            mensajeError.value = "No se pudo obtener la ubicación actual. Por favor, intente de nuevo o ingrese las coordenadas en el mapa";
+            mostrarDialogoError.value = true;
+            obteniendoUbicacion.value = false;
+          },
+          opciones
+        );
       } else {
-        alert("La geolocalización no está disponible en este navegador.")
+        mensajeError.value = "La geolocalización no está disponible en este navegador";
+        mostrarDialogoError.value = true;
       }
     }
 
@@ -378,7 +404,10 @@ export default {
       xs,
       validarCoordenadas,
       seleccionarEnMapa,
-      friendlyCaptchaSitekey
+      friendlyCaptchaSitekey,
+      mostrarDialogoError,
+      mensajeError,
+      obteniendoUbicacion
     }
   }
 }
