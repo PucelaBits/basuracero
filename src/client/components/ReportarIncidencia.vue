@@ -102,7 +102,7 @@
             show-size
           ></v-file-input>
           <div class="subtitle-text text-center">
-            <v-icon color="grey">mdi-information</v-icon>
+            <v-icon color="grey mr-2">mdi-information</v-icon>
             <span color="grey">No incluya caras de personas, matrículas o info personal</span>
           </div>
           
@@ -148,22 +148,19 @@ export default {
     ubicacionSeleccionada: {
       type: Object,
       default: () => ({})
+    },
+    datosFormulario: {
+      type: Object,
+      default: () => ({})
     }
   },
-  emits: ['update:modelValue', 'incidencia-creada', 'seleccionar-en-mapa'],
+  emits: ['update:modelValue', 'incidencia-creada', 'seleccionar-en-mapa', 'actualizar-datos'],
   setup(props, { emit }) {
     const { smAndDown, xs } = useDisplay()
     const dialog = ref(props.modelValue)
     const form = ref(null)
     const formValido = ref(false)
-    const incidencia = ref({
-      tipo_id: '',
-      descripcion: '',
-      latitud: null,
-      longitud: null,
-      imagen: null,
-      nombre: ''
-    })
+    const incidencia = ref({ ...props.datosFormulario })
     const tiposIncidencias = ref([])
     const previewUrl = ref(null)
     const enviando = ref(false)
@@ -281,6 +278,14 @@ export default {
         emit('incidencia-creada', response.data.id);
         cerrar();
         resetForm();
+        emit('actualizar-datos', {
+          tipo_id: '',
+          descripcion: '',
+          latitud: null,
+          longitud: null,
+          imagen: null,
+          nombre: ''
+        });
       } catch (error) {
         console.error('Error al enviar incidencia:', error)
         alert('Hubo un error al enviar la incidencia. Por favor, intente de nuevo.')
@@ -302,6 +307,7 @@ export default {
       direccion.value = ''
       if (form.value) {
         form.value.reset()
+        form.value.resetValidation()
       }
     }
 
@@ -325,6 +331,10 @@ export default {
         obtenerDireccion()
       }
     }, { immediate: true })
+
+    watch(incidencia, (newValue) => {
+      emit('actualizar-datos', newValue);
+    }, { deep: true });
 
     onMounted(() => {
       obtenerTiposIncidencias();

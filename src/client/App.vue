@@ -149,8 +149,10 @@
       <ReportarIncidencia 
         v-model="mostrarFormulario"
         :ubicacionSeleccionada="ubicacionSeleccionada"
+        :datosFormulario="datosFormulario"
         @incidencia-creada="incidenciaCreada"
         @seleccionar-en-mapa="seleccionarEnMapa"
+        @actualizar-datos="actualizarDatosFormulario"
       />
     </v-dialog>
 
@@ -405,6 +407,46 @@ export default {
       drawer.value = false // Cerrar el drawer después de la navegación
     }
 
+    const datosFormulario = ref({
+      tipo_id: '',
+      descripcion: '',
+      latitud: null,
+      longitud: null,
+      imagen: null,
+      nombre: ''
+    });
+
+    const actualizarDatosFormulario = (nuevosDatos) => {
+      datosFormulario.value = { ...datosFormulario.value, ...nuevosDatos };
+    };
+
+    const reiniciarDatosFormulario = () => {
+      datosFormulario.value = {
+        tipo_id: '',
+        descripcion: '',
+        latitud: null,
+        longitud: null,
+        imagen: null,
+        nombre: ''
+      };
+    };
+
+    const incidenciaCreada = (id) => {
+      obtenerIncidencias(currentPage.value, true);
+      obtenerTodasLasIncidencias(true);
+      ultimaActualizacionLocal.value = Date.now();
+      mostrarFormulario.value = false;
+      
+      // Abrir la URL de la incidencia y pasar un parámetro para mostrar el diálogo
+      router.push({ 
+        name: 'DetalleIncidencia', 
+        params: { id: id },
+        query: { mostrarDialogoExito: 'true' }
+      });
+      
+      reiniciarDatosFormulario();
+    }
+
     onMounted(() => {
       obtenerIncidencias();
       obtenerTodasLasIncidencias();
@@ -481,20 +523,6 @@ export default {
     // Exponer la función globalmente
     window.openImageModal = openImageModal
 
-    const incidenciaCreada = (id) => {
-      obtenerIncidencias(currentPage.value, true);
-      obtenerTodasLasIncidencias(true);
-      ultimaActualizacionLocal.value = Date.now();
-      mostrarFormulario.value = false;
-      
-      // Abrir la URL de la incidencia y pasar un parámetro para mostrar el diálogo
-      router.push({ 
-        name: 'DetalleIncidencia', 
-        params: { id: id },
-        query: { mostrarDialogoExito: 'true' }
-      });
-    }
-
     const abrirDetalleIncidencia = (incidencia) => {
       incidenciaSeleccionada.value = incidencia;
       mostrarDetalleIncidencia.value = true;
@@ -564,6 +592,8 @@ export default {
       compartir,
       mostrarRanking,
       abrirRanking,
+      datosFormulario,
+      actualizarDatosFormulario
     }
   }
 }
