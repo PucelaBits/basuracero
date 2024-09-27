@@ -6,8 +6,8 @@
           <v-icon>mdi-close</v-icon>
         </v-btn>
         <v-toolbar-title class="d-flex align-center">
-          <v-icon left class="mr-2">mdi-map-marker-radius</v-icon>
-          Validar cercanas
+          <v-icon left size="small" class="mr-2 mb-1">mdi-map-marker-radius</v-icon>
+          <span>Validar cercanas</span>
         </v-toolbar-title>
       </v-toolbar>
 
