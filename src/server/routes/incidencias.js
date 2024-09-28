@@ -274,6 +274,7 @@ router.get('/ultima-actualizacion', (req, res) => {
 
 router.get('/usuarios/ranking', (req, res) => {
   let minIncidencias = parseInt(req.query.minIncidencias);
+  let periodo = req.query.periodo || 'total';
   
   // Validación y sanitización
   if (isNaN(minIncidencias) || minIncidencias < 1) {
@@ -282,20 +283,57 @@ router.get('/usuarios/ranking', (req, res) => {
     minIncidencias = 1000;
   }
 
-  const sql = `
+  let fechaInicio, fechaFin = new Date();
+  fechaFin.setHours(23, 59, 59, 999); // Fin del día actual
+
+  switch (periodo) {
+    case 'semana':
+      fechaInicio = new Date(fechaFin);
+      fechaInicio.setDate(fechaInicio.getDate() - fechaInicio.getDay() + (fechaInicio.getDay() === 0 ? -6 : 1)); // Lunes de esta semana
+      fechaInicio.setHours(0, 0, 0, 0);
+      break;
+    case 'mes':
+      fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1); // Primer día del mes actual
+      break;
+    case 'total':
+      fechaInicio = new Date(fechaFin.getFullYear(), 0, 1); // Primer día del año actual
+      break;
+    default:
+      fechaInicio = new Date(0); // Desde el inicio de los tiempos
+  }
+
+  const sqlRanking = `
     SELECT 
       COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo') as nombre_lower,
       MAX(TRIM(nombre)) as nombre,
       COUNT(*) as incidencias
     FROM incidencias
-    WHERE estado != 'spam'
+    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
     GROUP BY COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo')
     HAVING COUNT(*) >= ?
     ORDER BY incidencias DESC, nombre_lower
     LIMIT 10
   `;
 
-  db.all(sql, [minIncidencias], (err, rows) => {
+  const sqlUsuariosUnicos = `
+    SELECT COUNT(DISTINCT COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo')) as usuarios_unicos
+    FROM incidencias
+    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
+  `;
+
+  const sqlTotalIncidencias = `
+    SELECT COUNT(*) as total_incidencias
+    FROM incidencias
+    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
+  `;
+
+  const sqlIncidenciasSolucionadas = `
+    SELECT COUNT(*) as incidencias_solucionadas
+    FROM incidencias
+    WHERE estado = 'solucionada' AND fecha >= ? AND fecha <= ?
+  `;
+
+  db.all(sqlRanking, [fechaInicio.toISOString(), fechaFin.toISOString(), minIncidencias], (err, rows) => {
     if (err) {
       console.error('Error al obtener el ranking de usuarios:', err);
       res.status(500).json({ error: 'Error interno del servidor' });
@@ -307,7 +345,37 @@ router.get('/usuarios/ranking', (req, res) => {
       nombre: row.nombre || 'Usuario anónimo',
       incidencias: row.incidencias
     }));
-    res.json({ ranking });
+
+    db.get(sqlUsuariosUnicos, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowUsuarios) => {
+      if (err) {
+        console.error('Error al obtener el número de usuarios únicos:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+        return;
+      }
+
+      db.get(sqlTotalIncidencias, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowIncidencias) => {
+        if (err) {
+          console.error('Error al obtener el total de incidencias:', err);
+          res.status(500).json({ error: 'Error interno del servidor' });
+          return;
+        }
+
+        db.get(sqlIncidenciasSolucionadas, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowSolucionadas) => {
+          if (err) {
+            console.error('Error al obtener el total de incidencias solucionadas:', err);
+            res.status(500).json({ error: 'Error interno del servidor' });
+            return;
+          }
+
+          res.json({ 
+            ranking,
+            usuariosUnicos: rowUsuarios.usuarios_unicos,
+            totalIncidencias: rowIncidencias.total_incidencias,
+            incidenciasSolucionadas: rowSolucionadas.incidencias_solucionadas
+          });
+        });
+      });
+    });
   });
 });
 
