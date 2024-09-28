@@ -470,8 +470,8 @@ export default {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
         reconocimientoVoz = new SpeechRecognition()
         reconocimientoVoz.lang = 'es-ES'
-        reconocimientoVoz.continuous = true
-        reconocimientoVoz.interimResults = true
+        reconocimientoVoz.continuous = false
+        reconocimientoVoz.interimResults = false
 
         reconocimientoVoz.onstart = () => {
           reconocimientoVozActivo.value = true
@@ -482,11 +482,13 @@ export default {
         }
 
         reconocimientoVoz.onresult = (event) => {
-          const resultado = Array.from(event.results)
-            .map(result => result[0].transcript)
-            .join('')
+          const resultado = event.results[0][0].transcript
+          incidencia.value.descripcion += (incidencia.value.descripcion ? ' ' : '') + resultado
+        }
 
-          incidencia.value.descripcion += resultado
+        reconocimientoVoz.onerror = (event) => {
+          console.error('Error en el reconocimiento de voz:', event.error)
+          reconocimientoVozActivo.value = false
         }
 
         reconocimientoVoz.start()
