@@ -43,14 +43,16 @@
               required
             >
               <template v-slot:append-inner>
-                <v-icon
-                  v-if="reconocimientoVozDisponible"
-                  @click="activarReconocimientoVoz"
-                  :color="reconocimientoVozActivo ? 'primary' : 'grey'"
-                  :class="{ 'pulsating': reconocimientoVozActivo }"
-                >
-                  mdi-microphone
-                </v-icon>
+                <div class="mic-container">
+                  <v-icon
+                    v-if="reconocimientoVozDisponible"
+                    @click="activarReconocimientoVoz"
+                    :color="reconocimientoVozActivo ? 'primary' : 'grey'"
+                    :class="{ 'pulsating': reconocimientoVozActivo }"
+                  >
+                    mdi-microphone
+                  </v-icon>
+                </div>
               </template>
             </v-textarea>
             
@@ -608,11 +610,13 @@ export default {
   background-color: #f6f6f6 !important;
 }
 
-.pulsating {
+.mic-container {
   position: relative;
+  width: 24px;
+  height: 24px;
 }
 
-.pulsating::before {
+.pulsating::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -623,6 +627,7 @@ export default {
   background-color: rgba(var(--v-theme-primary), 0.3);
   transform: translate(-50%, -50%);
   animation: pulse 1.5s ease-out infinite;
+  z-index: -1;
 }
 
 @keyframes pulse {
@@ -631,7 +636,7 @@ export default {
     opacity: 0;
   }
   50% {
-    opacity: 1;
+    opacity: 0.9;
   }
   100% {
     transform: translate(-50%, -50%) scale(1.2);
