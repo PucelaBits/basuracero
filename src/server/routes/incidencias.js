@@ -145,9 +145,9 @@ router.post('/', crearIncidenciaLimiter, upload.single('imagen'), async (req, re
     const codigoUnico = generarCodigoUnico();
 
     // Insertar la incidencia en la base de datos
-    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha, direccion, ip, codigo_unico) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`;
+    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha, direccion, ip, codigo_unico, barrio) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`;
     
-    db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre, direccion, ip, codigoUnico], function(err) {
+    db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre, direccion, ip, codigoUnico, req.body.barrio], function(err) {
       if (err) {
         console.error('Error al insertar en la base de datos:', err);
         res.status(500).json({ error: err.message });

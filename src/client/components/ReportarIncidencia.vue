@@ -313,17 +313,19 @@ export default {
             const response = await fetch(url)
             const data = await response.json()
             direccion.value = data.display_name
+            incidencia.value.barrio = data.address.neighbourhood || data.address.suburb || ''
           } catch (error) {
             console.error('Error al obtener la dirección:', error)
             direccion.value = 'No se pudo obtener la dirección'
+            incidencia.value.barrio = ''
           }
         } else {
-          // No cambiamos el valor de direccion.value aquí
+          incidencia.value.barrio = ''
         }
       } else {
         direccion.value = ''
+        incidencia.value.barrio = ''
       }
-      // Forzar la validación del formulario después de actualizar la dirección
       if (form.value) {
         form.value.validate()
       }

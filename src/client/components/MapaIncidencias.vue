@@ -465,7 +465,7 @@ export default {
     watch(() => props.incidencias, () => {
       updateMarkers();
     }, { deep: true });
-    
+
     watch(() => props.incluirSolucionadas, updateMarkers)
     watch(() => props.ubicacionSeleccionada, (newUbicacion) => {
       if (newUbicacion.latitud && newUbicacion.longitud) {
@@ -635,7 +635,7 @@ export default {
 
 .popup-description {
   font-size: 14px;
-  line-height: 1;
+  line-height: 1.5;
   margin-bottom: 10px;
   margin-top: 1px !important;
   overflow: hidden;

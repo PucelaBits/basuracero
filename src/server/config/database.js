@@ -33,6 +33,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         nombre TEXT,
         fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
         direccion TEXT,
+        barrio TEXT,
         estado TEXT DEFAULT 'activa',
         fecha_solucion DATETIME,
         ip TEXT,
@@ -105,6 +106,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
         })
         .catch((err) => {
           console.error('Error al verificar o añadir la columna codigo_unico:', err);
+        });
+     
+      // Verificar y añadir la columna barrio si no existe
+      agregarColumnaSiNoExiste(db, 'incidencias', 'barrio', 'TEXT')
+        .then(() => {
+          console.log('Verificación de columna barrio completada');
+        })
+        .catch((err) => {
+          console.error('Error al verificar o añadir la columna barrio:', err);
         });
     });
   }

@@ -10,7 +10,8 @@
     "build": "vite build && npm run copy-index",
     "copy-index": "cp dist/index.html dist/200.html",
     "borrar-incidencia": "node scripts/borrarIncidencia.js",
-    "tipos": "node scripts/gestionarTipos.js"
+    "tipos": "node scripts/gestionarTipos.js",
+    "rellenar-barrios": "node scripts/rellenarBarrios.js"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
