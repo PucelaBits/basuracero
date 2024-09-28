@@ -47,6 +47,7 @@
         <MapaIncidencias 
           :incidencias="todasLasIncidencias" 
           :incluirSolucionadas="incluirSolucionadas"
+          :tipoSeleccionado="tipoSeleccionado"
           :seguirUsuario="false"
           @ubicacion-seleccionada="actualizarUbicacion"
           @abrir-formulario="mostrarFormulario = true"
@@ -106,19 +107,24 @@
 
         <v-card class="ma-4">
           <v-card-text>
+            <v-select
+              v-model="tipoSeleccionado"
+              :items="tiposIncidencias"
+              item-title="nombre"
+              item-value="id"
+              label="Filtrar por tipo"
+              @update:model-value="obtenerIncidencias"
+            >
+              <template v-slot:prepend-item>
+                <v-list-item title="Todas" value="Todas" @click="tipoSeleccionado = 'Todas'"></v-list-item>
+                <v-divider class="mt-2"></v-divider>
+              </template>
+            </v-select>
             <v-switch
               v-model="incluirSolucionadas"
               label="Ver solucionadas"
               @change="obtenerIncidencias"
             ></v-switch>
-            <!--<v-select
-                v-model="tipoSeleccionado"
-                :items="['Todas', ...tiposIncidencias]"
-                item-title="nombre"
-                item-value="id"
-                label="Filtrar por tipo"
-                @input="obtenerIncidencias"
-            />-->
 
             <div class="text-caption text-grey">{{ textoTotalIncidencias }}</div>
           </v-card-text>
@@ -272,7 +278,7 @@ export default {
     const router = useRouter()
 
     const totalIncidencias = ref(0)
-    const tipoSeleccionado = ref(null)
+    const tipoSeleccionado = ref('Todas')
     const tiposIncidencias = ref([])
 
     const textoTotalIncidencias = computed(() => {
@@ -310,6 +316,9 @@ export default {
         currentPage.value = response.data.currentPage;
         totalPages.value = response.data.totalPages;
         totalIncidencias.value = response.data.totalItems;
+
+        // Actualizar todasLasIncidencias
+        obtenerTodasLasIncidencias(true);
       } catch (error) {
         console.error('Error al obtener incidencias:', error.response ? error.response.data : error.message);
       }
@@ -319,6 +328,7 @@ export default {
       try {
         const params = {
           incluirSolucionadas: incluirSolucionadas.value,
+          tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
         };
         
         if (forzarActualizacion) {
@@ -577,6 +587,10 @@ export default {
       mostrarFormulario.value = true;
       enviarEventoMatomo('Incidencia', 'Nueva', 'Botón +');
     };
+
+    watch(() => tipoSeleccionado.value, () => {
+      obtenerIncidencias(1, true);
+    });
 
     return {
       incidencias,

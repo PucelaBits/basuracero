@@ -120,6 +120,10 @@ export default {
     deshabilitarNuevaIncidencia: {
       type: Boolean,
       default: false
+    },
+    tipoSeleccionado: {
+      type: [String, Number],
+      default: 'Todas'
     }
   },
   emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion'],
@@ -209,8 +213,13 @@ export default {
         markers.forEach(marker => map.removeLayer(marker))
         markers = []
 
-        // Añadir nuevos marcadores
-        props.incidencias.forEach(incidencia => {
+        // Filtrar incidencias según el tipo seleccionado
+        const incidenciasFiltradas = props.tipoSeleccionado === 'Todas'
+          ? props.incidencias
+          : props.incidencias.filter(inc => inc.tipo_id === props.tipoSeleccionado)
+
+        // Crear nuevos marcadores para las incidencias filtradas
+        incidenciasFiltradas.forEach(incidencia => {
           if (props.incluirSolucionadas || incidencia.estado !== 'solucionada') {
             const popupContent = L.DomUtil.create('div', 'custom-popup')
             
@@ -453,7 +462,10 @@ export default {
       stopWatchingUserLocation()
     })
 
-    watch(() => props.incidencias, updateMarkers, { deep: true })
+    watch(() => props.incidencias, () => {
+      updateMarkers();
+    }, { deep: true });
+    
     watch(() => props.incluirSolucionadas, updateMarkers)
     watch(() => props.ubicacionSeleccionada, (newUbicacion) => {
       if (newUbicacion.latitud && newUbicacion.longitud) {
@@ -473,6 +485,9 @@ export default {
         removeUserMarker()
       }
     })
+    watch(() => props.tipoSeleccionado, () => {
+      updateMarkers();
+    });
 
     return {
       mapContainer,
