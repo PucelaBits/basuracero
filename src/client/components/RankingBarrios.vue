@@ -6,7 +6,7 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
           <v-toolbar-title class="d-flex align-center">
-            <v-icon left class="mr-2">mdi-map-marker</v-icon>
+            <v-icon left class="mr-2">mdi-home-group</v-icon>
             Ranking de barrios
           </v-toolbar-title>
         </v-toolbar>
@@ -29,7 +29,7 @@
                 <span class="ml-2">{{ rangoFechas[periodo] }}</span>
               </p>
               <p class="text-center mt-2 mb-2 text-grey">
-                <v-icon color="grey">mdi-map</v-icon>
+                <v-icon color="grey">mdi-home-group</v-icon>
                 <span class="ml-2">{{ barriosUnicos[periodo] }}</span>
                 <v-icon color="grey" class="ml-4">mdi-file-document-multiple</v-icon>
                 <span class="ml-2">{{ totalIncidencias[periodo] }}</span>

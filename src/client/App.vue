@@ -35,7 +35,7 @@
         </v-list-item>
         <v-list-item to="/ranking/barrios" active-class="primary--text">
           <template v-slot:prepend>
-            <v-icon>mdi-map-marker</v-icon>
+            <v-icon>mdi-home-group</v-icon>
           </template>
           <v-list-item-title>Ranking de barrios</v-list-item-title>
         </v-list-item>
