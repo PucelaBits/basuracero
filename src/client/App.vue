@@ -144,7 +144,7 @@
       fixed
       bottom
       right
-      @click="mostrarFormulario = true"
+      @click="abrirFormularioIncidencia"
       class="floating-btn"
       elevation="8"
       style="margin-bottom: 15px;"
@@ -239,6 +239,7 @@ import IncidenciasCercanas from './components/IncidenciasCercanas.vue'
 
 // Importar el método para obtener los tipos de incidencias
 import { obtenerTiposIncidencias } from './utils/api'
+import { enviarEventoMatomo } from './utils/analytics';
 
 export default {
   name: 'App',
@@ -369,14 +370,20 @@ export default {
     const instalarPWA = () => {
       if (esIOS.value) {
         mostrarDialogoIOS.value = true;
+        // Enviar evento a Matomo para iOS
+        _paq.push(['trackEvent', 'PWA', 'Instalación iOS', 'Clic en instalar']);
       } else if (eventoInstalacion) {
         eventoInstalacion.prompt();
         eventoInstalacion.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
             console.log('Usuario aceptó la instalación');
             mostrarAviso.value = false;
+            // Enviar evento a Matomo para instalación aceptada en Android
+            _paq.push(['trackEvent', 'PWA', 'Instalación Android', 'Aceptada']);
           } else {
             console.log('Usuario rechazó la instalación');
+            // Enviar evento a Matomo para instalación rechazada en Android
+            _paq.push(['trackEvent', 'PWA', 'Instalación Android', 'Rechazada']);
           }
           eventoInstalacion = null;
         });
@@ -406,7 +413,10 @@ export default {
           text: 'Ayuda a mantener limpia tu ciudad con Basura Cero Pucela',
           url: window.location.href,
         })
-        .then(() => console.log('Contenido compartido exitosamente'))
+        .then(() => {
+          console.log('Contenido compartido exitosamente');
+          enviarEventoMatomo('Incidencia', 'Compartir', 'Éxito');
+        })
         .catch((error) => console.log('Error al compartir:', error));
       } else {
         alert('La API de compartir no está disponible en este dispositivo');
@@ -563,6 +573,11 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const abrirFormularioIncidencia = () => {
+      mostrarFormulario.value = true;
+      enviarEventoMatomo('Incidencia', 'Abrir formulario', 'Botón +');
+    };
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -606,7 +621,8 @@ export default {
       mostrarRanking,
       abrirRanking,
       datosFormulario,
-      actualizarDatosFormulario
+      actualizarDatosFormulario,
+      abrirFormularioIncidencia
     }
   }
 }

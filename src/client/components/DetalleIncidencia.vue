@@ -600,6 +600,7 @@ export default {
           if (response.data.reportes >= 3) {
             props.incidencia.estado = 'spam';
           }
+          enviarEventoMatomo('Incidencia', 'Marcar como spam', 'Éxito');
         }
       } catch (error) {
         console.error('Error al marcar contenido inadecuado:', error);

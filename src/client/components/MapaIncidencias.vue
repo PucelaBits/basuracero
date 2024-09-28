@@ -24,6 +24,7 @@
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import L from 'leaflet'
 import { useRouter } from 'vue-router'
+import { enviarEventoMatomo } from '../utils/analytics'
 
 // Extensión para animación suave de marcadores
 L.Marker.include({
@@ -191,6 +192,7 @@ export default {
         const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent)
         addButton.innerHTML = 'Añadir incidencia aquí'
         L.DomEvent.on(addButton, 'click', () => {
+          enviarEventoMatomo('Incidencia', 'Abrir formulario', 'Mapa');
           emit('ubicacion-seleccionada', { latitud: lat, longitud: lng })
           emit('abrir-formulario')
         })

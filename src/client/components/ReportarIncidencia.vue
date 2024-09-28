@@ -184,6 +184,7 @@ import axios from 'axios'
 import { WidgetInstance } from 'friendly-challenge'
 import { useRouter } from 'vue-router';
 import DetalleIncidencia from './DetalleIncidencia.vue';
+import { enviarEventoMatomo } from '../utils/analytics';
 
 const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
@@ -349,6 +350,7 @@ export default {
         const response = await axios.post('/api/incidencias', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        enviarEventoMatomo('Incidencia', 'Enviar', 'Éxito', incidencia.value.tipo_id);
         emit('incidencia-creada', response.data.id);
         cerrar();
         resetForm();
