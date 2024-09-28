@@ -45,6 +45,20 @@
                 <span>{{ incidenciasSolucionadas }}</span>
               </p>
             </v-col>
+            <v-row>
+            <v-col cols="12">
+              <v-alert
+                color="grey-lighten-4"
+                icon="mdi-check-circle"
+                elevation="2"
+                class="info-banner mb-4"
+              >
+                <div class="d-flex align-center text-body-2">
+                  <span>Revisa habitualmente tus incidencias y marca como solucionadas las que ya lo estén</span>
+                </div>
+              </v-alert>
+              </v-col>
+            </v-row>
             <!-- Lista de incidencias -->
             <v-col v-for="incidencia in incidenciasUsuario" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
               <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-0 incidencia-card" height="150">
