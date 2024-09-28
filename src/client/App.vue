@@ -33,6 +33,12 @@
           </template>
           <v-list-item-title>Ranking de usuarios</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/ranking/barrios" active-class="primary--text">
+          <template v-slot:prepend>
+            <v-icon>mdi-map-marker</v-icon>
+          </template>
+          <v-list-item-title>Ranking de barrios</v-list-item-title>
+        </v-list-item>
         <v-list-item href="https://t.me/basuraceroapp" target="_blank">
           <template v-slot:prepend>
             <v-icon>mdi-account-group</v-icon>
@@ -234,6 +240,7 @@
     <RankingUsuarios />
     <IncidenciasCercanas :incidencias="todasLasIncidencias" />
     <TusIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
+    <RankingBarrios />
   </v-app>
 </template>
 
@@ -253,6 +260,7 @@ import TusIncidencias from './components/TusIncidencias.vue'
 // Importar el método para obtener los tipos de incidencias
 import { obtenerTiposIncidencias } from './utils/api'
 import { enviarEventoMatomo } from './utils/analytics';
+import RankingBarrios from './components/RankingBarrios.vue';
 
 export default {
   name: 'App',
@@ -264,7 +272,8 @@ export default {
     DetalleIncidencia,
     RankingUsuarios,
     IncidenciasCercanas,
-    TusIncidencias
+    TusIncidencias,
+    RankingBarrios
   },
   setup() {
     const incidencias = ref([])

@@ -574,4 +574,112 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
   }
 });
 
+router.get('/barrios/ranking', (req, res) => {
+  let minIncidencias = parseInt(req.query.minIncidencias);
+  let periodo = req.query.periodo || 'total';
+  
+  // Validación y sanitización
+  if (isNaN(minIncidencias) || minIncidencias < 1) {
+    minIncidencias = 1;
+  } else if (minIncidencias > 1000) {
+    minIncidencias = 1000;
+  }
+
+  let fechaInicio, fechaFin = new Date();
+  fechaFin.setHours(23, 59, 59, 999); // Fin del día actual
+
+  switch (periodo) {
+    case 'semana':
+      fechaInicio = new Date(fechaFin);
+      fechaInicio.setDate(fechaInicio.getDate() - fechaInicio.getDay() + (fechaInicio.getDay() === 0 ? -6 : 1)); // Lunes de esta semana
+      fechaInicio.setHours(0, 0, 0, 0);
+      break;
+    case 'mes':
+      fechaInicio = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1); // Primer día del mes actual
+      break;
+    case 'total':
+      fechaInicio = new Date(fechaFin.getFullYear(), 0, 1); // Primer día del año actual
+      break;
+    default:
+      fechaInicio = new Date(0); // Desde el inicio de los tiempos
+  }
+
+  const sqlRanking = `
+    SELECT 
+      COALESCE(barrio, 'Sin barrio') as nombre,
+      COUNT(*) as incidencias,
+      SUM(CASE WHEN estado = 'solucionada' THEN 1 ELSE 0 END) as incidencias_solucionadas
+    FROM incidencias
+    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
+    GROUP BY COALESCE(barrio, 'Sin barrio')
+    HAVING COUNT(*) >= ?
+    ORDER BY incidencias DESC, nombre
+    LIMIT 10
+  `;
+
+  const sqlBarriosUnicos = `
+    SELECT COUNT(DISTINCT COALESCE(barrio, 'Sin barrio')) as barrios_unicos
+    FROM incidencias
+    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
+  `;
+
+  const sqlTotalIncidencias = `
+    SELECT COUNT(*) as total_incidencias
+    FROM incidencias
+    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
+  `;
+
+  const sqlIncidenciasSolucionadas = `
+    SELECT COUNT(*) as incidencias_solucionadas
+    FROM incidencias
+    WHERE estado = 'solucionada' AND fecha >= ? AND fecha <= ?
+  `;
+
+  db.all(sqlRanking, [fechaInicio.toISOString(), fechaFin.toISOString(), minIncidencias], (err, rows) => {
+    if (err) {
+      console.error('Error al obtener el ranking de barrios:', err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+      return;
+    }
+
+    const ranking = rows.map((row, index) => ({
+      posicion: index + 1,
+      nombre: row.nombre,
+      incidencias: row.incidencias,
+      incidenciasSolucionadas: row.incidencias_solucionadas
+    }));
+
+    db.get(sqlBarriosUnicos, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowBarrios) => {
+      if (err) {
+        console.error('Error al obtener el número de barrios únicos:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+        return;
+      }
+
+      db.get(sqlTotalIncidencias, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowIncidencias) => {
+        if (err) {
+          console.error('Error al obtener el total de incidencias:', err);
+          res.status(500).json({ error: 'Error interno del servidor' });
+          return;
+        }
+
+        db.get(sqlIncidenciasSolucionadas, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowSolucionadas) => {
+          if (err) {
+            console.error('Error al obtener el total de incidencias solucionadas:', err);
+            res.status(500).json({ error: 'Error interno del servidor' });
+            return;
+          }
+
+          res.json({ 
+            ranking,
+            barriosUnicos: rowBarrios.barrios_unicos,
+            totalIncidencias: rowIncidencias.total_incidencias,
+            incidenciasSolucionadas: rowSolucionadas.incidencias_solucionadas
+          });
+        });
+      });
+    });
+  });
+});
+
 module.exports = router;
