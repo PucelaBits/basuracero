@@ -371,7 +371,7 @@ export default {
       if (esIOS.value) {
         mostrarDialogoIOS.value = true;
         // Enviar evento a Matomo para iOS
-        _paq.push(['trackEvent', 'PWA', 'Instalación iOS', 'Clic en instalar']);
+        enviarEventoMatomo('PWA', 'Instalación iOS', 'Aceptada');
       } else if (eventoInstalacion) {
         eventoInstalacion.prompt();
         eventoInstalacion.userChoice.then((choiceResult) => {
@@ -379,11 +379,11 @@ export default {
             console.log('Usuario aceptó la instalación');
             mostrarAviso.value = false;
             // Enviar evento a Matomo para instalación aceptada en Android
-            _paq.push(['trackEvent', 'PWA', 'Instalación Android', 'Aceptada']);
+            enviarEventoMatomo('PWA', 'Instalación Android', 'Aceptada');
           } else {
             console.log('Usuario rechazó la instalación');
             // Enviar evento a Matomo para instalación rechazada en Android
-            _paq.push(['trackEvent', 'PWA', 'Instalación Android', 'Rechazada']);
+            enviarEventoMatomo('PWA', 'Instalación Android', 'Rechazada');
           }
           eventoInstalacion = null;
         });
@@ -575,7 +575,7 @@ export default {
 
     const abrirFormularioIncidencia = () => {
       mostrarFormulario.value = true;
-      enviarEventoMatomo('Incidencia', 'Abrir formulario', 'Botón +');
+      enviarEventoMatomo('Incidencia', 'Nueva', 'Botón +');
     };
 
     return {

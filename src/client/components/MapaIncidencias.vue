@@ -192,7 +192,7 @@ export default {
         const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent)
         addButton.innerHTML = 'Añadir incidencia aquí'
         L.DomEvent.on(addButton, 'click', () => {
-          enviarEventoMatomo('Incidencia', 'Abrir formulario', 'Mapa');
+          enviarEventoMatomo('Incidencia', 'Nueva', 'Mapa');
           emit('ubicacion-seleccionada', { latitud: lat, longitud: lng })
           emit('abrir-formulario')
         })

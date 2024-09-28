@@ -349,7 +349,7 @@ export default {
     });
 
     const clickGeoLink = () => {
-      enviarEventoMatomo('Incidencia', 'Clic en enlace geo', isIOS.value ? 'Apple' : 'Android');
+      enviarEventoMatomo('Incidencia', 'Clic en ruta', `ID: ${props.incidencia.id}`);
     };
 
     watch(() => props.modelValue, (newValue) => {
@@ -588,6 +588,10 @@ export default {
       const mensaje = `${props.incidencia.descripcion}\nDirección: ${props.incidencia.direccion}`;
       const mensajeEncoded = encodeURIComponent(mensaje);
       const url = `https://wa.me/34660010010?text=${mensajeEncoded}`;
+      
+      // Enviar evento a Matomo con el ID de la incidencia
+      enviarEventoMatomo('Incidencia', 'Informe ayuntamiento', `ID: ${props.incidencia.id}`);
+      
       window.open(url, '_blank');
       mostrarDialogoWhatsApp.value = false;
     };
@@ -613,7 +617,7 @@ export default {
           if (response.data.reportes >= 3) {
             props.incidencia.estado = 'spam';
           }
-          enviarEventoMatomo('Incidencia', 'Marcar como spam', 'Éxito');
+          enviarEventoMatomo('Incidencia', 'Marcar como spam', `ID: ${props.incidencia.id}`);
         }
       } catch (error) {
         console.error('Error al marcar contenido inadecuado:', error);
