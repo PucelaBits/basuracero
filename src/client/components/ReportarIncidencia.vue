@@ -21,10 +21,16 @@
           <v-form ref="form" @submit.prevent="enviarIncidencia" v-model="formValido">
             <v-text-field
               v-model="incidencia.nombre"
-              label="Tu nombre"
-              :rules="[v => !!v || 'El nombre es necesario']"
+              label="Tu nombre o apodo"
+              :rules="[v => !!v || 'El nombre o apodo es necesario']"
               required
             ></v-text-field>
+            
+            <v-checkbox
+              v-model="recordarNombre"
+              label="Recordar mi nombre"
+              class="mb-4"
+            ></v-checkbox>
             
             <v-select
               v-model="incidencia.tipo_id"
@@ -253,6 +259,7 @@ export default {
     const reconocimientoVozActivo = ref(false)
     const reconocimientoVozDisponible = ref(false)
     let reconocimientoVoz = null
+    const recordarNombre = ref(true)
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -354,6 +361,8 @@ export default {
 
     const enviarIncidencia = async () => {
       if (!form.value.validate()) return
+
+      guardarNombre()
 
       enviando.value = true
       try {
@@ -500,6 +509,21 @@ export default {
       }
     }
 
+    const cargarNombreGuardado = () => {
+      const nombreGuardado = localStorage.getItem('nombreUsuario')
+      if (nombreGuardado) {
+        incidencia.value.nombre = nombreGuardado
+      }
+    }
+
+    const guardarNombre = () => {
+      if (recordarNombre.value && incidencia.value.nombre) {
+        localStorage.setItem('nombreUsuario', incidencia.value.nombre)
+      } else {
+        localStorage.removeItem('nombreUsuario')
+      }
+    }
+
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal
     })
@@ -548,6 +572,7 @@ export default {
       }
 
       verificarSoporteReconocimientoVoz()
+      cargarNombreGuardado()
     })
 
     onUnmounted(() => {
@@ -590,6 +615,7 @@ export default {
       reconocimientoVozActivo,
       reconocimientoVozDisponible,
       activarReconocimientoVoz,
+      recordarNombre,
     }
   }
 }
