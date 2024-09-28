@@ -3,7 +3,7 @@
     <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact" @click="scrollToTop" class="clickable-header">
       <v-container class="d-flex align-center pa-0">
         <v-avatar size="26" rounded="circle" class="avatar-logo">
-          <img src="/favicon.png" alt="Favicon" class="favicon">
+          <img src="/logo.png" alt="Favicon" class="favicon">
         </v-avatar>
         <div class="flex-grow-1 text-center">
           <v-toolbar-title class="text-h6 font-weight-bold titulo">Basura Cero</v-toolbar-title>
