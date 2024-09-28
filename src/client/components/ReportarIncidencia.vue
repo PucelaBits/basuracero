@@ -47,6 +47,7 @@
                   v-if="reconocimientoVozDisponible"
                   @click="activarReconocimientoVoz"
                   :color="reconocimientoVozActivo ? 'primary' : 'grey'"
+                  :class="{ 'pulsating': reconocimientoVozActivo }"
                 >
                   mdi-microphone
                 </v-icon>
@@ -605,6 +606,37 @@ export default {
 .aviso-formulario {
   color: #696969 !important;
   background-color: #f6f6f6 !important;
+}
+
+.pulsating {
+  position: relative;
+}
+
+.pulsating::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: rgba(var(--v-theme-primary), 0.3);
+  transform: translate(-50%, -50%);
+  animation: pulse 1.5s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0;
+  }
 }
 
 </style>
