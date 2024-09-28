@@ -15,11 +15,11 @@
 
     <v-navigation-drawer v-model="drawer" location="right" temporary>
       <v-list>
-        <v-list-item @click="compartir">
+        <v-list-item to="/perfil" v-if="tieneIncidenciasUsuario">
           <template v-slot:prepend>
-            <v-icon>mdi-share-variant</v-icon>
+            <v-icon>mdi-account-details</v-icon>
           </template>
-          <v-list-item-title>Compartir</v-list-item-title>
+          <v-list-item-title>Tus incidencias</v-list-item-title>
         </v-list-item>
         <v-list-item to="/cercanas">
           <template v-slot:prepend>
@@ -39,11 +39,11 @@
           </template>
           <v-list-item-title>Comunidad</v-list-item-title>
         </v-list-item>
-        <v-list-item to="/perfil" v-if="tieneIncidenciasUsuario">
+        <v-list-item @click="compartir">
           <template v-slot:prepend>
-            <v-icon>mdi-account-details</v-icon>
+            <v-icon>mdi-share-variant</v-icon>
           </template>
-          <v-list-item-title>Tus incidencias</v-list-item-title>
+          <v-list-item-title>Compartir</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
