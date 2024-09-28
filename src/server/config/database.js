@@ -36,6 +36,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         estado TEXT DEFAULT 'activa',
         fecha_solucion DATETIME,
         ip TEXT,
+        codigo_unico TEXT,
         FOREIGN KEY (tipo_id) REFERENCES tipos_incidencias(id)
       )`);
 
@@ -96,8 +97,43 @@ const db = new sqlite3.Database(dbPath, (err) => {
             .catch(err => console.error('Error al insertar tipos de incidencias:', err));
         }
       });
+
+      // Verificar y añadir la columna codigo_unico si no existe
+      agregarColumnaSiNoExiste(db, 'incidencias', 'codigo_unico', 'TEXT')
+        .then(() => {
+          console.log('Verificación de columna codigo_unico completada');
+        })
+        .catch((err) => {
+          console.error('Error al verificar o añadir la columna codigo_unico:', err);
+        });
     });
   }
 });
+
+function agregarColumnaSiNoExiste(db, tabla, columna, tipo) {
+  return new Promise((resolve, reject) => {
+    db.all(`PRAGMA table_info(${tabla})`, (err, rows) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      const columnaExiste = rows.some(row => row.name === columna);
+      
+      if (!columnaExiste) {
+        db.run(`ALTER TABLE ${tabla} ADD COLUMN ${columna} ${tipo}`, (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            console.log(`Columna ${columna} añadida a la tabla ${tabla}`);
+            resolve();
+          }
+        });
+      } else {
+        resolve();
+      }
+    });
+  });
+}
 
 module.exports = db;

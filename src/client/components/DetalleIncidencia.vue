@@ -408,14 +408,17 @@ export default {
       reportando.value = true;
       try {
         enviarEventoMatomo('Incidencia', 'Resolver', `ID: ${props.incidencia.id}`);
+        const codigoUnico = localStorage.getItem(`incidencia_${props.incidencia.id}`);
         const response = await axios.post(`/api/incidencias/${props.incidencia.id}/solucionada`, {
-          'frc-captcha-solution': captchaSolution.value
+          'frc-captcha-solution': captchaSolution.value,
+          codigoUnico
         });
         if (isComponentMounted.value) {
-          props.incidencia.reportes_solucion = response.data.reportes;
-          if (response.data.reportes >= 3) {
+          if (response.data.solucionada) {
             props.incidencia.estado = 'solucionada';
             props.incidencia.fecha_solucion = new Date().toISOString();
+          } else {
+            props.incidencia.reportes_solucion = response.data.reportes_solucion;
           }
         }
       } catch (error) {
@@ -426,6 +429,9 @@ export default {
       } finally {
         if (isComponentMounted.value) {
           reportando.value = false;
+        }
+        if (captchaWidget.value) {
+          captchaWidget.value.reset();
         }
       }
     };

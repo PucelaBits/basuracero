@@ -10,6 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 const { obtenerIP } = require('../utils/ip');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
 const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
@@ -84,6 +85,10 @@ const validarIncidencia = (incidencia) => {
   return errores;
 };
 
+function generarCodigoUnico() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
 // Obtener tipos de incidencias
 router.get('/tipos', (req, res) => {
   const sql = `SELECT * FROM tipos_incidencias`;
@@ -137,16 +142,18 @@ router.post('/', crearIncidenciaLimiter, upload.single('imagen'), async (req, re
 
     const ip = obtenerIP(req);
 
+    const codigoUnico = generarCodigoUnico();
+
     // Insertar la incidencia en la base de datos
-    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha, direccion, ip) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?)`;
+    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha, direccion, ip, codigo_unico) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`;
     
-    db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre, direccion, ip], function(err) {
+    db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre, direccion, ip, codigoUnico], function(err) {
       if (err) {
         console.error('Error al insertar en la base de datos:', err);
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ id: this.lastID });
+      res.json({ id: this.lastID, codigoUnico: codigoUnico });
     });
   } catch (error) {
     console.error('Error al procesar la incidencia:', error);
@@ -420,7 +427,7 @@ router.get('/:id', (req, res) => {
 router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
   const incidenciaId = req.params.id;
   const ip = obtenerIP(req);
-  const { 'frc-captcha-solution': captchaSolution } = req.body;
+  const { 'frc-captcha-solution': captchaSolution, codigoUnico } = req.body;
 
   try {
     // Validar el captcha
@@ -433,50 +440,77 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Captcha inválido' });
     }
 
-    // Verificar si el usuario ya ha reportado esta incidencia
-    const reporteExistente = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
+    // Verificar si se proporcionó un código único
+    if (codigoUnico) {
+      db.get('SELECT codigo_unico FROM incidencias WHERE id = ?', [incidenciaId], (err, row) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error interno del servidor' });
+        }
+        if (!row) {
+          return res.status(404).json({ error: 'Incidencia no encontrada' });
+        }
+        if (row.codigo_unico === codigoUnico) {
+          // El código único coincide, marcar como solucionada inmediatamente
+          db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error al actualizar la incidencia' });
+            }
+            return res.json({ solucionada: true, mensaje: 'Incidencia marcada como solucionada' });
+          });
+        } else {
+          // El código único no coincide, continuar con el proceso normal de reporte
+          procesarReporteSolucion(incidenciaId, ip, res);
+        }
       });
-    });
+    } else {
+      // No se proporcionó código único, continuar con el proceso normal de reporte
+      procesarReporteSolucion(incidenciaId, ip, res);
+    }
+  } catch (error) {
+    console.error('Error al procesar la solicitud:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
 
-    if (reporteExistente) {
+function procesarReporteSolucion(incidenciaId, ip, res) {
+  // Verificar si el usuario ya ha reportado esta incidencia
+  db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+    if (row) {
       return res.status(400).json({ error: 'Ya has reportado esta incidencia como solucionada' });
     }
 
     // Insertar el nuevo reporte
-    await new Promise((resolve, reject) => {
-      db.run('INSERT INTO reportes_solucion (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
+    db.run('INSERT INTO reportes_solucion (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error al registrar el reporte' });
+      }
 
-    // Contar el número de reportes para esta incidencia
-    const { count } = await new Promise((resolve, reject) => {
+      // Contar el número de reportes para esta incidencia
       db.get('SELECT COUNT(*) as count FROM reportes_solucion WHERE incidencia_id = ?', [incidenciaId], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
+        if (err) {
+          return res.status(500).json({ error: 'Error al contar los reportes' });
+        }
+
+        const reportes_solucion = row.count;
+
+        // Si hay 3 o más reportes, marcar la incidencia como solucionada
+        if (reportes_solucion >= 3) {
+          db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error al actualizar la incidencia' });
+            }
+            res.json({ solucionada: true, reportes_solucion });
+          });
+        } else {
+          res.json({ solucionada: false, reportes_solucion });
+        }
       });
     });
-
-    // Si hay 3 o más reportes, marcar la incidencia como solucionada
-    if (count >= 3) {
-      await new Promise((resolve, reject) => {
-        db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-    }
-
-    res.json({ mensaje: 'Reporte de solución registrado', reportes: count });
-  } catch (error) {
-    console.error('Error al procesar la incidencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
+  });
+}
 
 // Reportar incidencia como contenido inadecuado o spam
 router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {

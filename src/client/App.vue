@@ -39,6 +39,12 @@
           </template>
           <v-list-item-title>Comunidad</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/perfil" v-if="tieneIncidenciasUsuario">
+          <template v-slot:prepend>
+            <v-icon>mdi-account-details</v-icon>
+          </template>
+          <v-list-item-title>Tus incidencias</v-list-item-title>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -227,6 +233,7 @@
 
     <RankingUsuarios />
     <IncidenciasCercanas :incidencias="todasLasIncidencias" />
+    <TusIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
   </v-app>
 </template>
 
@@ -242,7 +249,7 @@ import ImageModal from './components/ImageModal.vue'
 import DetalleIncidencia from './components/DetalleIncidencia.vue'
 import RankingUsuarios from './components/RankingUsuarios.vue'
 import IncidenciasCercanas from './components/IncidenciasCercanas.vue'
-
+import TusIncidencias from './components/TusIncidencias.vue'
 // Importar el método para obtener los tipos de incidencias
 import { obtenerTiposIncidencias } from './utils/api'
 import { enviarEventoMatomo } from './utils/analytics';
@@ -256,7 +263,8 @@ export default {
     ImageModal,
     DetalleIncidencia,
     RankingUsuarios,
-    IncidenciasCercanas
+    IncidenciasCercanas,
+    TusIncidencias
   },
   setup() {
     const incidencias = ref([])
@@ -608,6 +616,31 @@ export default {
       enviarEventoMatomo('Incidencia', 'Nueva', 'Botón +');
     };
 
+    const tieneIncidenciasUsuario = computed(() => {
+      return Object.keys(localStorage).some(key => key.startsWith('incidencia_'));
+    });
+
+    const abrirTusIncidencias = () => {
+      router.push('/perfil')
+      drawer.value = false // Cerrar el drawer después de la navegación
+    }
+
+    // Añade esto en la sección de setup, junto con las otras propiedades computadas
+    const todasLasIncidenciasConSolucionadas = computed(async () => {
+      try {
+        const response = await axios.get(`/api/incidencias/todas`, { 
+          params: { 
+            incluirSolucionadas: true,
+            tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
+          }
+        });
+        return response.data.incidencias;
+      } catch (error) {
+        console.error('Error al obtener todas las incidencias con solucionadas:', error);
+        return [];
+      }
+    });
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -652,7 +685,10 @@ export default {
       abrirRanking,
       datosFormulario,
       actualizarDatosFormulario,
-      abrirFormularioIncidencia
+      abrirFormularioIncidencia,
+      tieneIncidenciasUsuario,
+      abrirTusIncidencias,
+      todasLasIncidenciasConSolucionadas
     }
   }
 }

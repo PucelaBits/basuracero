@@ -371,8 +371,10 @@ export default {
         const response = await axios.post('/api/incidencias', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        const { id, codigoUnico } = response.data;
+        localStorage.setItem(`incidencia_${id}`, codigoUnico);
         enviarEventoMatomo('Incidencia', 'Enviar', 'Éxito', incidencia.value.tipo_id);
-        emit('incidencia-creada', response.data.id);
+        emit('incidencia-creada', id);
         cerrar();
         resetForm();
         emit('actualizar-datos', {
