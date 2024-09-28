@@ -11,6 +11,16 @@
         </v-toolbar-title>
       </v-toolbar>
 
+      <div class="mapa-container">
+        <MapaIncidencias
+          v-if="!cargando && incidenciasUsuario.length > 0"
+          :incidencias="incidenciasUsuario"
+          :incluirSolucionadas="true"
+          :deshabilitarNuevaIncidencia="true"
+          @incidencia-seleccionada="abrirDetalleIncidencia"
+        />
+      </div>
+
       <v-card-text>
         <v-container fluid>
           <v-row v-if="cargando">
@@ -25,18 +35,17 @@
               </v-alert>
             </v-col>
           </v-row>
-          <v-row v-else dense>
-            <!-- Añadir esta sección para mostrar el resumen -->
-          <v-row v-if="!cargando" class="mb-4">
-            <v-col cols="12" class="text-center">
+          <v-row v-else>
+            <!-- Resumen de incidencias -->
+            <v-col cols="12" class="text-center mb-4">
               <p class="text-body-2 text-grey">
                 <v-icon color="grey" class="mr-1">mdi-file-document-multiple</v-icon>
                 <span class="mr-4">{{ incidenciasUsuario.length }}</span>
                 <v-icon color="grey" class="mr-1">mdi-check-circle</v-icon>
                 <span>{{ incidenciasSolucionadas }}</span>
               </p>
-              </v-col>
-            </v-row>
+            </v-col>
+            <!-- Lista de incidencias -->
             <v-col v-for="incidencia in incidenciasUsuario" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
               <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-0 incidencia-card" height="150">
                 <v-row no-gutters>
@@ -86,9 +95,13 @@
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import MapaIncidencias from './MapaIncidencias.vue'
 
 export default {
   name: 'TusIncidencias',
+  components: {
+    MapaIncidencias
+  },
   props: {
     incidencias: {
       type: [Array, Promise],
@@ -184,7 +197,7 @@ export default {
       handleImageError,
       formatDate,
       cargando,
-      incidenciasSolucionadas // Añadir esta línea
+      incidenciasSolucionadas
     }
   }
 }
@@ -195,6 +208,11 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+.mapa-container {
+  width: 100%;
+  height: 50vh; /* Ajusta esta altura según tus necesidades */
 }
 
 .incidencia-card {
