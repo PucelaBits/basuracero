@@ -52,12 +52,12 @@
 
           <v-row align="center" class="text-caption text--secondary">
             <v-col cols="auto">
-              <v-icon small class="mr-1">mdi-account</v-icon>
+              <v-icon small class="mr-2">mdi-account</v-icon>
               {{ incidencia.nombre }}
             </v-col>
             <v-spacer></v-spacer>
             <v-col cols="auto">
-              <v-icon small class="mr-1">mdi-calendar</v-icon>
+              <v-icon small class="mr-2">mdi-calendar</v-icon>
               {{ formatDate(incidencia.fecha) }}
             </v-col>
           </v-row>
@@ -65,11 +65,11 @@
           <!-- Dirección -->
           <v-row v-if="incidencia.direccion" align="center" class="mt-2">
             <v-col cols="12">
-              <a :href="geoLink" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+              <a :href="geoLink" target="_blank" rel="noopener noreferrer" @click="clickGeoLink" class="text-decoration-none">
                 <div class="d-flex align-center text-caption">
-                  <v-icon small class="mr-1">mdi-map-marker</v-icon>
+                  <v-icon small class="mr-2">mdi-map-marker</v-icon>
                   <span>{{ incidencia.direccion }}</span>
-                  <v-icon small class="ml-1">mdi-directions</v-icon>
+                  <v-icon class="ml-1" style="font-size: 25px;">mdi-directions</v-icon>
                 </div>
               </a>
             </v-col>
@@ -79,7 +79,7 @@
           <v-row align="center" class="mt-2" v-if="incidencia.estado === 'solucionada' && incidencia.estado !== 'spam'">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
-                <v-icon color="success" small class="mr-1">
+                <v-icon color="success" small class="mr-2">
                   mdi-check-circle
                 </v-icon>
                 <span class="success--text">
@@ -92,7 +92,7 @@
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon color="success" small class="mr-1">mdi-check-circle</v-icon>
-                <v-icon small class="mr-1">mdi-calendar</v-icon>
+                <v-icon small class="mr-2">mdi-calendar</v-icon>
                 <span>{{ formatDate(incidencia.fecha_solucion) }}</span>
               </div>
             </v-col>
@@ -100,7 +100,7 @@
           <v-row v-if="incidencia.reportes_solucion > 0 && incidencia.estado !== 'spam'" align="center" class="mt-1">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
-                <v-icon small class="mr-1">mdi-account-group</v-icon>
+                <v-icon small class="mr-2">mdi-account-group</v-icon>
                 <span>{{ incidencia.reportes_solucion === 1 ? '1 persona ha indicado que está solucionada' : `${incidencia.reportes_solucion} personas han indicado que está solucionada` }}</span>
               </div>
             </v-col>
@@ -108,7 +108,7 @@
           <v-row v-if="incidencia.estado !== 'spam'" align="center" class="mt-1">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption cursor-pointer" @click="mostrarDialogoReporteInadecuado = true">
-                <v-icon small class="mr-1">mdi-alert-circle</v-icon>
+                <v-icon small class="mr-2">mdi-alert-circle</v-icon>
                 <span>Avisar de contenido inadecuado o spam</span>
               </div>
             </v-col>
@@ -116,7 +116,7 @@
           <v-row v-if="incidencia.reportes_inadecuado > 0" align="center" class="mt-1">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
-                <v-icon small class="mr-1">mdi-alert</v-icon>
+                <v-icon small class="mr-2">mdi-alert</v-icon>
                 <span>{{ incidencia.reportes_inadecuado === 1 ? '1 persona ha marcado este contenido como inadecuado' : `${incidencia.reportes_inadecuado} personas han marcado este contenido como inadecuado` }}</span>
               </div>
             </v-col>
@@ -294,6 +294,7 @@ import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { WidgetInstance } from 'friendly-challenge';
+import { enviarEventoMatomo } from '../utils/analytics';
 
 export default {
   name: 'DetalleIncidencia',
@@ -332,12 +333,24 @@ export default {
 
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
 
+    const isIOS = computed(() => {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    });
+
     const geoLink = computed(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
-        return `geo:${props.incidencia.latitud},${props.incidencia.longitud}?q=${props.incidencia.latitud},${props.incidencia.longitud}`;
+        if (isIOS.value) {
+          return `https://maps.apple.com/?q=${props.incidencia.latitud},${props.incidencia.longitud}`;
+        } else {
+          return `geo:${props.incidencia.latitud},${props.incidencia.longitud}?q=${props.incidencia.latitud},${props.incidencia.longitud}`;
+        }
       }
       return '#';
     });
+
+    const clickGeoLink = () => {
+      enviarEventoMatomo('Incidencia', 'Clic en enlace geo', isIOS.value ? 'Apple' : 'Android');
+    };
 
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
@@ -630,12 +643,6 @@ export default {
       }
     });
 
-    const enviarEventoMatomo = (categoria, accion, nombre = null, valor = null) => {
-      if (window._paq) {
-        window._paq.push(['trackEvent', categoria, accion, nombre, valor]);
-      }
-    };
-
     return {
       dialog,
       cerrar,
@@ -662,7 +669,7 @@ export default {
       geoLink,
       mostrarDialogoExito,
       cerrarDialogoExito,
-      enviarEventoMatomo,
+      clickGeoLink,
     };
   }
 };
