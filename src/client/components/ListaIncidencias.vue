@@ -9,7 +9,7 @@
         md="4"
         lg="3"
       >
-        <v-card @click="abrirDetalle(incidencia)" class="ma-2">
+        <v-card @click="abrirDetalle(incidencia)" class="ma-1">
           <v-img
             :src="incidencia.imagen"
             :alt="incidencia.tipo"
@@ -27,7 +27,13 @@
             </v-chip>
           </v-img>
           <v-card-text>
-            <p class="text-body-2 mb-2 descripcion-truncada">
+            <v-row no-gutters align="center" class="text-caption text--secondary mb-1 mt-0">
+              <v-col cols="auto">
+                <v-icon small class="mr-1 mb-1">mdi-map-marker</v-icon>
+                {{ incidencia.direccion.split(',').slice(0, 2).join(',') }}
+              </v-col>
+            </v-row>
+            <p class="text-body-3 mb-2 ml-6 descripcion-truncada">
               {{ incidencia.descripcion }}
             </p>
             <v-divider class="my-2"></v-divider>

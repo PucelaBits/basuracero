@@ -53,11 +53,11 @@
                   <v-col cols="8">
                     <v-card-text class="pa-2">
                       <p class="text-caption mb-1" :title="incidencia.tipo">
-                        {{ incidencia.tipo.length > 25 ? incidencia.tipo.substring(0, 25) + '...' : incidencia.tipo }}
+                        {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                       </p>
                       <p class="text-caption mb-1">
                         <v-icon x-small class="mr-1">mdi-map-marker</v-icon>
-                        {{ incidencia.direccion.length > 25 ? incidencia.direccion.substring(0, 25) + '...' : incidencia.direccion }}
+                        {{ incidencia.direccion.length > 20 ? incidencia.direccion.substring(0, 20) + '...' : incidencia.direccion }}
                       </p>
                       <p class="text-caption mb-1">
                         <v-icon x-small class="mr-1">mdi-calendar</v-icon>
