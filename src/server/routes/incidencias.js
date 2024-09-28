@@ -306,7 +306,8 @@ router.get('/usuarios/ranking', (req, res) => {
     SELECT 
       COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo') as nombre_lower,
       MAX(TRIM(nombre)) as nombre,
-      COUNT(*) as incidencias
+      COUNT(*) as incidencias,
+      SUM(CASE WHEN estado = 'solucionada' THEN 1 ELSE 0 END) as incidencias_solucionadas
     FROM incidencias
     WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
     GROUP BY COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo')
@@ -343,7 +344,8 @@ router.get('/usuarios/ranking', (req, res) => {
     const ranking = rows.map((row, index) => ({
       posicion: index + 1,
       nombre: row.nombre || 'Usuario anónimo',
-      incidencias: row.incidencias
+      incidencias: row.incidencias,
+      incidenciasSolucionadas: row.incidencias_solucionadas
     }));
 
     db.get(sqlUsuariosUnicos, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowUsuarios) => {
