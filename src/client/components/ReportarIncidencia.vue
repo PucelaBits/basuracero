@@ -22,7 +22,7 @@
             <v-text-field
               v-model="incidencia.nombre"
               label="Tu nombre"
-              :rules="[v => !!v || 'El nombre es requerido']"
+              :rules="[v => !!v || 'El nombre es necesario']"
               required
             ></v-text-field>
             
@@ -32,23 +32,33 @@
               item-title="nombre"
               item-value="id"
               label="Tipo"
-              :rules="[v => !!v || 'El tipo es requerido']"
+              :rules="[v => !!v || 'El tipo es necesario']"
               required
             ></v-select>
             
             <v-textarea
               v-model="incidencia.descripcion"
               label="Descripción"
-              :rules="[v => !!v || 'La descripción es requerida']"
+              :rules="[v => !!v || 'La descripción es necesaria']"
               required
-            ></v-textarea>
+            >
+              <template v-slot:append-inner>
+                <v-icon
+                  v-if="reconocimientoVozDisponible"
+                  @click="activarReconocimientoVoz"
+                  :color="reconocimientoVozActivo ? 'primary' : 'grey'"
+                >
+                  mdi-microphone
+                </v-icon>
+              </template>
+            </v-textarea>
             
             <v-text-field
               v-model="incidencia.latitud"
               label="Latitud"
               type="number"
               step="any"
-              :rules="[v => !!v || 'La latitud es requerida']"
+              :rules="[v => !!v || 'La latitud es necesaria']"
               required
               @input="obtenerDireccion"
               v-show="false"
@@ -59,7 +69,7 @@
               label="Longitud"
               type="number"
               step="any"
-              :rules="[v => !!v || 'La longitud es requerida']"
+              :rules="[v => !!v || 'La longitud es necesaria']"
               required
               @input="obtenerDireccion"
               v-show="false"
@@ -103,7 +113,7 @@
               label="Hacer o subir foto"
               prepend-icon="mdi-camera"
               @change="onFileSelected"
-              :rules="[v => !!v || 'La imagen es requerida']"
+              :rules="[v => !!v || 'La imagen es necesaria']"
               required
               show-size
             ></v-file-input>
@@ -237,6 +247,9 @@ export default {
     const incidenciasCercanas = ref([])
     const mostrarDialogoIncidenciasCercanas = ref(false)
     const router = useRouter();
+    const reconocimientoVozActivo = ref(false)
+    const reconocimientoVozDisponible = ref(false)
+    let reconocimientoVoz = null
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -448,6 +461,38 @@ export default {
       mostrarDialogoIncidenciasCercanas.value = false;
     };
 
+    const verificarSoporteReconocimientoVoz = () => {
+      reconocimientoVozDisponible.value = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
+    }
+
+    const activarReconocimientoVoz = () => {
+      if (reconocimientoVozDisponible.value) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+        reconocimientoVoz = new SpeechRecognition()
+        reconocimientoVoz.lang = 'es-ES'
+        reconocimientoVoz.continuous = true
+        reconocimientoVoz.interimResults = true
+
+        reconocimientoVoz.onstart = () => {
+          reconocimientoVozActivo.value = true
+        }
+
+        reconocimientoVoz.onend = () => {
+          reconocimientoVozActivo.value = false
+        }
+
+        reconocimientoVoz.onresult = (event) => {
+          const resultado = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('')
+
+          incidencia.value.descripcion += resultado
+        }
+
+        reconocimientoVoz.start()
+      }
+    }
+
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal
     })
@@ -494,11 +539,16 @@ export default {
           }
         });
       }
+
+      verificarSoporteReconocimientoVoz()
     })
 
     onUnmounted(() => {
       if (captchaWidget.value) {
         captchaWidget.value.destroy()
+      }
+      if (reconocimientoVoz) {
+        reconocimientoVoz.stop()
       }
     })
 
@@ -529,7 +579,10 @@ export default {
       mostrarDialogoIncidenciasCercanas,
       verificarIncidenciasCercanas,
       cerrarDialogoIncidenciasCercanas,
-      abrirIncidenciaCercana
+      abrirIncidenciaCercana,
+      reconocimientoVozActivo,
+      reconocimientoVozDisponible,
+      activarReconocimientoVoz,
     }
   }
 }
