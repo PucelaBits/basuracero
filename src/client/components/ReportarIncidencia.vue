@@ -12,6 +12,11 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
+        <v-card-text class="text-center">
+          <v-alert color="grey" elevation="2" class="aviso-formulario">
+            <span style="font-size: 0.8em;"><v-icon>mdi-information</v-icon> Evitar informar de incidencias que lleven menos de 24h activas</span>
+          </v-alert>
+        </v-card-text>
         <v-card-text>
           <v-form ref="form" @submit.prevent="enviarIncidencia" v-model="formValido">
             <v-text-field
@@ -541,4 +546,10 @@ export default {
   font-size: smaller;
   margin-bottom: 1.5em;
 }
+
+.aviso-formulario {
+  color: #696969 !important;
+  background-color: #f6f6f6 !important;
+}
+
 </style>
