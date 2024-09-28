@@ -231,7 +231,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useTheme } from 'vuetify'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
@@ -308,7 +308,7 @@ export default {
         };
         
         if (forzarActualizacion) {
-          params._ = Date.now(); // Añadir timestamp solo cuando sea necesario
+          params._ = Date.now();
         }
         
         const response = await axios.get(`/api/incidencias`, { params });
@@ -316,6 +316,11 @@ export default {
         currentPage.value = response.data.currentPage;
         totalPages.value = response.data.totalPages;
         totalIncidencias.value = response.data.totalItems;
+
+        // Forzar actualización de la vista
+        nextTick(() => {
+          incidencias.value = [...incidencias.value];
+        });
 
         // Actualizar todasLasIncidencias
         obtenerTodasLasIncidencias(true);
@@ -511,6 +516,10 @@ export default {
       }
     })
 
+    watch(() => tipoSeleccionado.value, () => {
+      obtenerIncidencias(1, true);
+    }, { immediate: true });
+
     const actualizarLista = () => {
       obtenerIncidencias()
       mensajeExito.value = 'Incidencia añadida con éxito'
@@ -587,10 +596,6 @@ export default {
       mostrarFormulario.value = true;
       enviarEventoMatomo('Incidencia', 'Nueva', 'Botón +');
     };
-
-    watch(() => tipoSeleccionado.value, () => {
-      obtenerIncidencias(1, true);
-    });
 
     return {
       incidencias,
