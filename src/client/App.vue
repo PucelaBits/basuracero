@@ -298,8 +298,12 @@ export default {
       }
     }
 
+    const cargaInicial = ref(true);
+
     const obtenerIncidencias = async (page = currentPage.value, forzarActualizacion = false) => {
       try {
+        console.log('Obteniendo incidencias...', { page, forzarActualizacion, tipoSeleccionado: tipoSeleccionado.value, incluirSolucionadas: incluirSolucionadas.value });
+        
         const params = {
           page: page,
           limit: itemsPerPage,
@@ -307,23 +311,28 @@ export default {
           tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
         };
         
-        if (forzarActualizacion) {
+        if (forzarActualizacion || cargaInicial.value) {
           params._ = Date.now();
         }
         
         const response = await axios.get(`/api/incidencias`, { params });
+        console.log('Respuesta recibida:', response.data);
+        
         incidencias.value = response.data.incidencias;
         currentPage.value = response.data.currentPage;
         totalPages.value = response.data.totalPages;
         totalIncidencias.value = response.data.totalItems;
 
         // Forzar actualización de la vista
-        nextTick(() => {
-          incidencias.value = [...incidencias.value];
-        });
+        await nextTick();
+        incidencias.value = [...incidencias.value];
+        
+        console.log('Incidencias actualizadas:', incidencias.value);
 
         // Actualizar todasLasIncidencias
-        obtenerTodasLasIncidencias(true);
+        await obtenerTodasLasIncidencias(true);
+        
+        cargaInicial.value = false;
       } catch (error) {
         console.error('Error al obtener incidencias:', error.response ? error.response.data : error.message);
       }
@@ -485,9 +494,9 @@ export default {
       reiniciarDatosFormulario();
     }
 
-    onMounted(() => {
-      obtenerIncidencias();
-      obtenerTodasLasIncidencias();
+    onMounted(async () => {
+      await obtenerIncidencias(1, true);
+      await obtenerTodasLasIncidencias(true);
       obtenerTipos();
       
       // Verificar actualizaciones cada 30 segundos
@@ -505,20 +514,22 @@ export default {
       window.removeEventListener('beforeinstallprompt', manejarEventoInstalacion);
     });
 
-    watch(() => incluirSolucionadas.value, () => {
-      obtenerIncidencias()
-      obtenerTodasLasIncidencias()
-    })
+    watch(() => tipoSeleccionado.value, async () => {
+      console.log('Tipo seleccionado cambiado:', tipoSeleccionado.value);
+      await obtenerIncidencias(1, true);
+    });
+
+    watch(() => incluirSolucionadas.value, async () => {
+      console.log('Incluir solucionadas cambiado:', incluirSolucionadas.value);
+      await obtenerIncidencias(1, true);
+      await obtenerTodasLasIncidencias(true);
+    });
 
     watch(() => route.params.id, (newId) => {
       if (newId) {
         abrirDetalleIncidenciaPorId(newId)
       }
     })
-
-    watch(() => tipoSeleccionado.value, () => {
-      obtenerIncidencias(1, true);
-    }, { immediate: true });
 
     const actualizarLista = () => {
       obtenerIncidencias()
