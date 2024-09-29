@@ -131,18 +131,17 @@
             </v-col>
           </v-row>
 
+          <!-- Mapa -->
+          <div class="mapa-container mt-4">
+            <div id="mapa-detalle" class="mapa-detalle"></div>
+          </div>
+
+          <v-row class="mt-4">
+            <v-col cols="12" class="text-center">
+              <p class="text-caption">Todo el contenido está bajo licencia <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">CC BY-SA 4.0</a></p>
+            </v-col>
+          </v-row>
         </v-container>
-
-        <!-- Mapa -->
-        <div class="mapa-container mt-4">
-          <div id="mapa-detalle" class="mapa-detalle"></div>
-        </div>
-
-        <v-row class="mt-4">
-        <v-col cols="12" class="text-center">
-          <p class="text-caption">Todo el contenido está bajo licencia <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">CC BY-SA 4.0</a></p>
-          </v-col>
-        </v-row>
       </v-card-text>
 
       <v-card-actions class="flex-column" id="botones-detalle" v-if="incidencia.estado !== 'spam'">
