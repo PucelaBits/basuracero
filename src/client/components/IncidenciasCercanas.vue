@@ -17,6 +17,7 @@
           :incluirSolucionadas="incluirSolucionadas"
           :ubicacionUsuario="ubicacionUsuario"
           :seguirUsuario="true"
+          :deshabilitarNuevaIncidencia="true"
           @solicitar-actualizacion-ubicacion="actualizarUbicacionUsuario"
           @incidencia-seleccionada="abrirDetalleIncidencia"
         />
@@ -198,9 +199,6 @@ export default {
       if (route.name === 'IncidenciasCercanas') {
         dialogVisible.value = true
         actualizarUbicacionUsuario()
-        if (map) {
-          map.setZoom(16)
-        }
       }
     })
 

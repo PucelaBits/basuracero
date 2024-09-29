@@ -14,7 +14,7 @@
         <v-icon>mdi-magnify</v-icon>
       </button>
     </div>
-    <button @click="detectarUbicacion" class="boton-ubicacion">
+    <button @click="detectarUbicacion" v-if="!deshabilitarNuevaIncidencia" class="boton-ubicacion">
       <v-icon>mdi-map-marker</v-icon>
     </button>
   </div>
@@ -168,9 +168,11 @@ export default {
           maxZoom: 20
         }).addTo(map)
 
+        if (!props.deshabilitarNuevaIncidencia) {
         map.on('click', (event) => {
           addTempMarker(event.latlng.lat, event.latlng.lng)
-        })
+          })
+        }
 
         if (props.seguirUsuario && props.ubicacionUsuario) {
           map.setView([props.ubicacionUsuario.latitud, props.ubicacionUsuario.longitud], 16)
@@ -242,7 +244,7 @@ export default {
               </div>
               <div class="popup-content">
                 <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion.split(',').slice(0, 2).join(',')}</span></div>
-                <p class="popup-description mt-2">${incidencia.descripcion}</p>
+                <div class="popup-footer text-left mt-3 mb-3"><span><i class="mdi mdi-text"></i> ${incidencia.descripcion}</span></div>
                 <div class="popup-footer">
                   <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
                   <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
@@ -809,6 +811,10 @@ export default {
 .custom-popup .popup-content {
   position: relative;
   padding-bottom: 20px;
+}
+
+.leaflet-popup-close-button {
+  color: #FFF !important;
 }
 
 .user-location-marker {

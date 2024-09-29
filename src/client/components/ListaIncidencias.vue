@@ -42,9 +42,12 @@
                 {{ incidencia.direccion.split(',').slice(0, 2).join(',') }}
               </v-col>
             </v-row>
-            <p class="text-body-3 mb-2 ml-6 descripcion-truncada">
-              {{ incidencia.descripcion }}
-            </p>
+            <v-row no-gutters class="text-caption mb-2 text--secondary descripcion-truncada">
+              <v-col cols="auto">
+                <v-icon class="mr-1">mdi-text</v-icon>
+                {{ incidencia.descripcion }}
+              </v-col>
+            </v-row>
             <v-divider class="my-2"></v-divider>
             <v-row no-gutters align="center" class="text-caption text--secondary">
               <v-col cols="auto">
