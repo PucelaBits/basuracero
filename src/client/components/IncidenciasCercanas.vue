@@ -61,6 +61,7 @@
                   <v-col cols="8">
                     <v-card-text class="pa-2">
                       <p class="text-caption mb-1" :title="incidencia.tipo">
+                        <v-icon x-small class="mr-1">mdi-tag-outline</v-icon>
                         {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                       </p>
                       <p class="text-caption mb-1">
@@ -122,6 +123,9 @@ export default {
               longitud: position.coords.longitude
             }
             calcularIncidenciasCercanas()
+            if (map) {
+              map.setView([position.coords.latitude, position.coords.longitude], 16)
+            }
           },
           (error) => {
             console.error("Error al obtener la ubicación:", error.message)
@@ -194,6 +198,9 @@ export default {
       if (route.name === 'IncidenciasCercanas') {
         dialogVisible.value = true
         actualizarUbicacionUsuario()
+        if (map) {
+          map.setZoom(16)
+        }
       }
     })
 

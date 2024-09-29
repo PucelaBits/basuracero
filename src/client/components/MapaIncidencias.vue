@@ -289,7 +289,8 @@ export default {
           }
         })
 
-        if (markers.length > 0) {
+        // Solo ajustar la vista si no hay marcadores o si el mapa está en su vista inicial
+        if (markers.length > 0 && (!map.getZoom() || map.getZoom() === 13)) {
           const bounds = L.latLngBounds(markers.map(marker => marker.getLatLng()))
           map.fitBounds(bounds)
         }
