@@ -182,6 +182,19 @@
               <v-icon color="grey mr-2">mdi-information</v-icon>
               <span color="grey">Máx. 2 fotos.No incluya caras de personas, matrículas o info personal</span>
             </div>
+
+            <v-checkbox
+              v-model="aceptaLicencia"
+              :rules="[v => !!v || 'Debes aceptar los términos de la licencia para continuar']"
+              required
+            >
+              <template v-slot:label>
+                <div class="subtitle-text">
+                  Acepto que el texto y las fotos subidas serán publicados bajo licencia 
+                  <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">CC BY-SA 4.0</a>
+                </div>
+              </template>
+            </v-checkbox>
             
             <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSitekey" data-lang="es"></div>
 
@@ -227,7 +240,7 @@
                   color="primary"
                   @click="enviarIncidencia"
                   :loading="enviando"
-                  :disabled="!formValido || enviando || !incidencia.imagenes || incidencia.imagenes.length === 0"
+                  :disabled="!formValido || enviando || !incidencia.imagenes || incidencia.imagenes.length === 0 || !aceptaLicencia"
                 >
                   {{ enviando ? 'Enviando...' : 'Enviar' }}
                 </v-btn>
@@ -312,6 +325,7 @@ export default {
     const recordarNombre = ref(true)
     const cameraInput = ref(null)
     const fileInput = ref(null)
+    const aceptaLicencia = ref(false)
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -491,6 +505,7 @@ export default {
       }
       previewUrls.value = []
       direccion.value = ''
+      aceptaLicencia.value = false
       if (form.value) {
         form.value.reset()
         form.value.resetValidation()
@@ -702,6 +717,7 @@ export default {
       tomarFoto,
       abrirSelectorArchivos,
       onCameraCapture,
+      aceptaLicencia,
     }
   }
 }
@@ -763,6 +779,15 @@ export default {
   top: 5px;
   right: 5px;
   background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+a {
+  color: var(--v-primary-base);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 </style>

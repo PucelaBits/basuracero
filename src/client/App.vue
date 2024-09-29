@@ -202,10 +202,10 @@
           <a href="https://t.me/basuraceroapp" target="_blank" rel="noopener noreferrer">Contacto</a>
         </v-col>
         <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://github.com/PucelaBits/basuracero" target="_blank" rel="noopener noreferrer">Código</a>
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">Licencia</a>
         </v-col>
         <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener noreferrer">Licencia</a>
+          <a href="https://github.com/PucelaBits/basuracero" target="_blank" rel="noopener noreferrer">Código</a>
         </v-col>
       </v-row>
     </v-footer>
