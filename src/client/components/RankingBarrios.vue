@@ -156,7 +156,7 @@
           const periodos = ['semana', 'mes', 'total'];
           const responses = await Promise.all(
             periodos.map(periodo => 
-              axios.get(`/api/incidencias/barrios/ranking?periodo=${periodo}&minIncidencias=${periodo === 'total' ? 2 : 1}&incluirDetalles=true`)
+              axios.get(`/api/incidencias/barrios/ranking?periodo=${periodo}&minIncidencias=1&incluirDetalles=true`)
             )
           );
   

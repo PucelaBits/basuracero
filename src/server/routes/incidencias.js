@@ -367,7 +367,6 @@ router.get('/usuarios/ranking', (req, res) => {
     GROUP BY COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo')
     HAVING COUNT(*) >= ?
     ORDER BY incidencias DESC, nombre_lower
-    LIMIT 10
   `;
 
   const sqlUsuariosUnicos = `
@@ -670,7 +669,6 @@ router.get('/barrios/ranking', (req, res) => {
     GROUP BY COALESCE(barrio, 'Sin barrio')
     HAVING COUNT(*) >= ?
     ORDER BY incidencias DESC
-    LIMIT 10
   `;
 
   db.all(sqlRanking, [fechaInicio.toISOString(), fechaFin.toISOString(), minIncidencias], (err, rows) => {
