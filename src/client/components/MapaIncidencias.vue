@@ -1,6 +1,6 @@
 <template>
   <div class="mapa-container">
-    <div ref="mapContainer" class="mapa-incidencias"></div>
+    <div ref="mapContainer" class="mapa-incidencias" :style="mapRotationStyle"></div>
     <div class="search-container" :class="{ 'active': isSearchActive }">
       <input 
         type="text" 
@@ -17,11 +17,14 @@
     <button @click="detectarUbicacion" class="boton-ubicacion">
       <v-icon>mdi-map-marker</v-icon>
     </button>
+    <button v-if="mostrarBotonRotacion" @click="toggleRotationMode" class="boton-rotacion" :title="rotationModeTitle">
+      <v-icon>{{ rotationModeIcon }}</v-icon>
+    </button>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
 import L from 'leaflet'
 import { useRouter } from 'vue-router'
 import { enviarEventoMatomo } from '../utils/analytics'
@@ -124,6 +127,10 @@ export default {
     tipoSeleccionado: {
       type: [String, Number],
       default: 'Todas'
+    },
+    mostrarBotonRotacion: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion'],
@@ -140,6 +147,21 @@ export default {
     const searchResults = ref([])
     
     const incidenciaSeleccionada = ref(null);
+
+    const rotationMode = ref('north')
+    const mapRotation = ref(0)
+    const mapRotationStyle = computed(() => ({
+      transform: `rotate(${mapRotation.value}deg)`,
+      transformOrigin: 'center center'
+    }))
+
+    const rotationModeIcon = computed(() => 
+      rotationMode.value === 'north' ? 'mdi-compass' : 'mdi-compass-outline'
+    )
+    const rotationModeTitle = computed(() => 
+      rotationMode.value === 'north' ? 'Cambiar a rotación con dispositivo' : 'Cambiar a norte arriba'
+    )
+    let deviceOrientationHandler = null
 
     const abrirDetalle = (incidencia) => {
       emit('incidencia-seleccionada', incidencia);
@@ -161,7 +183,10 @@ export default {
 
     const initMap = () => {
       if (mapContainer.value && !map) {
-        map = L.map(mapContainer.value).setView([41.652251, -4.724532], 13)
+        map = L.map(mapContainer.value, {
+          rotate: true,
+          touchRotate: true
+        }).setView([41.652251, -4.724532], 13)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
@@ -475,6 +500,54 @@ export default {
       }
     }
 
+    const toggleRotationMode = () => {
+      rotationMode.value = rotationMode.value === 'north' ? 'device' : 'north'
+      if (rotationMode.value === 'device') {
+        startDeviceOrientation()
+      } else {
+        stopDeviceOrientation()
+        mapRotation.value = 0
+      }
+      enviarEventoMatomo('Mapa', 'CambioModoRotacion', rotationMode.value)
+    }
+
+    const startDeviceOrientation = () => {
+      if ('DeviceOrientationEvent' in window) {
+        deviceOrientationHandler = throttle(handleOrientation, 100)
+        window.addEventListener('deviceorientation', deviceOrientationHandler)
+      } else {
+        alert('Lo siento, tu dispositivo no soporta la orientación.')
+        rotationMode.value = 'north'
+      }
+    }
+
+    const stopDeviceOrientation = () => {
+      if (deviceOrientationHandler) {
+        window.removeEventListener('deviceorientation', deviceOrientationHandler)
+        deviceOrientationHandler = null
+      }
+    }
+
+    const handleOrientation = (event) => {
+      if (rotationMode.value === 'device') {
+        const alpha = event.webkitCompassHeading || event.alpha || 0
+        mapRotation.value = alpha
+      }
+    }
+
+    const throttle = (func, limit) => {
+      let inThrottle
+      return function() {
+        const args = arguments
+        const context = this
+        if (!inThrottle) {
+          func.apply(context, args)
+          inThrottle = true
+          setTimeout(() => inThrottle = false, limit)
+        }
+      }
+    }
+
     onMounted(() => {
       initMap()
       updateMarkers()
@@ -489,6 +562,7 @@ export default {
         map = null
       }
       stopWatchingUserLocation()
+      stopDeviceOrientation()
     })
 
     watch(() => props.incidencias, () => {
@@ -527,7 +601,13 @@ export default {
       searchQuery,
       toggleSearch,
       searchAddress,
-      abrirDetalle
+      abrirDetalle,
+      rotationMode,
+      rotationModeIcon,
+      rotationModeTitle,
+      toggleRotationMode,
+      mapRotationStyle,
+      mostrarBotonRotacion: props.mostrarBotonRotacion
     }
   }
 }
@@ -547,6 +627,7 @@ export default {
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 1rem;
+  transition: transform 0.3s ease;
 }
 
 .boton-ubicacion {
@@ -822,5 +903,26 @@ export default {
   background-color: #3388ff;
   border: 2px solid white;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.boton-rotacion {
+  position: absolute;
+  bottom: 60px;
+  right: 20px;
+  z-index: 1000;
+  background-color: white;
+  border-radius: 4px;
+  width: 34px;
+  height: 34px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.boton-rotacion:hover {
+  background-color: #f4f4f4;
 }
 </style>

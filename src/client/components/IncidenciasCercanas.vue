@@ -17,6 +17,7 @@
           :incluirSolucionadas="incluirSolucionadas"
           :ubicacionUsuario="ubicacionUsuario"
           :seguirUsuario="true"
+          :mostrarBotonRotacion="true"
           @solicitar-actualizacion-ubicacion="actualizarUbicacionUsuario"
           @incidencia-seleccionada="abrirDetalleIncidencia"
         />
