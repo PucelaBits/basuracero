@@ -42,13 +42,21 @@
                 <v-row no-gutters>
                   <v-col cols="4">
                     <v-img
-                      :src="incidencia.imagen"
-                      :alt="incidencia.tipo"
+                      v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
+                      :src="incidencia.imagenes[0].ruta_imagen"
                       height="120"
                       cover
                       @error="handleImageError"
                     >
+                      <template v-slot:placeholder>
+                        <v-row class="fill-height ma-0" align="center" justify="center">
+                          <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                        </v-row>
+                      </template>
                     </v-img>
+                    <div v-else class="no-image-placeholder" height="120">
+                      <v-icon>mdi-image-off</v-icon>
+                    </div>
                   </v-col>
                   <v-col cols="8">
                     <v-card-text class="pa-2">
@@ -229,7 +237,7 @@ export default {
 }
 
 .incidencia-card {
-  transition: transform 0.3s;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .incidencia-card:hover {
@@ -263,5 +271,14 @@ export default {
 
 .v-alert__icon {
   margin-top: 8px;
+}
+
+.no-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #999;
+  height: 100%;
 }
 </style>

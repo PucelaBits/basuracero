@@ -11,7 +11,8 @@
     "copy-index": "cp dist/index.html dist/200.html",
     "borrar-incidencia": "node scripts/borrarIncidencia.js",
     "tipos": "node scripts/gestionarTipos.js",
-    "rellenar-barrios": "node scripts/rellenarBarrios.js"
+    "rellenar-barrios": "node scripts/rellenarBarrios.js",
+    "migrar-imagenes": "node scripts/migrarImagenes.js"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

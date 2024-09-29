@@ -57,6 +57,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (incidencia_id) REFERENCES incidencias(id)
       )`);
 
+      // Crear la tabla imagenes_incidencias si no existe
+      db.run(`CREATE TABLE IF NOT EXISTS imagenes_incidencias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        incidencia_id INTEGER NOT NULL,
+        ruta_imagen TEXT NOT NULL,
+        fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (incidencia_id) REFERENCES incidencias(id) ON DELETE CASCADE
+      )`);
+
+      console.log('Tabla imagenes_incidencias creada o verificada');
+
       // Insertar tipos de incidencias predefinidos si la tabla está vacía
       db.get('SELECT COUNT(*) AS count FROM tipos_incidencias', (err, row) => {
         if (err) {

@@ -10,22 +10,31 @@
         lg="3"
       >
         <v-card @click="abrirDetalle(incidencia)" class="ma-1">
-          <v-img
-            :src="incidencia.imagen"
-            :alt="incidencia.tipo"
+          <v-carousel
+            v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
             height="200"
-            cover
-            @error="handleImageError"
+            hide-delimiter-background
+            :show-arrows="false"
+            :continuous="false"
+            :cycle="incidencia.imagenes.length > 1"
+            :hide-delimiters="incidencia.imagenes.length <= 1"
           >
-            <v-chip
-              class="ma-2 tipo-chip"
-              label
-              text-color="primary"
-              elevation="2"
+            <v-carousel-item
+              v-for="(imagen, i) in incidencia.imagenes"
+              :key="i"
+              :src="imagen.ruta_imagen"
+              cover
             >
-              {{ incidencia.tipo }}
-            </v-chip>
-          </v-img>
+              <v-chip
+                class="ma-2 tipo-chip"
+                label
+                text-color="primary"
+                elevation="2"
+              >
+                {{ incidencia.tipo }}
+              </v-chip>
+            </v-carousel-item>
+          </v-carousel>
           <v-card-text>
             <v-row no-gutters align="center" class="text-caption text--secondary mb-1 mt-0">
               <v-col cols="auto">
@@ -133,5 +142,37 @@ export default {
 
 .text-caption {
   color: #666;
+}
+
+.v-carousel {
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  overflow: hidden;
+}
+
+.tipo-chip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+}
+
+.v-carousel__controls__item {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.v-carousel__controls__item:first-child {
+  left: 5px;
+}
+
+.v-carousel__controls__item:last-child {
+  right: 5px;
+}
+
+.v-carousel .v-btn--icon {
+  background-color: rgba(255, 255, 255, 0.7) !important;
 }
 </style>

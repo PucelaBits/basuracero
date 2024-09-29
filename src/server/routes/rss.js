@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
   });
 
   const sql = `
-    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.direccion
+    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.direccion
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     WHERE i.estado != 'spam'
@@ -31,8 +31,27 @@ router.get('/', (req, res) => {
       return;
     }
 
-    rows.forEach(incidencia => {
+    const getImagenes = (incidenciaId) => {
+      return new Promise((resolve, reject) => {
+        db.all('SELECT ruta_imagen FROM imagenes_incidencias WHERE incidencia_id = ?', [incidenciaId], (err, imagenes) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(imagenes.map(img => img.ruta_imagen));
+          }
+        });
+      });
+    };
+
+    Promise.all(rows.map(async incidencia => {
+      const imagenes = await getImagenes(incidencia.id);
       const direccion = incidencia.direccion ? incidencia.direccion.split(',').slice(0, 2).join(',') : 'Dirección no disponible';
+      
+      let contenidoImagenes = '';
+      imagenes.forEach(imagen => {
+        contenidoImagenes += `<img src="https://basuracero.pucelabits.org/uploads/${imagen}" alt="${incidencia.tipo}">`;
+      });
+
       feed.addItem({
         title: `${incidencia.tipo}: ${incidencia.descripcion.substring(0, 100)}...`,
         id: `https://basuracero.pucelabits.org/incidencia/${incidencia.id}`,
@@ -42,15 +61,18 @@ router.get('/', (req, res) => {
             <p>📍 ${direccion}</p>
             <p>👤 ${incidencia.nombre}</p>
             <p>💬 ${incidencia.descripcion}</p>
-            <img src="https://basuracero.pucelabits.org/uploads/${incidencia.imagen}" alt="${incidencia.tipo}">
+            ${contenidoImagenes}
         `,
         date: new Date(incidencia.fecha),
-        image: `https://basuracero.pucelabits.org/uploads/${incidencia.imagen}`
+        image: imagenes.length > 0 ? `https://basuracero.pucelabits.org/uploads/${imagenes[0]}` : undefined
       });
+    })).then(() => {
+      res.set('Content-Type', 'application/rss+xml');
+      res.send(feed.rss2());
+    }).catch(error => {
+      console.error('Error al procesar las incidencias para RSS:', error);
+      res.status(500).send('Error interno del servidor');
     });
-
-    res.set('Content-Type', 'application/rss+xml');
-    res.send(feed.rss2());
   });
 });
 

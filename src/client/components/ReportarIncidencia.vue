@@ -116,23 +116,73 @@
               </v-col>
             </v-row>
             
-            <v-file-input
-              v-model="incidencia.imagen"
+            <v-row>
+              <v-col cols="6">
+                <v-btn block color="success" @click="tomarFoto" :disabled="incidencia.imagenes.length >= 2">
+                  <v-icon start>mdi-camera</v-icon>
+                  Hacer foto
+                </v-btn>
+              </v-col>
+              <v-col cols="6">
+                <v-btn block color="info" @click="abrirSelectorArchivos" :disabled="incidencia.imagenes.length >= 2">
+                  <v-icon start>mdi-upload</v-icon>
+                  Subir fotos
+                </v-btn>
+              </v-col>
+            </v-row>
+
+            <v-list v-if="incidencia.imagenes.length > 0" class="mt-3">
+              <v-list-item v-for="(imagen, index) in incidencia.imagenes" :key="index">
+                <template v-slot:prepend>
+                  <v-icon icon="mdi-file-image"></v-icon>
+                </template>
+                <v-list-item-title>{{ imagen.name }}</v-list-item-title>
+                <template v-slot:append>
+                  <v-btn icon="mdi-delete" variant="text" @click="removeImage(index)"></v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+
+            <v-row v-if="previewUrls.length > 0" class="mt-3">
+              <v-col v-for="(url, index) in previewUrls" :key="index" cols="6">
+                <v-img
+                  :src="url"
+                  aspect-ratio="1"
+                  class="grey lighten-2"
+                  cover
+                >
+                  <template v-slot:placeholder>
+                    <v-row class="fill-height ma-0" align="center" justify="center">
+                      <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                    </v-row>
+                  </template>
+                </v-img>
+              </v-col>
+            </v-row>
+
+            <input
+              type="file"
               accept="image/*"
-              label="Hacer o subir foto"
-              prepend-icon="mdi-camera"
-              @change="onFileSelected"
-              :rules="[v => !!v || 'La imagen es necesaria']"
-              required
-              show-size
-            ></v-file-input>
-            <div class="subtitle-text text-center">
+              capture="environment"
+              ref="cameraInput"
+              style="display: none"
+              @change="onCameraCapture"
+            >
+
+            <input
+              type="file"
+              accept="image/*"
+              ref="fileInput"
+              style="display: none"
+              @change="onFilesSelected"
+              multiple
+            >
+
+            <div class="subtitle-text text-center mt-4">
               <v-icon color="grey mr-2">mdi-information</v-icon>
-              <span color="grey">No incluya caras de personas, matrículas o info personal</span>
+              <span color="grey">Máx. 2 fotos.No incluya caras de personas, matrículas o info personal</span>
             </div>
             
-            <v-img v-if="previewUrl" :src="previewUrl" max-height="200" class="mb-4"></v-img>
-
             <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSitekey" data-lang="es"></div>
 
             <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
@@ -177,7 +227,7 @@
                   color="primary"
                   @click="enviarIncidencia"
                   :loading="enviando"
-                  :disabled="!formValido || enviando || !incidencia.imagen"
+                  :disabled="!formValido || enviando || !incidencia.imagenes || incidencia.imagenes.length === 0"
                 >
                   {{ enviando ? 'Enviando...' : 'Enviar' }}
                 </v-btn>
@@ -241,9 +291,9 @@ export default {
     const dialog = ref(props.modelValue)
     const form = ref(null)
     const formValido = ref(false)
-    const incidencia = ref({ ...props.datosFormulario })
+    const incidencia = ref({ ...props.datosFormulario, imagenes: [] })
     const tiposIncidencias = ref([])
-    const previewUrl = ref(null)
+    const previewUrls = ref([])
     const enviando = ref(false)
     const direccion = ref('')
     const captchaContainer = ref(null)
@@ -260,6 +310,8 @@ export default {
     const reconocimientoVozDisponible = ref(false)
     let reconocimientoVoz = null
     const recordarNombre = ref(true)
+    const cameraInput = ref(null)
+    const fileInput = ref(null)
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -279,20 +331,42 @@ export default {
       dialog.value = false
     }
 
-    const onFileSelected = (event) => {
-      const file = event && event.target ? event.target.files[0] : event
-      if (file && file instanceof File) {
-        incidencia.value.imagen = file
-        try {
-          previewUrl.value = URL.createObjectURL(file)
-        } catch (error) {
-          console.error('Error al crear URL para la vista previa:', error)
-          previewUrl.value = null
-        }
-      } else {
-        incidencia.value.imagen = null
-        previewUrl.value = null
+    const tomarFoto = () => {
+      if (cameraInput.value && incidencia.value.imagenes.length < 2) {
+        cameraInput.value.click()
       }
+    }
+
+    const abrirSelectorArchivos = () => {
+      if (fileInput.value && incidencia.value.imagenes.length < 2) {
+        fileInput.value.click()
+      }
+    }
+
+    const onFilesSelected = (event) => {
+      const files = event.target.files
+      if (files && files.length > 0) {
+        const newImages = Array.from(files).slice(0, 2 - incidencia.value.imagenes.length)
+        incidencia.value.imagenes = [...incidencia.value.imagenes, ...newImages].slice(0, 2)
+        updatePreviewUrls()
+      }
+    }
+
+    const onCameraCapture = (event) => {
+      const file = event.target.files[0]
+      if (file && incidencia.value.imagenes.length < 2) {
+        incidencia.value.imagenes.push(file)
+        updatePreviewUrls()
+      }
+    }
+
+    const removeImage = (index) => {
+      incidencia.value.imagenes.splice(index, 1)
+      updatePreviewUrls()
+    }
+
+    const updatePreviewUrls = () => {
+      previewUrls.value = incidencia.value.imagenes.map(file => URL.createObjectURL(file))
     }
 
     const obtenerTiposIncidencias = async () => {
@@ -370,8 +444,10 @@ export default {
       try {
         const formData = new FormData()
         for (const key in incidencia.value) {
-          if (key === 'imagen' && incidencia.value[key] instanceof File) {
-            formData.append(key, incidencia.value[key])
+          if (key === 'imagenes') {
+            incidencia.value[key].forEach((imagen, index) => {
+              formData.append(`imagenes`, imagen);
+            });
           } else if (incidencia.value[key] !== null && incidencia.value[key] !== undefined) {
             formData.append(key, incidencia.value[key])
           }
@@ -393,7 +469,7 @@ export default {
           descripcion: '',
           latitud: null,
           longitud: null,
-          imagen: null,
+          imagenes: [],
           nombre: ''
         });
       } catch (error) {
@@ -410,10 +486,10 @@ export default {
         descripcion: '',
         latitud: null,
         longitud: null,
-        imagen: null,
+        imagenes: [],
         nombre: ''
       }
-      previewUrl.value = null
+      previewUrls.value = []
       direccion.value = ''
       if (form.value) {
         form.value.reset()
@@ -552,6 +628,8 @@ export default {
       }
     );
 
+    watch(() => incidencia.value.imagenes, updatePreviewUrls, { deep: true })
+
     onMounted(() => {
       obtenerTiposIncidencias();
 
@@ -592,11 +670,11 @@ export default {
       formValido,
       incidencia,
       tiposIncidencias,
-      previewUrl,
+      previewUrls,
       enviando,
       direccion,
       cerrar,
-      onFileSelected,
+      onFilesSelected,
       obtenerDireccion,
       obtenerUbicacion,
       enviarIncidencia,
@@ -618,6 +696,12 @@ export default {
       reconocimientoVozDisponible,
       activarReconocimientoVoz,
       recordarNombre,
+      removeImage,
+      cameraInput,
+      fileInput,
+      tomarFoto,
+      abrirSelectorArchivos,
+      onCameraCapture,
     }
   }
 }
@@ -672,6 +756,13 @@ export default {
     transform: translate(-50%, -50%) scale(1.2);
     opacity: 0;
   }
+}
+
+.remove-image {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(0, 0, 0, 0.5) !important;
 }
 
 </style>

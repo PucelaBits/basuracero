@@ -25,7 +25,7 @@ if (!fs.existsSync(uploadsDir)){
 }
 
 // Configurar Multer para la subida de archivos
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage() }).array('imagenes', 2);
 
 // Configurar el limitador de tasa
 const limiter = rateLimit({
@@ -103,62 +103,73 @@ router.get('/tipos', (req, res) => {
 });
 
 // Crear una nueva incidencia
-router.post('/', crearIncidenciaLimiter, upload.single('imagen'), async (req, res) => {
-  const { tipo_id, descripcion, latitud, longitud, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
-  const nombre = req.body.nombre ? req.body.nombre.trim() : '';
-
-  const errores = validarIncidencia({...req.body, nombre});
-  if (errores.length > 0) {
-    return res.status(400).json({ errores });
-  }
-
-  if (!req.file) {
-    return res.status(400).json({ error: 'La imagen es obligatoria' });
-  }
-
-  try {
-    // Validar el captcha
-    const captchaResponse = await axios.post('https://api.friendlycaptcha.com/api/v1/siteverify', {
-      solution: captchaSolution,
-      secret: friendlyCaptchaSecret
-    });
-
-    if (!captchaResponse.data.success) {
-      return res.status(400).json({ error: 'Captcha inválido' });
+router.post('/', crearIncidenciaLimiter, (req, res) => {
+  upload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ error: 'Error al subir las imágenes' });
+    } else if (err) {
+      return res.status(500).json({ error: 'Error interno del servidor' });
     }
 
-    console.log('Procesando imagen...');
-    // Procesar y guardar la imagen
-    const filename = `${uuidv4()}.jpg`;
-    const filepath = path.join(uploadsDir, filename);
-    
-    await sharp(req.file.buffer)
-      .rotate()
-      .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 80 })
-      .toFile(filepath);
+    const { tipo_id, descripcion, latitud, longitud, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
+    const nombre = req.body.nombre ? req.body.nombre.trim() : '';
 
-    console.log('Imagen procesada y guardada.');
+    const errores = validarIncidencia({...req.body, nombre});
+    if (errores.length > 0) {
+      return res.status(400).json({ errores });
+    }
 
-    const ip = obtenerIP(req);
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Se requiere al menos una imagen' });
+    }
 
-    const codigoUnico = generarCodigoUnico();
+    try {
+      // Validar el captcha
+      const captchaResponse = await axios.post('https://api.friendlycaptcha.com/api/v1/siteverify', {
+        solution: captchaSolution,
+        secret: friendlyCaptchaSecret
+      });
 
-    // Insertar la incidencia en la base de datos
-    const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, imagen, nombre, fecha, direccion, ip, codigo_unico, barrio) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`;
-    
-    db.run(sql, [tipo_id, descripcion, latitud, longitud, filename, nombre, direccion, ip, codigoUnico, req.body.barrio], function(err) {
-      if (err) {
-        console.error('Error al insertar en la base de datos:', err);
-        res.status(500).json({ error: err.message });
-        return;
+      if (!captchaResponse.data.success) {
+        return res.status(400).json({ error: 'Captcha inválido' });
       }
-      res.json({ id: this.lastID, codigoUnico: codigoUnico });
-    });
-  } catch (error) {
-    console.error('Error al procesar la incidencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
+
+      const ip = obtenerIP(req);
+      const codigoUnico = generarCodigoUnico();
+
+      // Insertar la incidencia en la base de datos
+      const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, direccion, ip, codigo_unico, barrio) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`;
+      
+      db.run(sql, [tipo_id, descripcion, latitud, longitud, nombre, direccion, ip, codigoUnico, req.body.barrio], async function(err) {
+        if (err) {
+          console.error('Error al insertar en la base de datos:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        const incidenciaId = this.lastID;
+
+        // Procesar y guardar las imágenes
+        for (const file of req.files) {
+          const filename = `${uuidv4()}.jpg`;
+          const filepath = path.join(uploadsDir, filename);
+          
+          await sharp(file.buffer)
+            .rotate()
+            .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toFile(filepath);
+
+          // Insertar la imagen en la tabla imagenes_incidencias
+          await db.run('INSERT INTO imagenes_incidencias (incidencia_id, ruta_imagen) VALUES (?, ?)', [incidenciaId, filename]);
+        }
+
+        res.json({ id: incidenciaId, codigoUnico: codigoUnico });
+      });
+    } catch (error) {
+      console.error('Error al procesar la incidencia:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  });
 });
 
 // Obtener incidencias paginadas
@@ -167,7 +178,7 @@ router.get('/', (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
-  const tipo = parseInt(req.query.tipo); // Convertir a número
+  const tipo = parseInt(req.query.tipo);
 
   let whereClause = 'WHERE i.estado != ?';
   let params = ['spam'];
@@ -182,7 +193,7 @@ router.get('/', (req, res) => {
 
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
   const dataSql = `
-    SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+    SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
            (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
@@ -210,17 +221,35 @@ router.get('/', (req, res) => {
         return;
       }
       
-      const incidenciasConImagenes = rows.map(incidencia => ({
-        ...incidencia,
-        imagen: incidencia.imagen ? `/uploads/${incidencia.imagen}` : null
-      }));
-
-      res.json({
-        incidencias: incidenciasConImagenes,
-        currentPage: page,
-        totalPages: totalPages,
-        totalItems: total
+      // Obtener las imágenes para cada incidencia
+      const promises = rows.map(incidencia => {
+        return new Promise((resolve, reject) => {
+          db.all('SELECT ruta_imagen FROM imagenes_incidencias WHERE incidencia_id = ?', [incidencia.id], (err, imagenes) => {
+            if (err) {
+              reject(err);
+            } else {
+              incidencia.imagenes = imagenes.map(img => ({
+                ruta_imagen: `/uploads/${img.ruta_imagen}`
+              }));
+              resolve(incidencia);
+            }
+          });
+        });
       });
+
+      Promise.all(promises)
+        .then(incidenciasConImagenes => {
+          res.json({
+            incidencias: incidenciasConImagenes,
+            currentPage: page,
+            totalPages: totalPages,
+            totalItems: total
+          });
+        })
+        .catch(error => {
+          console.error('Error al obtener las imágenes de las incidencias:', error);
+          res.status(500).json({ error: 'Error interno del servidor' });
+        });
     });
   });
 });
@@ -235,7 +264,7 @@ router.get('/todas', (req, res) => {
   }
 
   const sql = `
-    SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+    SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
            (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
@@ -252,14 +281,32 @@ router.get('/todas', (req, res) => {
       return;
     }
     
-    const incidenciasConImagenes = rows.map(incidencia => ({
-      ...incidencia,
-      imagen: incidencia.imagen ? `/uploads/${incidencia.imagen}` : null
-    }));
-
-    res.json({
-      incidencias: incidenciasConImagenes
+    // Obtener las imágenes para cada incidencia
+    const promises = rows.map(incidencia => {
+      return new Promise((resolve, reject) => {
+        db.all('SELECT ruta_imagen FROM imagenes_incidencias WHERE incidencia_id = ?', [incidencia.id], (err, imagenes) => {
+          if (err) {
+            reject(err);
+          } else {
+            incidencia.imagenes = imagenes.map(img => ({
+              ruta_imagen: `/uploads/${img.ruta_imagen}`
+            }));
+            resolve(incidencia);
+          }
+        });
+      });
     });
+
+    Promise.all(promises)
+      .then(incidenciasConImagenes => {
+        res.json({
+          incidencias: incidenciasConImagenes
+        });
+      })
+      .catch(error => {
+        console.error('Error al obtener las imágenes de las incidencias:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+      });
   });
 });
 
@@ -393,7 +440,7 @@ router.get('/:id', (req, res) => {
   const incidenciaId = req.params.id;
 
   const sql = `
-    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.imagen, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
            (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
@@ -414,12 +461,20 @@ router.get('/:id', (req, res) => {
       return;
     }
 
-    const incidenciaConImagen = {
-      ...row,
-      imagen: row.imagen ? `/uploads/${row.imagen}` : null
-    };
+    // Obtener las imágenes de la incidencia
+    db.all('SELECT ruta_imagen FROM imagenes_incidencias WHERE incidencia_id = ?', [incidenciaId], (err, imagenes) => {
+      if (err) {
+        console.error('Error al obtener las imágenes de la incidencia:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+        return;
+      }
 
-    res.json(incidenciaConImagen);
+      row.imagenes = imagenes.map(img => ({
+        ruta_imagen: `/uploads/${img.ruta_imagen}`
+      }));
+
+      res.json(row);
+    });
   });
 });
 

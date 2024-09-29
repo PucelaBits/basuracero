@@ -2,32 +2,41 @@
   <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
     <v-card class="detalle-incidencia">
       <div class="imagen-container">
-        <v-img
-          v-if="incidencia.estado !== 'spam'"
-          :src="incidencia.imagen"
-          :alt="incidencia.tipo"
+        <v-carousel
+          v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
+          :show-arrows="incidencia.imagenes.length > 1"
+          hide-delimiter-background
           height="270"
           class="imagen-detalle"
-          @click="abrirImagenCompleta"
-          cover
+          :hide-delimiters="incidencia.imagenes.length <= 1"
         >
-          <template v-slot:placeholder>
-            <v-row class="fill-height ma-0" align="center" justify="center">
-              <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
-            </v-row>
-          </template>
-          
-          <!-- Pastillas de tipo y estado -->
-          <div class="pastillas-container">
-            <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
-            <span :class="['estado-pastilla', incidencia.estado]">
-              {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
-            </span>
-          </div>
-        </v-img>
+          <v-carousel-item
+            v-for="(imagen, index) in incidencia.imagenes"
+            :key="index"
+            :src="imagen.ruta_imagen"
+            :alt="incidencia.tipo"
+            cover
+            @click="abrirImagenCompleta(index)"
+          >
+            <template v-slot:placeholder>
+              <v-row class="fill-height ma-0" align="center" justify="center">
+                <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+              </v-row>
+            </template>
+          </v-carousel-item>
+        </v-carousel>
         <div v-else class="spam-placeholder" height="270">
           <v-icon x-large color="grey">mdi-image-off</v-icon>
         </div>
+        
+        <!-- Pastillas de tipo y estado -->
+        <div class="pastillas-container">
+          <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
+          <span :class="['estado-pastilla', incidencia.estado]">
+            {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
+          </span>
+        </div>
+        
         <v-btn icon dark class="close-btn" @click="cerrar">
           <v-icon>mdi-close</v-icon>
         </v-btn>
@@ -217,20 +226,35 @@
     <!-- Diálogo flotante para la imagen a pantalla completa -->
     <v-dialog v-model="dialogImagen" fullscreen>
       <v-card flat class="transparent">
-        <v-img
-          :src="incidencia.imagen"
-          :alt="incidencia.tipo"
-          max-height="100vh"
-          max-width="100vw"
-          contain
+        <v-carousel
+          v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
+          :value="imagenSeleccionadaIndex"
+          height="100vh"
+          hide-delimiter-background
+          :show-arrows="incidencia.imagenes.length > 1"
+        >
+          <v-carousel-item
+            v-for="(imagen, i) in incidencia.imagenes"
+            :key="i"
+            :src="imagen.ruta_imagen"
+            contain
+            @click="dialogImagen = false"
+          >
+            <template v-slot:placeholder>
+              <v-row class="fill-height ma-0" align="center" justify="center">
+                <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+              </v-row>
+            </template>
+          </v-carousel-item>
+        </v-carousel>
+        <v-btn
+          icon
+          dark
+          class="close-fullscreen-btn"
           @click="dialogImagen = false"
         >
-          <template v-slot:placeholder>
-            <v-row class="fill-height ma-0" align="center" justify="center">
-              <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
-            </v-row>
-          </template>
-        </v-img>
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
       </v-card>
     </v-dialog>
 
@@ -330,6 +354,7 @@ export default {
     const captchaWidgetInadecuado = ref(null);
     const mostrarDialogoExito = ref(false);
     const route = useRoute();
+    const imagenSeleccionadaIndex = ref(0);
 
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
 
@@ -388,7 +413,8 @@ export default {
       router.push('/');
     };
 
-    const abrirImagenCompleta = () => {
+    const abrirImagenCompleta = (index) => {
+      imagenSeleccionadaIndex.value = index;
       dialogImagen.value = true;
     };
 
@@ -680,6 +706,7 @@ export default {
       mostrarDialogoExito,
       cerrarDialogoExito,
       clickGeoLink,
+      imagenSeleccionadaIndex,
     };
   }
 };
@@ -825,5 +852,55 @@ a {
 
 #botones-detalle {
   gap: 0px !important;
+}
+
+.imagen-container {
+  position: relative;
+}
+
+.pastillas-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+}
+
+.popup-chip {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.estado-pastilla {
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  color: white;
+}
+
+.estado-pastilla.activa {
+  background-color: #4CAF50;
+}
+
+.estado-pastilla.solucionada {
+  background-color: #2196F3;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+.close-fullscreen-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5) !important;
 }
 </style>
