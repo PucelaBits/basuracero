@@ -630,13 +630,10 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
 });
 
 router.get('/barrios/ranking', (req, res) => {
-  console.log('Recibida solicitud de ranking de barrios');
   let minIncidencias = parseInt(req.query.minIncidencias);
   let periodo = req.query.periodo || 'total';
   const incluirDetalles = req.query.incluirDetalles === 'true';
   
-  console.log(`Parámetros: minIncidencias=${minIncidencias}, periodo=${periodo}, incluirDetalles=${incluirDetalles}`);
-
   // Validación y sanitización
   if (isNaN(minIncidencias) || minIncidencias < 1) {
     minIncidencias = 1;
@@ -663,8 +660,6 @@ router.get('/barrios/ranking', (req, res) => {
       fechaInicio = new Date(0); // Desde el inicio de los tiempos
   }
 
-  console.log(`Rango de fechas: ${fechaInicio.toISOString()} - ${fechaFin.toISOString()}`);
-
   const sqlRanking = `
     SELECT 
       COALESCE(barrio, 'Sin barrio') as nombre,
@@ -678,15 +673,12 @@ router.get('/barrios/ranking', (req, res) => {
     LIMIT 10
   `;
 
-  console.log('Ejecutando consulta de ranking');
   db.all(sqlRanking, [fechaInicio.toISOString(), fechaFin.toISOString(), minIncidencias], (err, rows) => {
     if (err) {
       console.error('Error al obtener el ranking de barrios:', err);
       res.status(500).json({ error: 'Error interno del servidor', details: err.message });
       return;
     }
-
-    console.log(`Obtenidos ${rows.length} resultados del ranking`);
 
     const ranking = rows.map((row, index) => ({
       posicion: index + 1,
@@ -696,7 +688,6 @@ router.get('/barrios/ranking', (req, res) => {
     }));
 
     if (incluirDetalles) {
-      console.log('Obteniendo detalles de tipos de incidencias');
       const sqlTiposIncidencias = `
         SELECT 
           COALESCE(i.barrio, 'Sin barrio') as nombre,
@@ -715,8 +706,6 @@ router.get('/barrios/ranking', (req, res) => {
           res.status(500).json({ error: 'Error interno del servidor', details: err.message });
           return;
         }
-
-        console.log(`Obtenidos ${rowsTipos.length} resultados de tipos de incidencias`);
 
         const tiposIncidenciasPorBarrio = rowsTipos.reduce((acc, row) => {
           if (!acc[row.nombre]) {
@@ -742,7 +731,6 @@ router.get('/barrios/ranking', (req, res) => {
   });
 
   function finalizarRespuesta(ranking) {
-    console.log('Finalizando respuesta');
     const sqlBarriosUnicos = `
       SELECT COUNT(DISTINCT COALESCE(barrio, 'Sin barrio')) as barrios_unicos
       FROM incidencias
@@ -788,7 +776,6 @@ router.get('/barrios/ranking', (req, res) => {
             totalIncidencias: rowIncidencias.total_incidencias,
             incidenciasSolucionadas: rowSolucionadas.incidencias_solucionadas
           });
-          console.log('Respuesta enviada');
         });
       });
     });
