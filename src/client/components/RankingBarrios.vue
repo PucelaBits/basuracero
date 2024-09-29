@@ -37,35 +37,69 @@
                 <span class="ml-2">{{ incidenciasSolucionadas[periodo] }}</span>
               </p>
               <v-list class="ranking-list">
-                <v-list-item v-for="barrio in rankings[periodo]" :key="barrio.posicion" class="mb-2 rounded-lg elevation-1">
-                  <template v-slot:prepend>
-                    <v-avatar size="32" color="grey">
-                      <v-icon color="white">mdi-home-group</v-icon>
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-subtitle-2">{{ barrio.nombre }}</v-list-item-title>
-                  <template v-slot:append>
-                    <v-chip
-                      color="grey"
-                      outlined
-                      x-small
-                      class="mr-2"
-                      :class="{ 'grey--text': barrio.incidencias === 0 }"
-                    >
-                      <v-icon start size="x-small">mdi-file-document-multiple</v-icon>
-                      {{ barrio.incidencias }}
-                    </v-chip>
-                    <v-chip
-                      :color="barrio.incidenciasSolucionadas > 0 ? 'success' : 'grey'"
-                      outlined
-                      x-small
-                      :class="{ 'grey--text': barrio.incidenciasSolucionadas === 0 }"
-                    >
-                      <v-icon start size="x-small">mdi-check-circle</v-icon>
-                      {{ barrio.incidenciasSolucionadas }}
-                    </v-chip>
-                  </template>
-                </v-list-item>
+                <template v-for="barrio in rankings[periodo]" :key="barrio.posicion">
+                  <v-list-item 
+                    class="mb-2 rounded-lg elevation-1"
+                    @click="toggleDetallesBarrio(barrio)"
+                  >
+                    <template v-slot:prepend>
+                      <v-avatar size="32" color="grey">
+                        <v-icon color="white">mdi-home-group</v-icon>
+                      </v-avatar>
+                    </template>
+                    <v-list-item-title class="text-subtitle-2">{{ barrio.nombre }}</v-list-item-title>
+                    <template v-slot:append>
+                      <v-chip
+                        color="grey"
+                        outlined
+                        x-small
+                        class="mr-2"
+                        :class="{ 'grey--text': barrio.incidencias === 0 }"
+                      >
+                        <v-icon start size="x-small">mdi-file-document-multiple</v-icon>
+                        {{ barrio.incidencias }}
+                      </v-chip>
+                      <v-chip
+                        :color="barrio.incidenciasSolucionadas > 0 ? 'success' : 'grey'"
+                        outlined
+                        x-small
+                        :class="{ 'grey--text': barrio.incidenciasSolucionadas === 0 }"
+                      >
+                        <v-icon start size="x-small">mdi-check-circle</v-icon>
+                        {{ barrio.incidenciasSolucionadas }}
+                      </v-chip>
+                    </template>
+                  </v-list-item>
+                  <v-expand-transition>
+                    <div v-if="barrio.mostrarDetalles" class="pb-2">
+                      <v-list>
+                        <v-list-item v-for="tipo in barrio.tiposIncidencias" :key="tipo.tipo" dense>
+                          <v-list-item-title class="text-caption mr-1"><v-icon size="small" color="grey" class="mr-1">mdi-tag-outline</v-icon> {{ tipo.tipo }}</v-list-item-title>
+                          <template v-slot:append>
+                            <v-chip
+                              color="grey"
+                              outlined
+                              x-small
+                              class="mr-2"
+                            >
+                              <v-icon start size="x-small">mdi-file-document-multiple</v-icon>
+                              {{ tipo.total }}
+                            </v-chip>
+                            <v-chip
+                              :color="tipo.solucionadas > 0 ? 'success' : 'grey'"
+                              outlined
+                              x-small
+                              :class="{ 'grey--text': tipo.solucionadas === 0 }"
+                            >
+                              <v-icon start size="x-small">mdi-check-circle</v-icon>
+                              {{ tipo.solucionadas }}
+                            </v-chip>
+                          </template>
+                        </v-list-item>
+                      </v-list>
+                    </div>
+                  </v-expand-transition>
+                </template>
               </v-list>
             </v-window-item>
           </v-window>
@@ -122,13 +156,16 @@
           const periodos = ['semana', 'mes', 'total'];
           const responses = await Promise.all(
             periodos.map(periodo => 
-              axios.get(`/api/incidencias/barrios/ranking?periodo=${periodo}&minIncidencias=${periodo === 'total' ? 2 : 1}`)
+              axios.get(`/api/incidencias/barrios/ranking?periodo=${periodo}&minIncidencias=${periodo === 'total' ? 2 : 1}&incluirDetalles=true`)
             )
           );
   
           responses.forEach((response, index) => {
             const periodo = periodos[index];
-            rankings.value[periodo] = response.data.ranking;
+            rankings.value[periodo] = response.data.ranking.map(barrio => ({
+              ...barrio,
+              mostrarDetalles: false
+            }));
             barriosUnicos.value[periodo] = response.data.barriosUnicos;
             totalIncidencias.value[periodo] = response.data.totalIncidencias;
             incidenciasSolucionadas.value[periodo] = response.data.incidenciasSolucionadas;
@@ -173,6 +210,17 @@
         }
       });
   
+      const toggleDetallesBarrio = (barrio) => {
+        if (!barrio.mostrarDetalles) {
+          rankings.value[tab.value].forEach(b => {
+            if (b !== barrio) {
+              b.mostrarDetalles = false;
+            }
+          });
+        }
+        barrio.mostrarDetalles = !barrio.mostrarDetalles;
+      };
+
       return {
         dialogVisible,
         tab,
@@ -183,9 +231,11 @@
         iconosPeriodo,
         cerrar,
         rangoFechas,
+        toggleDetallesBarrio,
       };
     },
   };
+  
   </script>
   
   <style scoped>
@@ -202,12 +252,10 @@
   
   .v-list-item {
     transition: all 0.3s ease;
-    height: 48px;
   }
   
   .v-list-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: rgba(0, 0, 0, 0.04);
   }
   
   .v-list-item-content {
@@ -224,5 +272,9 @@
   
   .grey--text {
     color: rgba(0, 0, 0, 0.38) !important;
+  }
+  
+  .pl-16 {
+    padding-left: 64px;
   }
   </style>

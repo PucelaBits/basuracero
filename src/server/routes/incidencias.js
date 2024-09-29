@@ -630,9 +630,13 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
 });
 
 router.get('/barrios/ranking', (req, res) => {
+  console.log('Recibida solicitud de ranking de barrios');
   let minIncidencias = parseInt(req.query.minIncidencias);
   let periodo = req.query.periodo || 'total';
+  const incluirDetalles = req.query.incluirDetalles === 'true';
   
+  console.log(`Parámetros: minIncidencias=${minIncidencias}, periodo=${periodo}, incluirDetalles=${incluirDetalles}`);
+
   // Validación y sanitización
   if (isNaN(minIncidencias) || minIncidencias < 1) {
     minIncidencias = 1;
@@ -659,6 +663,8 @@ router.get('/barrios/ranking', (req, res) => {
       fechaInicio = new Date(0); // Desde el inicio de los tiempos
   }
 
+  console.log(`Rango de fechas: ${fechaInicio.toISOString()} - ${fechaFin.toISOString()}`);
+
   const sqlRanking = `
     SELECT 
       COALESCE(barrio, 'Sin barrio') as nombre,
@@ -668,34 +674,19 @@ router.get('/barrios/ranking', (req, res) => {
     WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
     GROUP BY COALESCE(barrio, 'Sin barrio')
     HAVING COUNT(*) >= ?
-    ORDER BY incidencias DESC, nombre
+    ORDER BY incidencias DESC
     LIMIT 10
   `;
 
-  const sqlBarriosUnicos = `
-    SELECT COUNT(DISTINCT COALESCE(barrio, 'Sin barrio')) as barrios_unicos
-    FROM incidencias
-    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
-  `;
-
-  const sqlTotalIncidencias = `
-    SELECT COUNT(*) as total_incidencias
-    FROM incidencias
-    WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
-  `;
-
-  const sqlIncidenciasSolucionadas = `
-    SELECT COUNT(*) as incidencias_solucionadas
-    FROM incidencias
-    WHERE estado = 'solucionada' AND fecha >= ? AND fecha <= ?
-  `;
-
+  console.log('Ejecutando consulta de ranking');
   db.all(sqlRanking, [fechaInicio.toISOString(), fechaFin.toISOString(), minIncidencias], (err, rows) => {
     if (err) {
       console.error('Error al obtener el ranking de barrios:', err);
-      res.status(500).json({ error: 'Error interno del servidor' });
+      res.status(500).json({ error: 'Error interno del servidor', details: err.message });
       return;
     }
+
+    console.log(`Obtenidos ${rows.length} resultados del ranking`);
 
     const ranking = rows.map((row, index) => ({
       posicion: index + 1,
@@ -703,6 +694,72 @@ router.get('/barrios/ranking', (req, res) => {
       incidencias: row.incidencias,
       incidenciasSolucionadas: row.incidencias_solucionadas
     }));
+
+    if (incluirDetalles) {
+      console.log('Obteniendo detalles de tipos de incidencias');
+      const sqlTiposIncidencias = `
+        SELECT 
+          COALESCE(i.barrio, 'Sin barrio') as nombre,
+          t.nombre as tipo,
+          COUNT(*) as total,
+          SUM(CASE WHEN i.estado = 'solucionada' THEN 1 ELSE 0 END) as solucionadas
+        FROM incidencias i
+        JOIN tipos_incidencias t ON i.tipo_id = t.id
+        WHERE i.estado != 'spam' AND i.fecha >= ? AND i.fecha <= ?
+        GROUP BY COALESCE(i.barrio, 'Sin barrio'), t.nombre
+      `;
+
+      db.all(sqlTiposIncidencias, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowsTipos) => {
+        if (err) {
+          console.error('Error al obtener los tipos de incidencias por barrio:', err);
+          res.status(500).json({ error: 'Error interno del servidor', details: err.message });
+          return;
+        }
+
+        console.log(`Obtenidos ${rowsTipos.length} resultados de tipos de incidencias`);
+
+        const tiposIncidenciasPorBarrio = rowsTipos.reduce((acc, row) => {
+          if (!acc[row.nombre]) {
+            acc[row.nombre] = [];
+          }
+          acc[row.nombre].push({
+            tipo: row.tipo,
+            total: row.total,
+            solucionadas: row.solucionadas
+          });
+          return acc;
+        }, {});
+
+        ranking.forEach(barrio => {
+          barrio.tiposIncidencias = tiposIncidenciasPorBarrio[barrio.nombre] || [];
+        });
+
+        finalizarRespuesta(ranking);
+      });
+    } else {
+      finalizarRespuesta(ranking);
+    }
+  });
+
+  function finalizarRespuesta(ranking) {
+    console.log('Finalizando respuesta');
+    const sqlBarriosUnicos = `
+      SELECT COUNT(DISTINCT COALESCE(barrio, 'Sin barrio')) as barrios_unicos
+      FROM incidencias
+      WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
+    `;
+
+    const sqlTotalIncidencias = `
+      SELECT COUNT(*) as total_incidencias
+      FROM incidencias
+      WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
+    `;
+
+    const sqlIncidenciasSolucionadas = `
+      SELECT COUNT(*) as incidencias_solucionadas
+      FROM incidencias
+      WHERE estado = 'solucionada' AND fecha >= ? AND fecha <= ?
+    `;
 
     db.get(sqlBarriosUnicos, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowBarrios) => {
       if (err) {
@@ -731,10 +788,11 @@ router.get('/barrios/ranking', (req, res) => {
             totalIncidencias: rowIncidencias.total_incidencias,
             incidenciasSolucionadas: rowSolucionadas.incidencias_solucionadas
           });
+          console.log('Respuesta enviada');
         });
       });
     });
-  });
+  }
 });
 
 module.exports = router;
