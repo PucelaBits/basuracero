@@ -223,9 +223,18 @@ export default {
           if (props.incluirSolucionadas || incidencia.estado !== 'solucionada') {
             const popupContent = L.DomUtil.create('div', 'custom-popup')
             
+            // Crear el contenido del popup
             popupContent.innerHTML = `
               <div class="popup-header">
-                <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image">
+                <div class="popup-image-container">
+                  <img src="${incidencia.imagenes[0].ruta_imagen}" alt="${incidencia.tipo}" class="popup-image">
+                  ${incidencia.imagenes.length > 1 ? `
+                    <div class="popup-image-controls">
+                      <button class="popup-image-prev"><i class="mdi mdi-chevron-left"></i></button>
+                      <button class="popup-image-next"><i class="mdi mdi-chevron-right"></i></button>
+                    </div>
+                  ` : ''}
+                </div>
                 <div class="popup-chips">
                   <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
                   <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
@@ -251,9 +260,29 @@ export default {
               className: 'custom-popup-class' 
             })
 
+            // Añadir funcionalidad al carrusel
+            if (incidencia.imagenes.length > 1) {
+              let currentImageIndex = 0
+              const popupImageElement = popupContent.querySelector('.popup-image')
+              const prevButton = popupContent.querySelector('.popup-image-prev')
+              const nextButton = popupContent.querySelector('.popup-image-next')
+
+              prevButton.addEventListener('click', (e) => {
+                e.stopPropagation()
+                currentImageIndex = (currentImageIndex - 1 + incidencia.imagenes.length) % incidencia.imagenes.length
+                popupImageElement.src = incidencia.imagenes[currentImageIndex].ruta_imagen
+              })
+
+              nextButton.addEventListener('click', (e) => {
+                e.stopPropagation()
+                currentImageIndex = (currentImageIndex + 1) % incidencia.imagenes.length
+                popupImageElement.src = incidencia.imagenes[currentImageIndex].ruta_imagen
+              })
+            }
+
             L.DomEvent.on(popupContent.querySelector('.popup-image'), 'click', (e) => {
-              L.DomEvent.stopPropagation(e);
-              abrirDetalle(incidencia);
+              L.DomEvent.stopPropagation(e)
+              abrirDetalle(incidencia)
             })
 
             markers.push(marker)
@@ -577,11 +606,40 @@ export default {
   width: 100%;
 }
 
-.popup-image {
+.popup-image-container {
+  position: relative;
   width: 100%;
   height: 150px;
+}
+
+.popup-image {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  display: block;
+}
+
+.popup-image-controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+}
+
+.popup-image-prev,
+.popup-image-next {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.popup-image-prev:hover,
+.popup-image-next:hover {
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 .popup-chips {
