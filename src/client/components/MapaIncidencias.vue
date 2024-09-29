@@ -1,6 +1,6 @@
 <template>
   <div class="mapa-container">
-    <div ref="mapContainer" class="mapa-incidencias" :style="mapRotationStyle"></div>
+    <div ref="mapContainer" class="mapa-incidencias"></div>
     <div class="search-container" :class="{ 'active': isSearchActive }">
       <input 
         type="text" 
@@ -17,14 +17,11 @@
     <button @click="detectarUbicacion" class="boton-ubicacion">
       <v-icon>mdi-map-marker</v-icon>
     </button>
-    <button v-if="mostrarBotonRotacion" @click="toggleRotationMode" class="boton-rotacion" :title="rotationModeTitle">
-      <v-icon>{{ rotationModeIcon }}</v-icon>
-    </button>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import L from 'leaflet'
 import { useRouter } from 'vue-router'
 import { enviarEventoMatomo } from '../utils/analytics'
@@ -127,10 +124,6 @@ export default {
     tipoSeleccionado: {
       type: [String, Number],
       default: 'Todas'
-    },
-    mostrarBotonRotacion: {
-      type: Boolean,
-      default: false
     }
   },
   emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion'],
@@ -147,21 +140,6 @@ export default {
     const searchResults = ref([])
     
     const incidenciaSeleccionada = ref(null);
-
-    const rotationMode = ref('north')
-    const mapRotation = ref(0)
-    const mapRotationStyle = computed(() => ({
-      transform: `rotate(${mapRotation.value}deg)`,
-      transformOrigin: 'center center'
-    }))
-
-    const rotationModeIcon = computed(() => 
-      rotationMode.value === 'north' ? 'mdi-compass' : 'mdi-compass-outline'
-    )
-    const rotationModeTitle = computed(() => 
-      rotationMode.value === 'north' ? 'Cambiar a rotación con dispositivo' : 'Cambiar a norte arriba'
-    )
-    let deviceOrientationHandler = null
 
     const abrirDetalle = (incidencia) => {
       emit('incidencia-seleccionada', incidencia);
@@ -183,10 +161,7 @@ export default {
 
     const initMap = () => {
       if (mapContainer.value && !map) {
-        map = L.map(mapContainer.value, {
-          rotate: true,
-          touchRotate: true
-        }).setView([41.652251, -4.724532], 13)
+        map = L.map(mapContainer.value).setView([41.652251, -4.724532], 13)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
@@ -248,18 +223,9 @@ export default {
           if (props.incluirSolucionadas || incidencia.estado !== 'solucionada') {
             const popupContent = L.DomUtil.create('div', 'custom-popup')
             
-            // Crear el contenido del popup
             popupContent.innerHTML = `
               <div class="popup-header">
-                <div class="popup-image-container">
-                  <img src="${incidencia.imagenes[0].ruta_imagen}" alt="${incidencia.tipo}" class="popup-image">
-                  ${incidencia.imagenes.length > 1 ? `
-                    <div class="popup-image-controls">
-                      <button class="popup-image-prev"><i class="mdi mdi-chevron-left"></i></button>
-                      <button class="popup-image-next"><i class="mdi mdi-chevron-right"></i></button>
-                    </div>
-                  ` : ''}
-                </div>
+                <img src="${incidencia.imagen}" alt="${incidencia.tipo}" class="popup-image">
                 <div class="popup-chips">
                   <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
                   <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
@@ -285,29 +251,9 @@ export default {
               className: 'custom-popup-class' 
             })
 
-            // Añadir funcionalidad al carrusel
-            if (incidencia.imagenes.length > 1) {
-              let currentImageIndex = 0
-              const popupImageElement = popupContent.querySelector('.popup-image')
-              const prevButton = popupContent.querySelector('.popup-image-prev')
-              const nextButton = popupContent.querySelector('.popup-image-next')
-
-              prevButton.addEventListener('click', (e) => {
-                e.stopPropagation()
-                currentImageIndex = (currentImageIndex - 1 + incidencia.imagenes.length) % incidencia.imagenes.length
-                popupImageElement.src = incidencia.imagenes[currentImageIndex].ruta_imagen
-              })
-
-              nextButton.addEventListener('click', (e) => {
-                e.stopPropagation()
-                currentImageIndex = (currentImageIndex + 1) % incidencia.imagenes.length
-                popupImageElement.src = incidencia.imagenes[currentImageIndex].ruta_imagen
-              })
-            }
-
             L.DomEvent.on(popupContent.querySelector('.popup-image'), 'click', (e) => {
-              L.DomEvent.stopPropagation(e)
-              abrirDetalle(incidencia)
+              L.DomEvent.stopPropagation(e);
+              abrirDetalle(incidencia);
             })
 
             markers.push(marker)
@@ -500,54 +446,6 @@ export default {
       }
     }
 
-    const toggleRotationMode = () => {
-      rotationMode.value = rotationMode.value === 'north' ? 'device' : 'north'
-      if (rotationMode.value === 'device') {
-        startDeviceOrientation()
-      } else {
-        stopDeviceOrientation()
-        mapRotation.value = 0
-      }
-      enviarEventoMatomo('Mapa', 'CambioModoRotacion', rotationMode.value)
-    }
-
-    const startDeviceOrientation = () => {
-      if ('DeviceOrientationEvent' in window) {
-        deviceOrientationHandler = throttle(handleOrientation, 100)
-        window.addEventListener('deviceorientation', deviceOrientationHandler)
-      } else {
-        alert('Lo siento, tu dispositivo no soporta la orientación.')
-        rotationMode.value = 'north'
-      }
-    }
-
-    const stopDeviceOrientation = () => {
-      if (deviceOrientationHandler) {
-        window.removeEventListener('deviceorientation', deviceOrientationHandler)
-        deviceOrientationHandler = null
-      }
-    }
-
-    const handleOrientation = (event) => {
-      if (rotationMode.value === 'device') {
-        const alpha = event.webkitCompassHeading || event.alpha || 0
-        mapRotation.value = alpha
-      }
-    }
-
-    const throttle = (func, limit) => {
-      let inThrottle
-      return function() {
-        const args = arguments
-        const context = this
-        if (!inThrottle) {
-          func.apply(context, args)
-          inThrottle = true
-          setTimeout(() => inThrottle = false, limit)
-        }
-      }
-    }
-
     onMounted(() => {
       initMap()
       updateMarkers()
@@ -562,7 +460,6 @@ export default {
         map = null
       }
       stopWatchingUserLocation()
-      stopDeviceOrientation()
     })
 
     watch(() => props.incidencias, () => {
@@ -601,13 +498,7 @@ export default {
       searchQuery,
       toggleSearch,
       searchAddress,
-      abrirDetalle,
-      rotationMode,
-      rotationModeIcon,
-      rotationModeTitle,
-      toggleRotationMode,
-      mapRotationStyle,
-      mostrarBotonRotacion: props.mostrarBotonRotacion
+      abrirDetalle
     }
   }
 }
@@ -627,7 +518,6 @@ export default {
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 1rem;
-  transition: transform 0.3s ease;
 }
 
 .boton-ubicacion {
@@ -687,40 +577,11 @@ export default {
   width: 100%;
 }
 
-.popup-image-container {
-  position: relative;
-  width: 100%;
-  height: 150px;
-}
-
 .popup-image {
   width: 100%;
-  height: 100%;
+  height: 150px;
   object-fit: cover;
-}
-
-.popup-image-controls {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  transform: translateY(-50%);
-}
-
-.popup-image-prev,
-.popup-image-next {
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  cursor: pointer;
-}
-
-.popup-image-prev:hover,
-.popup-image-next:hover {
-  background-color: rgba(0, 0, 0, 0.7);
+  display: block;
 }
 
 .popup-chips {
@@ -903,26 +764,5 @@ export default {
   background-color: #3388ff;
   border: 2px solid white;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-.boton-rotacion {
-  position: absolute;
-  bottom: 60px;
-  right: 20px;
-  z-index: 1000;
-  background-color: white;
-  border-radius: 4px;
-  width: 34px;
-  height: 34px;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.boton-rotacion:hover {
-  background-color: #f4f4f4;
 }
 </style>
