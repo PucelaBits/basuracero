@@ -111,6 +111,23 @@ server {
     # Agrega el encabezado CORS para todas las ubicaciones
     add_header 'Access-Control-Allow-Origin' '*';
 
+    # Archivos estáticos incluyendo assets
+    location ~* ^/(assets/.*\.(js|css|png|jpg|jpeg|gif|ico|svg)|.*\.(js|css|png|jpg|jpeg|gif|ico|svg))$ {
+        proxy_pass http://localhost:5050;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000, immutable";
+        proxy_cache my_cache;
+        proxy_cache_valid 200 30d;
+        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+    }
+
+    # Manejo específico para index.html (sin cache)
+    location = /index.html {
+        proxy_pass http://localhost:5050;
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
     # Tipos de incidencias
     location /api/incidencias/tipos {
         proxy_pass http://localhost:5050;
@@ -119,11 +136,11 @@ server {
         proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
     }
 
-    # Obtener todas las incidencias (tiempo de caché reducido)
+    # Obtener todas las incidencias
     location /api/incidencias/todas {
         proxy_pass http://localhost:5050;
         proxy_cache my_cache;
-        proxy_cache_valid 200 30s;
+        proxy_cache_valid 200 1m;
         proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
     }
 
@@ -137,7 +154,23 @@ server {
         proxy_no_cache $query_string;
     }
 
-    # Archivos estáticos
+    # Ranking de usuarios
+    location /api/incidencias/usuarios/ranking {
+        proxy_pass http://localhost:5050;
+        proxy_cache my_cache;
+        proxy_cache_valid 200 1h;
+        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+    }
+
+    # Ranking de barrios
+    location /api/incidencias/barrios/ranking {
+        proxy_pass http://localhost:5050;
+        proxy_cache my_cache;
+        proxy_cache_valid 200 1h;
+        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+    }
+
+    # Archivos estáticos en uploads
     location /uploads/ {
         proxy_pass http://localhost:5050;
         proxy_cache my_cache;
@@ -147,12 +180,19 @@ server {
 
     # Configuración general para otras rutas
     location / {
-        proxy_pass http://localhost:5050/;
+        proxy_pass http://localhost:5050;
         proxy_http_version 1.1;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Intenta servir el archivo directamente, si no, pasa la solicitud a la aplicación
+        try_files $uri $uri/ @app;
+    }
+
+    location @app {
+        proxy_pass http://localhost:5050;
     }
 }
 ```
