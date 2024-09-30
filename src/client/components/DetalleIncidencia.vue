@@ -886,14 +886,6 @@ a {
   color: white;
 }
 
-.estado-pastilla.activa {
-  background-color: #4CAF50;
-}
-
-.estado-pastilla.solucionada {
-  background-color: #2196F3;
-}
-
 .close-btn {
   position: absolute;
   top: 10px;

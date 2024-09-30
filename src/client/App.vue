@@ -67,20 +67,27 @@
           :ubicacionSeleccionada="ubicacionSeleccionada"
         />
 
-        <v-card class="text-center custom-banner ma-4">
+        <v-card v-if="mostrarBanner" class="text-center custom-banner ma-4 position-relative">
+          <v-btn
+            icon="mdi-close"
+            color="primary"
+            size="smaller"
+            class="close-btn"
+            @click="cerrarBanner"
+          ></v-btn>
           <v-card-text>
             <v-row>
               <v-col cols="12">
-                <v-icon>mdi-camera</v-icon>
-                <span class="ml-2">Informa de incidencias</span>
+                <v-icon>mdi-eye</v-icon>
+                <span class="ml-2">Detecta problemas</span>
               </v-col>
               <v-col cols="12">
-                <v-icon>mdi-broom</v-icon>
-                <span class="ml-2">Manten tu ciudad limpia</span>
+                <v-icon>mdi-camera</v-icon>
+                <span class="ml-2">Crea una incidencia</span>
               </v-col>
               <v-col cols="12">
                 <v-icon>mdi-check-circle</v-icon>
-                <span class="ml-2">Valida las ya solucionadas</span>
+                <span class="ml-2">Verifica las solucionadas</span>
               </v-col>
             </v-row>
           </v-card-text>
@@ -90,25 +97,20 @@
         <v-card v-if="mostrarAviso" class="ma-4 custom-banner" color="primary">
           <v-card-text>
             <v-row>
-              <v-col cols="auto" class="d-flex justify-center align-center">
-                <v-icon>mdi-cellphone</v-icon>
-              </v-col>
-              <v-col class="text-center mx-auto">
-                <span>Añademe a tu pantalla principal</span>
-              </v-col>
-              <v-col class="text-right">
+              <v-col class="text-center">
                 <v-btn
                   color="white"
                   text
                   @click="instalarPWA"
+                  size="large"
                 >
-                  OK
+                  <v-icon>mdi-cellphone</v-icon> Añademe a tu pantalla principal
                 </v-btn>
                 <v-btn
-                  color="white"
+                  color="primary"
                   icon="mdi-close"
-                  size="small"
-                  class="ml-2"
+                  size="smaller"
+                  class="close-btn"
                   @click="cerrarAviso"
                 >
                 </v-btn>
@@ -139,6 +141,34 @@
             ></v-switch>
 
             <div class="text-caption text-grey">{{ textoTotalIncidencias }}</div>
+          </v-card-text>
+        </v-card>
+
+        <v-card v-if="incidenciasAntiguas > 0 && mostrarAvisoIncidenciasAntiguas" class="ma-4 custom-banner" color="primary">
+          <v-card-text>
+            <v-row>
+              <v-col cols="9" class="text-center mx-auto">
+                <v-row align="center" justify="center" class="mb-0">
+                  <v-col cols="2" align="center" class="pr-0">
+                    <v-icon size="x-large">mdi-clock-alert</v-icon>
+                  </v-col>
+                  <v-col cols="10" align="center" class="pl-0">
+                    <span class="text-body-2">Hay <strong>{{ incidenciasAntiguas }}</strong> incidencias activas<br />con más de una semana</span>
+                  </v-col>
+                </v-row>
+                <v-row align="center" class="mt-0">
+                  <v-col>
+                    <v-btn
+                      color="white"
+                      text
+                      @click="irACercanas"
+                    >
+                      <v-icon size="large" class="mr-2">mdi-check-circle</v-icon> Ayuda a validar tu zona
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
 
@@ -511,6 +541,13 @@ export default {
       reiniciarDatosFormulario();
     }
 
+    const mostrarBanner = ref(true)
+
+    const cerrarBanner = () => {
+      mostrarBanner.value = false
+      localStorage.setItem('bannerCerrado', 'true')
+    }
+
     onMounted(async () => {
       await obtenerIncidencias(1, true);
       await obtenerTodasLasIncidencias(true);
@@ -521,6 +558,11 @@ export default {
 
       detectarIOS();
       window.addEventListener('beforeinstallprompt', manejarEventoInstalacion);
+
+      const bannerCerrado = localStorage.getItem('bannerCerrado')
+      if (bannerCerrado === 'true') {
+        mostrarBanner.value = false
+      }
     });
 
     onUnmounted(() => {
@@ -650,6 +692,21 @@ export default {
       }
     });
 
+    const incidenciasAntiguas = computed(() => {
+      const unaSemanaAtras = new Date();
+      unaSemanaAtras.setDate(unaSemanaAtras.getDate() - 7);
+      
+      return todasLasIncidencias.value.filter(incidencia => 
+        incidencia.estado === 'activa' && new Date(incidencia.fecha) < unaSemanaAtras
+      ).length;
+    });
+
+    const mostrarAvisoIncidenciasAntiguas = ref(true);
+
+    const irACercanas = () => {
+      router.push('/cercanas');
+    };
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -697,7 +754,12 @@ export default {
       abrirFormularioIncidencia,
       tieneIncidenciasUsuario,
       abrirTusIncidencias,
-      todasLasIncidenciasConSolucionadas
+      todasLasIncidenciasConSolucionadas,
+      incidenciasAntiguas,
+      mostrarAvisoIncidenciasAntiguas,
+      irACercanas,
+      mostrarBanner,
+      cerrarBanner
     }
   }
 }
@@ -849,5 +911,16 @@ export default {
 
 .v-navigation-drawer {
   width: 250px;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.close-btn {
+  position: absolute !important;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
 }
 </style>
