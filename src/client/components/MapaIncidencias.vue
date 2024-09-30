@@ -128,6 +128,10 @@ export default {
     esCercanas: {
       type: Boolean,
       default: false
+    },
+    zoomForzado: {
+      type: Number,
+      default: null
     }
   },
   emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion', 'verificar-estado'],
@@ -165,7 +169,7 @@ export default {
 
     const initMap = () => {
       if (mapContainer.value && !map) {
-        map = L.map(mapContainer.value).setView([41.652251, -4.724532], 13)
+        map = L.map(mapContainer.value).setView([41.652251, -4.724532], props.zoomForzado || 13)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
@@ -248,7 +252,7 @@ export default {
               </div>
               <div class="popup-content">
                 <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion.split(',').slice(0, 2).join(',')}</span></div>
-                <div class="popup-footer text-left mt-3 mb-3"><span><i class="mdi mdi-text"></i> ${incidencia.descripcion}</span></div>
+                <div class="popup-footer text-left mt-3 mb-3"><span><i class="mdi mdi-text"></i> ${incidencia.descripcion.length > 100 ? incidencia.descripcion.substring(0, 100) + '...' : incidencia.descripcion}</span></div>
                 <div class="popup-footer">
                   <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
                   <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
@@ -256,15 +260,15 @@ export default {
               </div>
               ${props.esCercanas && !incidencia.ocultarVerificacion ? `
                 <div class="popup-verification">
-                  <p>¿Se solucionó esta incidencia?</p>
+                  <p>¿Está ya solucionada?</p>
                   <div class="verification-buttons">
-                    <button class="verify-btn verify-yes">
+                    <button class="verify-btn verify-yes" data-incidencia-id="${incidencia.id}" data-estado="solucionada">
                       <i class="mdi mdi-check"></i> Sí
                     </button>
-                    <button class="verify-btn verify-no">
+                    <button class="verify-btn verify-no" data-incidencia-id="${incidencia.id}" data-estado="activa">
                       <i class="mdi mdi-close"></i> No
                     </button>
-                    <button class="verify-btn verify-unknown">
+                    <button class="verify-btn verify-unknown" data-incidencia-id="${incidencia.id}" data-estado="desconocido">
                       <i class="mdi mdi-help"></i> No sé
                     </button>
                   </div>
@@ -308,25 +312,15 @@ export default {
             })
 
             if (props.esCercanas && !incidencia.ocultarVerificacion) {
-              const verifyYesBtn = popupContent.querySelector('.verify-yes')
-              const verifyNoBtn = popupContent.querySelector('.verify-no')
-              const verifyUnknownBtn = popupContent.querySelector('.verify-unknown')
-              const verificationBlock = popupContent.querySelector('.popup-verification')
-
-              verifyYesBtn.addEventListener('click', (e) => {
-                e.stopPropagation()
-                emit('verificar-estado', { incidenciaId: incidencia.id, estado: 'activa' })
-              })
-
-              verifyNoBtn.addEventListener('click', (e) => {
-                e.stopPropagation()
-                emit('verificar-estado', { incidenciaId: incidencia.id, estado: 'solucionada' })
-              })
-
-              verifyUnknownBtn.addEventListener('click', (e) => {
-                e.stopPropagation()
-                verificationBlock.style.display = 'none'
-                emit('verificar-estado', { incidenciaId: incidencia.id, estado: 'desconocido' })
+              const verificationButtons = popupContent.querySelectorAll('.verify-btn')
+              verificationButtons.forEach(button => {
+                L.DomEvent.on(button, 'click', (e) => {
+                  L.DomEvent.stopPropagation(e)
+                  const incidenciaId = parseInt(button.getAttribute('data-incidencia-id'), 10)
+                  const estado = button.getAttribute('data-estado')
+                  console.log('Emitiendo verificar-estado:', incidenciaId, estado, typeof incidenciaId)
+                  emit('verificar-estado', incidenciaId, estado)
+                })
               })
             }
 
@@ -354,7 +348,7 @@ export default {
     
     const updateUbicacion = (lat, lng) => {
       if (map) {
-        map.setView([lat, lng], 18)
+        map.setView([lat, lng], props.zoomForzado || 18)
         addTempMarker(lat, lng)
       }
     }
@@ -563,6 +557,12 @@ export default {
     watch(() => props.tipoSeleccionado, () => {
       updateMarkers();
     });
+
+    watch(() => props.zoomForzado, (newZoom) => {
+      if (map && newZoom) {
+        map.setZoom(newZoom)
+      }
+    })
 
     return {
       mapContainer,

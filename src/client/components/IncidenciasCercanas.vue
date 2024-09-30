@@ -19,6 +19,7 @@
           :seguirUsuario="true"
           :deshabilitarNuevaIncidencia="true"
           :esCercanas="true"
+          :zoomForzado="16"
           @solicitar-actualizacion-ubicacion="actualizarUbicacionUsuario"
           @incidencia-seleccionada="abrirDetalleIncidencia"
           @verificar-estado="verificarEstadoIncidencia"
@@ -64,7 +65,7 @@
               <p>No se encontraron incidencias cercanas.</p>
             </v-col>
             <v-col v-else v-for="incidencia in incidenciasOrdenadas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
-              <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-2 incidencia-card" height="120">
+              <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-2 incidencia-card" height="auto">
                 <v-row no-gutters>
                   <v-col cols="4">
                     <v-img
@@ -105,6 +106,21 @@
                     </v-card-text>
                   </v-col>
                 </v-row>
+                <v-divider></v-divider>
+                <div v-if="incidencia.faldonOculto !== undefined && !incidencia.faldonOculto" class="popup-verification pa-2">
+                  <p class="text-center mb-2">¿Está ya solucionada?</p>
+                  <div class="verification-buttons">
+                    <v-btn x-small class="verify-btn verify-yes" @click.stop="verificarEstadoIncidencia(incidencia.id, 'solucionada')">
+                      <v-icon left x-small>mdi-check</v-icon> Sí
+                    </v-btn>
+                    <v-btn x-small class="verify-btn verify-no" @click.stop="verificarEstadoIncidencia(incidencia.id, 'activa')">
+                      <v-icon left small>mdi-close</v-icon> No
+                    </v-btn>
+                    <v-btn x-small class="verify-btn verify-unknown" @click.stop="ocultarFaldon(incidencia)">
+                      <v-icon left small>mdi-help</v-icon> No sé
+                    </v-btn>
+                  </div>
+                </div>
               </v-card>
             </v-col>
           </v-row>
@@ -112,7 +128,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Nuevo diálogo de confirmación para resolver incidencia -->
+    <!-- Diálogo de confirmación para resolver incidencia -->
     <v-dialog v-model="mostrarDialogoConfirmacion" max-width="500px">
       <v-card>
         <v-card-title class="headline">Confirmar resolución</v-card-title>
@@ -130,7 +146,7 @@
       </v-card>
     </v-dialog>
 
-    <!-- Nuevo diálogo para WhatsApp -->
+    <!-- Diálogo para WhatsApp -->
     <v-dialog v-model="mostrarDialogoWhatsApp" max-width="500px">
       <v-card>
         <v-card-title class="headline">
@@ -165,11 +181,27 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Diálogo de advertencia -->
+    <v-dialog v-model="mostrarDialogoAdvertencia" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">Advertencia</v-card-title>
+        <v-card-text>
+          Sólo puedes marcarla como solucionada si lo has comprobado presencialmente.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="mostrarDialogoAdvertencia = false">
+            Entendido
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted, nextTick, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import MapaIncidencias from './MapaIncidencias.vue'
 import { useResolverIncidencia } from '@/composables/useResolverIncidencia'
@@ -208,6 +240,7 @@ export default {
     const mostrarDialogoConfirmacion = ref(false)
     const mostrarDialogoWhatsApp = ref(false)
     const mostrarDialogoError = ref(false)
+    const mostrarDialogoAdvertencia = ref(false)
     const captchaContainer = ref(null)
     const captchaSolution = ref(null)
     const captchaWidget = ref(null)
@@ -258,14 +291,16 @@ export default {
       if (ubicacionUsuario.value && props.incidencias.length > 0) {
         incidenciasCalculadas.value = props.incidencias.map(incidencia => ({
           ...incidencia,
+          id: parseInt(incidencia.id, 10),
           distancia: calcularDistancia(
             ubicacionUsuario.value.latitud,
             ubicacionUsuario.value.longitud,
             incidencia.latitud,
             incidencia.longitud
-          )
-        }))
-        cargandoIncidencias.value = false
+          ),
+          faldonOculto: false
+        }));
+        cargandoIncidencias.value = false;
       }
     }
 
@@ -303,43 +338,98 @@ export default {
       }
     }
 
-    const verificarEstadoIncidencia = async ({ incidenciaId, estado }) => {
-      incidenciaSeleccionada.value = incidenciasCalculadas.value.find(inc => inc.id === incidenciaId)
-      if (estado === 'activa') {
-        mostrarDialogoConfirmacion.value = true
-      } else if (estado === 'solucionada') {
-        mostrarDialogoWhatsApp.value = true
+    const ocultarFaldon = (incidencia) => {
+      const index = incidenciasCalculadas.value.findIndex(inc => inc.id === incidencia.id);
+      if (index !== -1) {
+        incidenciasCalculadas.value[index] = reactive({
+          ...incidenciasCalculadas.value[index],
+          faldonOculto: true
+        });
       }
-    }
+    };
+
+    const verificarEstadoIncidencia = async (incidenciaId, estado) => {
+      try {
+        const idNumerico = parseInt(incidenciaId, 10)
+        incidenciaSeleccionada.value = incidenciasCalculadas.value.find(inc => inc.id === idNumerico);
+        if (!incidenciaSeleccionada.value) {
+          return
+        }
+
+        if (estado === 'activa') {
+          mostrarDialogoWhatsApp.value = true;
+        } else if (estado === 'solucionada') {
+          mostrarDialogoConfirmacion.value = true;
+          await nextTick();
+          inicializarCaptcha();
+        } else {
+          ocultarFaldon(incidenciaSeleccionada.value);
+        }
+      } catch (error) {
+        console.error('Error en verificarEstadoIncidencia:', error)
+      }
+    };
+
+    const inicializarCaptcha = () => {
+      if (captchaHabilitado.value && captchaContainer.value) {
+        captchaWidget.value = new WidgetInstance(captchaContainer.value, {
+          sitekey: friendlyCaptchaSiteKey,
+          doneCallback: (solution) => {
+            captchaSolution.value = solution;
+          },
+          errorCallback: (err) => {
+            console.error("Error al resolver el Captcha:", err);
+          }
+        });
+      }
+    };
 
     const confirmarSolucion = async () => {
       if (captchaHabilitado.value && !captchaSolution.value) {
-        mostrarError('Por favor, completa el captcha.')
-        return
+        mostrarError('Por favor, completa el captcha.');
+        return;
       }
 
-      mostrarDialogoConfirmacion.value = false
+      mostrarDialogoConfirmacion.value = false;
       try {
-        const codigoUnico = localStorage.getItem(`incidencia_${incidenciaSeleccionada.value.id}`)
-        const resultado = await resolverIncidencia(incidenciaSeleccionada.value.id, captchaSolution.value, codigoUnico)
+        const codigoUnico = localStorage.getItem(`incidencia_${incidenciaSeleccionada.value.id}`);
+        const resultado = await resolverIncidencia(incidenciaSeleccionada.value.id, captchaSolution.value, codigoUnico);
+        
         if (resultado.solucionada) {
-          incidenciaSeleccionada.value.estado = 'solucionada'
-          incidenciaSeleccionada.value.fecha_solucion = new Date().toISOString()
+          incidenciaSeleccionada.value = {
+            ...incidenciaSeleccionada.value,
+            estado: 'solucionada',
+            fecha_solucion: new Date().toISOString(),
+            faldonOculto: true
+          };
+          actualizarIncidencias();
         } else {
-          incidenciaSeleccionada.value.reportes_solucion = resultado.reportes_solucion
+          incidenciaSeleccionada.value.reportes_solucion = resultado.reportes_solucion;
         }
       } catch (error) {
-        mostrarError(mensajeError.value)
+        console.error('Error en confirmarSolucion:', error);
+        mostrarError(mensajeError.value);
       } finally {
         if (captchaWidget.value) {
-          captchaWidget.value.reset()
+          captchaWidget.value.reset();
         }
+        captchaSolution.value = null;
       }
-    }
+    };
+
+    const actualizarIncidencias = () => {
+      incidenciasCalculadas.value = incidenciasCalculadas.value.map(inc => {
+        if (inc.id === incidenciaSeleccionada.value.id) {
+          return { ...inc, ...incidenciaSeleccionada.value };
+        }
+        return inc;
+      });
+    };
 
     const cancelarConfirmacion = () => {
-      mostrarDialogoConfirmacion.value = false
-    }
+      mostrarDialogoConfirmacion.value = false;
+      mostrarDialogoAdvertencia.value = true;
+    };
 
     const handleEnviarWhatsApp = () => {
       if (incidenciaSeleccionada.value) {
@@ -379,9 +469,9 @@ export default {
 
     watch(() => props.incidencias, (newIncidencias) => {
       if (newIncidencias.length > 0) {
-        calcularIncidenciasCercanas()
+        calcularIncidenciasCercanas();
       }
-    }, { immediate: true })
+    }, { immediate: true });
 
     watch(() => route.name, (newRouteName) => {
       dialogVisible.value = newRouteName === 'IncidenciasCercanas'
@@ -392,8 +482,8 @@ export default {
     })
 
     watch(dialogVisible, (newValue) => {
-      if (!newValue && route.name === 'IncidenciasCercanas') {
-        router.push('/')
+      if (newValue) {
+        actualizarUbicacionUsuario()
       }
     })
 
@@ -425,6 +515,7 @@ export default {
       mostrarDialogoConfirmacion,
       mostrarDialogoWhatsApp,
       mostrarDialogoError,
+      mostrarDialogoAdvertencia,
       captchaContainer,
       captchaSolution,
       captchaWidget,
@@ -433,7 +524,9 @@ export default {
       confirmarSolucion,
       cancelarConfirmacion,
       handleEnviarWhatsApp,
-      captchaHabilitado
+      captchaHabilitado,
+      ocultarFaldon,
+      mostrarError
     }
   }
 }
@@ -491,4 +584,68 @@ export default {
   color: #999;
   height: 100%;
 }
+
+.popup-verification {
+  background-color: #f0f0f0;
+  border-top: 1px solid #ddd;
+  padding: 4px 8px;
+}
+
+.popup-verification p {
+  margin: 0 0 4px 0;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.verification-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.verify-btn {
+  flex: 1;
+  padding: 2px 4px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: opacity 0.3s;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.verify-btn .v-icon {
+  margin-right: 2px;
+  font-size: 0.8rem;
+}
+
+.verify-yes {
+  background-color: #4caf4f86 !important;
+}
+
+.verify-no {
+  background-color: #c4807c86 !important;
+}
+
+.verify-unknown {
+  background-color: #9e9e9e82 !important;
+}
+
+.verify-btn:hover {
+  opacity: 0.8;
+}
+
+.subtitle-text {
+  color: grey;
+  font-size: smaller;
+}
+
+.frc-captcha {
+  margin: 0.5em auto;
+}
+
 </style>
