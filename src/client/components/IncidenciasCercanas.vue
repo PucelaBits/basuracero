@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="dialogVisible" fullscreen :scrim="false" transition="dialog-bottom-transition">
-    <v-card v-show="dialogVisible" class="incidencias-cercanas-card">
+    <v-card v-if="dialogVisible" class="incidencias-cercanas-card">
       <v-toolbar color="primary" class="elevation-2">
         <v-btn icon @click="cerrar">
           <v-icon>mdi-close</v-icon>
@@ -13,7 +13,7 @@
 
       <v-card-text fluid class="pa-0">
         <MapaIncidencias 
-          :incidencias="incidencias" 
+          :incidencias="incidenciasCalculadas" 
           :incluirSolucionadas="incluirSolucionadas"
           :ubicacionUsuario="ubicacionUsuario"
           :seguirUsuario="true"
@@ -50,7 +50,18 @@
             </v-col>
           </v-row>
           <v-row dense>
-            <v-col v-for="incidencia in incidenciasOrdenadas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
+            <v-col v-if="cargandoIncidencias" cols="12" class="text-center">
+              <v-progress-circular indeterminate color="primary"></v-progress-circular>
+              <p class="mt-2">Cargando incidencias...</p>
+            </v-col>
+            <v-col v-else-if="cargandoUbicacion" cols="12" class="text-center">
+              <v-progress-circular indeterminate color="primary"></v-progress-circular>
+              <p class="mt-2">Obteniendo ubicación...</p>
+            </v-col>
+            <v-col v-else-if="incidenciasCalculadas.length === 0" cols="12" class="text-center">
+              <p>No se encontraron incidencias cercanas.</p>
+            </v-col>
+            <v-col v-else v-for="incidencia in incidenciasOrdenadas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
               <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-2 incidencia-card" height="120">
                 <v-row no-gutters>
                   <v-col cols="4">
@@ -103,14 +114,12 @@
 
 <script>
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
-import MapaIncidencias from './MapaIncidencias.vue'
 import { useRouter, useRoute } from 'vue-router'
+import MapaIncidencias from './MapaIncidencias.vue'
 
 export default {
   name: 'IncidenciasCercanas',
-  components: {
-    MapaIncidencias
-  },
+  components: { MapaIncidencias },
   props: {
     incidencias: {
       type: Array,
@@ -122,17 +131,20 @@ export default {
     const route = useRoute()
     
     const dialogVisible = ref(false)
-    const incluirSolucionadas = ref(false)
+    const cargandoUbicacion = ref(false)
+    const cargandoIncidencias = ref(true)
     const ubicacionUsuario = ref(null)
-    const incidenciasCercanas = ref([])
+    const incidenciasCalculadas = ref([])
     const watchId = ref(null)
     const ordenSeleccionado = ref('distancia')
     const opcionesOrden = [
       { title: 'Más cercanas', value: 'distancia' },
       { title: 'Más antiguas', value: 'antiguedad' }
     ]
+    const incluirSolucionadas = ref(false)
 
     const actualizarUbicacionUsuario = () => {
+      cargandoUbicacion.value = true
       if ("geolocation" in navigator) {
         watchId.value = navigator.geolocation.watchPosition(
           (position) => {
@@ -140,16 +152,17 @@ export default {
               latitud: position.coords.latitude,
               longitud: position.coords.longitude
             }
+            cargandoUbicacion.value = false
             calcularIncidenciasCercanas()
-            if (map) {
-              map.setView([position.coords.latitude, position.coords.longitude], 16)
-            }
           },
           (error) => {
             console.error("Error al obtener la ubicación:", error.message)
+            cargandoUbicacion.value = false
           },
-          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         )
+      } else {
+        cargandoUbicacion.value = false
       }
     }
 
@@ -169,8 +182,8 @@ export default {
     }
 
     const calcularIncidenciasCercanas = () => {
-      if (ubicacionUsuario.value) {
-        const incidenciasConDistancia = props.incidencias.map(incidencia => ({
+      if (ubicacionUsuario.value && props.incidencias.length > 0) {
+        incidenciasCalculadas.value = props.incidencias.map(incidencia => ({
           ...incidencia,
           distancia: calcularDistancia(
             ubicacionUsuario.value.latitud,
@@ -179,18 +192,15 @@ export default {
             incidencia.longitud
           )
         }))
-
-        incidenciasCercanas.value = incidenciasConDistancia
-          .sort((a, b) => a.distancia - b.distancia)
-          .slice(0, 10)
+        cargandoIncidencias.value = false
       }
     }
 
     const incidenciasOrdenadas = computed(() => {
       if (ordenSeleccionado.value === 'distancia') {
-        return [...incidenciasCercanas.value].sort((a, b) => a.distancia - b.distancia)
+        return [...incidenciasCalculadas.value].sort((a, b) => a.distancia - b.distancia)
       } else {
-        return [...incidenciasCercanas.value].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+        return [...incidenciasCalculadas.value].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
       }
     })
 
@@ -227,12 +237,18 @@ export default {
       }
     })
 
-    onUnmounted(() => {
-      detenerSeguimiento()
-    })
+    watch(() => props.incidencias, (newIncidencias) => {
+      if (newIncidencias.length > 0) {
+        calcularIncidenciasCercanas()
+      }
+    }, { immediate: true })
 
     watch(() => route.name, (newRouteName) => {
       dialogVisible.value = newRouteName === 'IncidenciasCercanas'
+      if (dialogVisible.value) {
+        cargandoIncidencias.value = true
+        actualizarUbicacionUsuario()
+      }
     })
 
     watch(dialogVisible, (newValue) => {
@@ -241,22 +257,28 @@ export default {
       }
     })
 
-    watch(() => ubicacionUsuario.value, calcularIncidenciasCercanas)
+    onUnmounted(() => {
+      if (watchId.value !== null) {
+        navigator.geolocation.clearWatch(watchId.value)
+      }
+    })
 
     return {
       dialogVisible,
-      incluirSolucionadas,
+      cargandoUbicacion,
+      cargandoIncidencias,
       ubicacionUsuario,
-      incidenciasCercanas,
+      incidenciasCalculadas,
+      incidenciasOrdenadas,
+      incluirSolucionadas,
+      ordenSeleccionado,
+      opcionesOrden,
       actualizarUbicacionUsuario,
       abrirDetalleIncidencia,
       cerrar,
       formatDate,
       handleImageError,
       detenerSeguimiento,
-      ordenSeleccionado,
-      opcionesOrden,
-      incidenciasOrdenadas
     }
   }
 }
