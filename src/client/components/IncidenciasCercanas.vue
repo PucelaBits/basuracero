@@ -57,10 +57,6 @@
               <v-progress-circular indeterminate color="primary"></v-progress-circular>
               <p class="mt-2">Cargando incidencias...</p>
             </v-col>
-            <v-col v-else-if="cargandoUbicacion" cols="12" class="text-center">
-              <v-progress-circular indeterminate color="primary"></v-progress-circular>
-              <p class="mt-2">Obteniendo ubicación...</p>
-            </v-col>
             <v-col v-else-if="incidenciasCalculadas.length === 0" cols="12" class="text-center">
               <p>No se encontraron incidencias cercanas.</p>
             </v-col>
