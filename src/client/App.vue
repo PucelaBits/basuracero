@@ -67,6 +67,22 @@
           :ubicacionSeleccionada="ubicacionSeleccionada"
         />
 
+        <!-- Banner de notificación -->
+        <v-alert
+          v-if="incidenciasAntiguasUsuario > 0"
+          color="#7361a0"
+          class="banner-incidencias mx-0 pt-4 pb-4 text-center text-body-2"
+          density="compact"
+          text-align="center"
+          font-size="smaller"
+          style="border-radius: 0;"
+        >
+          <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>Tienes {{ incidenciasAntiguasUsuario }} incidencia{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días
+          <v-btn text color="white" size="small" class="mt-3" @click="$router.push('/perfil')">
+            <v-icon color="grey-darken-2 mr-2">mdi-check-circle</v-icon> Verifica si se {{ incidenciasAntiguasUsuario !== 1 ? 'solucionaron' : 'solucionó' }}
+          </v-btn>
+        </v-alert>
+
         <v-card v-if="mostrarBanner" class="text-center custom-banner ma-4 position-relative">
           <v-btn
             icon="mdi-close"
@@ -144,7 +160,8 @@
           </v-card-text>
         </v-card>
 
-        <v-card v-if="incidenciasAntiguas > 0 && mostrarAvisoIncidenciasAntiguas" class="ma-4 custom-banner" color="primary">
+        <!-- Aviso de incidencias antiguas -->
+        <v-card v-if="incidenciasAntiguas > 0 && mostrarAvisoIncidenciasAntiguas" class="ma-4 custom-banner" color="#7361a0">
           <v-card-text>
             <v-row>
               <v-col cols="9" class="text-center mx-auto">
@@ -378,6 +395,7 @@ export default {
 
         // Actualizar todasLasIncidencias
         await obtenerTodasLasIncidencias(true);
+        calcularIncidenciasAntiguasUsuario();
         
         cargaInicial.value = false;
       } catch (error) {
@@ -548,9 +566,52 @@ export default {
       localStorage.setItem('bannerCerrado', 'true')
     }
 
-    onMounted(async () => {
-      await obtenerIncidencias(1, true);
-      await obtenerTodasLasIncidencias(true);
+    const totalIncidenciasUsuario = ref(0)
+    const incidenciasSolucionadasUsuario = ref(0)
+
+    const obtenerIncidenciasUsuario = async () => {
+      const incidenciasIds = Object.keys(localStorage)
+        .filter(key => key.startsWith('incidencia_'))
+        .map(key => key.replace('incidencia_', ''));
+
+      totalIncidenciasUsuario.value = incidenciasIds.length;
+
+      // Obtener todas las incidencias, incluyendo las solucionadas
+      const todasLasIncidencias = await todasLasIncidenciasConSolucionadas.value;
+
+      // Contar incidencias solucionadas
+      incidenciasSolucionadasUsuario.value = todasLasIncidencias.filter(inc => 
+        incidenciasIds.includes(inc.id.toString()) && inc.estado === 'solucionada'
+      ).length;
+
+      console.log('Incidencias del usuario:', { total: totalIncidenciasUsuario.value, solucionadas: incidenciasSolucionadasUsuario.value });
+    };
+
+    const incidenciasAntiguasUsuario = ref(0);
+
+    const calcularIncidenciasAntiguasUsuario = () => {
+      const diasAtras = new Date();
+      diasAtras.setDate(diasAtras.getDate() - 7);
+      
+      const incidenciasIds = Object.keys(localStorage)
+        .filter(key => key.startsWith('incidencia_'))
+        .map(key => key.replace('incidencia_', ''));
+
+      incidenciasAntiguasUsuario.value = todasLasIncidencias.value.filter(incidencia => 
+        incidenciasIds.includes(incidencia.id.toString()) &&
+        incidencia.estado === 'activa' &&
+        new Date(incidencia.fecha) < diasAtras
+      ).length;
+
+      console.log('Incidencias antiguas del usuario:', incidenciasAntiguasUsuario.value);
+    };
+
+    // Actualizar cuando cambien las incidencias
+    watch(todasLasIncidencias, calcularIncidenciasAntiguasUsuario);
+
+    onMounted(() => {
+      obtenerIncidencias(1, true);
+      obtenerTodasLasIncidencias(true);
       obtenerTipos();
       
       // Verificar actualizaciones cada 30 segundos
@@ -563,6 +624,9 @@ export default {
       if (bannerCerrado === 'true') {
         mostrarBanner.value = false
       }
+
+      obtenerIncidenciasUsuario();
+      calcularIncidenciasAntiguasUsuario();
     });
 
     onUnmounted(() => {
@@ -707,6 +771,11 @@ export default {
       router.push('/cercanas');
     };
 
+    // Actualizar cuando cambien las incidencias
+    watch(todasLasIncidenciasConSolucionadas, () => {
+      obtenerIncidenciasUsuario();
+    });
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -759,7 +828,11 @@ export default {
       mostrarAvisoIncidenciasAntiguas,
       irACercanas,
       mostrarBanner,
-      cerrarBanner
+      cerrarBanner,
+      totalIncidenciasUsuario,
+      incidenciasSolucionadasUsuario,
+      obtenerIncidenciasUsuario,
+      incidenciasAntiguasUsuario,
     }
   }
 }
@@ -923,4 +996,5 @@ export default {
   right: 10px;
   z-index: 1;
 }
+
 </style>
