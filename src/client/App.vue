@@ -135,8 +135,23 @@
           </v-card-text>
         </v-card>
 
-        <v-card class="ma-4">
-          <v-card-text>
+        <v-card class="ma-4 pt-0">
+          <v-card-text class="pt-2">
+            <v-row class="text-grey mt-0 mb-2" align="center" justify="center">
+              <v-col cols="auto" class="d-flex align-center mr-4">
+                <v-icon color="grey" class="mr-1">mdi-file-document-multiple</v-icon>
+                <span>{{ incidenciasActivas }}</span>
+              </v-col>
+              <v-col cols="auto" class="d-flex align-center mr-4">
+                <v-icon color="grey" class="mr-1">mdi-check-circle</v-icon>
+                <span>{{ incidenciasSolucionadas }}</span>
+              </v-col>
+              <v-col cols="auto" class="d-flex align-center">
+                <v-icon color="grey" class="mr-1">mdi-account-group</v-icon>
+                <span>{{ totalUsuarios }}</span>
+              </v-col>
+            </v-row>
+
             <v-select
               v-model="tipoSeleccionado"
               :items="tiposIncidencias"
@@ -150,13 +165,16 @@
                 <v-divider class="mt-2"></v-divider>
               </template>
             </v-select>
-            <v-switch
-              v-model="incluirSolucionadas"
-              label="Ver solucionadas"
-              @change="obtenerIncidencias"
-            ></v-switch>
-
-            <div class="text-caption text-grey">{{ textoTotalIncidencias }}</div>
+            <v-row justify="center">
+              <v-switch
+                v-model="incluirSolucionadas"
+                label="Ver solucionadas"
+                @change="obtenerIncidencias"
+                density="compact"
+                hide-details
+                class="small-switch"
+              ></v-switch>
+            </v-row>
           </v-card-text>
         </v-card>
 
@@ -180,7 +198,7 @@
                       text
                       @click="irACercanas"
                     >
-                      <v-icon size="large" class="mr-2">mdi-check-circle</v-icon> Ayuda a validar tu zona
+                      <v-icon size="large" class="mr-2">mdi-map-marker-radius</v-icon> Ayuda a validar tu zona
                     </v-btn>
                   </v-col>
                 </v-row>
@@ -403,10 +421,12 @@ export default {
       }
     };
 
+    const todasLasIncidenciasConSolucionadas = ref([]);
+
     const obtenerTodasLasIncidencias = async (forzarActualizacion = false) => {
       try {
         const params = {
-          incluirSolucionadas: incluirSolucionadas.value,
+          incluirSolucionadas: true,
           tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
         };
         
@@ -416,6 +436,10 @@ export default {
         
         const response = await axios.get(`/api/incidencias/todas`, { params });
         todasLasIncidencias.value = response.data.incidencias;
+        todasLasIncidenciasConSolucionadas.value = response.data.incidencias;
+        
+        // Actualizar estadísticas aquí
+        actualizarEstadisticas(response.data.incidencias);
       } catch (error) {
         console.error('Error al obtener todas las incidencias:', error.response ? error.response.data : error.message);
       }
@@ -740,22 +764,6 @@ export default {
       drawer.value = false // Cerrar el drawer después de la navegación
     }
 
-    // Añade esto en la sección de setup, junto con las otras propiedades computadas
-    const todasLasIncidenciasConSolucionadas = computed(async () => {
-      try {
-        const response = await axios.get(`/api/incidencias/todas`, { 
-          params: { 
-            incluirSolucionadas: true,
-            tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
-          }
-        });
-        return response.data.incidencias;
-      } catch (error) {
-        console.error('Error al obtener todas las incidencias con solucionadas:', error);
-        return [];
-      }
-    });
-
     const incidenciasAntiguas = computed(() => {
       const unaSemanaAtras = new Date();
       unaSemanaAtras.setDate(unaSemanaAtras.getDate() - 7);
@@ -775,6 +783,19 @@ export default {
     watch(todasLasIncidenciasConSolucionadas, () => {
       obtenerIncidenciasUsuario();
     });
+
+    const incidenciasActivas = computed(() => {
+      return todasLasIncidencias.value.filter(inc => inc.estado === 'activa').length;
+    });
+
+    const incidenciasSolucionadas = ref(0);
+    const totalUsuarios = ref(0);
+
+    const actualizarEstadisticas = (incidencias) => {
+      incidenciasSolucionadas.value = incidencias.filter(inc => inc.estado === 'solucionada').length;
+      const usuariosUnicos = new Set(incidencias.map(inc => inc.nombre));
+      totalUsuarios.value = usuariosUnicos.size;
+    };
 
     return {
       incidencias,
@@ -833,6 +854,9 @@ export default {
       incidenciasSolucionadasUsuario,
       obtenerIncidenciasUsuario,
       incidenciasAntiguasUsuario,
+      incidenciasActivas,
+      incidenciasSolucionadas,
+      totalUsuarios,
     }
   }
 }
@@ -997,4 +1021,20 @@ export default {
   z-index: 1;
 }
 
+.small-switch {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.small-switch :deep(.v-switch__track) {
+  opacity: 0.5;
+}
+
+.small-switch :deep(.v-switch__thumb) {
+  transform: scale(0.8);
+}
+
+.small-switch :deep(.v-label) {
+  font-size: 0.9em;
+}
 </style>
