@@ -319,6 +319,8 @@
 <script>
 import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useResolverIncidencia } from '@/composables/useResolverIncidencia';
+import { useInformarAyuntamiento } from '@/composables/useInformarAyuntamiento';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -341,7 +343,6 @@ export default {
   setup(props, { emit }) {
     const router = useRouter();
     const dialog = ref(props.modelValue);
-    const reportando = ref(false);
     const mostrarDialogoConfirmacion = ref(false);
     const mostrarDialogoAdvertencia = ref(false);
     const dialogImagen = ref(false);
@@ -351,7 +352,6 @@ export default {
     const canShare = ref(false);
     const mostrarDialogoWhatsApp = ref(false);
     const mostrarDialogoError = ref(false);
-    const mensajeError = ref('');
     const isComponentMounted = ref(true);
     const mostrarDialogoReporteInadecuado = ref(false);
     const captchaContainerInadecuado = ref(null);
@@ -429,6 +429,9 @@ export default {
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
+    const { reportando, mensajeError, resolverIncidencia } = useResolverIncidencia();
+    const { enviarWhatsApp } = useInformarAyuntamiento();
+
     const confirmarSolucion = async () => {
       if (!captchaSolution.value) {
         mostrarError('Por favor, completa el captcha.');
@@ -436,31 +439,22 @@ export default {
       }
 
       mostrarDialogoConfirmacion.value = false;
-      reportando.value = true;
       try {
-        enviarEventoMatomo('Incidencia', 'Resolver', `ID: ${props.incidencia.id}`);
         const codigoUnico = localStorage.getItem(`incidencia_${props.incidencia.id}`);
-        const response = await axios.post(`/api/incidencias/${props.incidencia.id}/solucionada`, {
-          'frc-captcha-solution': captchaSolution.value,
-          codigoUnico
-        });
+        const resultado = await resolverIncidencia(props.incidencia.id, captchaSolution.value, codigoUnico);
         if (isComponentMounted.value) {
-          if (response.data.solucionada) {
+          if (resultado.solucionada) {
             props.incidencia.estado = 'solucionada';
             props.incidencia.fecha_solucion = new Date().toISOString();
           } else {
-            props.incidencia.reportes_solucion = response.data.reportes_solucion;
+            props.incidencia.reportes_solucion = resultado.reportes_solucion;
           }
         }
       } catch (error) {
-        console.error('Error al marcar como solucionada:', error);
         if (isComponentMounted.value) {
-          mostrarError(error.response?.data?.error || 'Error al marcar como solucionada');
+          mostrarError(mensajeError.value);
         }
       } finally {
-        if (isComponentMounted.value) {
-          reportando.value = false;
-        }
         if (captchaWidget.value) {
           captchaWidget.value.reset();
         }
@@ -621,15 +615,8 @@ export default {
       }
     };
 
-    const enviarWhatsApp = () => {
-      const mensaje = `${props.incidencia.descripcion}\nDirección: ${props.incidencia.direccion}`;
-      const mensajeEncoded = encodeURIComponent(mensaje);
-      const url = `https://wa.me/34660010010?text=${mensajeEncoded}`;
-      
-      // Enviar evento a Matomo con el ID de la incidencia
-      enviarEventoMatomo('Incidencia', 'Informe ayuntamiento', `ID: ${props.incidencia.id}`);
-      
-      window.open(url, '_blank');
+    const handleEnviarWhatsApp = () => {
+      enviarWhatsApp(props.incidencia);
       mostrarDialogoWhatsApp.value = false;
     };
 
@@ -700,7 +687,7 @@ export default {
       canShare,
       compartir,
       mostrarDialogoWhatsApp,
-      enviarWhatsApp,
+      enviarWhatsApp: handleEnviarWhatsApp,
       mostrarDialogoError,
       mensajeError,
       mostrarDialogoReporteInadecuado,

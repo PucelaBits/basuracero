@@ -18,8 +18,10 @@
           :ubicacionUsuario="ubicacionUsuario"
           :seguirUsuario="true"
           :deshabilitarNuevaIncidencia="true"
+          :esCercanas="true"
           @solicitar-actualizacion-ubicacion="actualizarUbicacionUsuario"
           @incidencia-seleccionada="abrirDetalleIncidencia"
+          @verificar-estado="verificarEstadoIncidencia"
         />
         
         <v-container fluid class="mt-4">
@@ -109,13 +111,70 @@
         </v-container>
       </v-card-text>
     </v-card>
+
+    <!-- Nuevo diálogo de confirmación para resolver incidencia -->
+    <v-dialog v-model="mostrarDialogoConfirmacion" max-width="500px">
+      <v-card>
+        <v-card-title class="headline">Confirmar resolución</v-card-title>
+        <v-card-text>
+          ¿Has verificado presencialmente que la incidencia ha sido solucionada?
+          <div v-if="captchaHabilitado" ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
+          <div v-else class="text-caption mt-2">El captcha no está disponible en este momento.</div>
+          <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="green darken-1" text @click="confirmarSolucion" :disabled="!captchaHabilitado">Sí</v-btn>
+          <v-btn color="red darken-1" text @click="cancelarConfirmacion">No</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Nuevo diálogo para WhatsApp -->
+    <v-dialog v-model="mostrarDialogoWhatsApp" max-width="500px">
+      <v-card>
+        <v-card-title class="headline">
+          <v-icon left>mdi-whatsapp</v-icon>
+          Informar por WhatsApp
+        </v-card-title>
+        <v-card-text>
+          Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
+          <br>
+          <br><span class="subtitle-text"><strong>Nota:</strong> Si es la primera vez que hablas con el bot necesitarás mandarle primero "Hola" para activarle</span>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="handleEnviarWhatsApp">Aceptar</v-btn>
+          <v-btn color="error" text @click="mostrarDialogoWhatsApp = false">Cancelar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Diálogo para mostrar errores -->
+    <v-dialog v-model="mostrarDialogoError" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">Error</v-card-title>
+        <v-card-text>
+          {{ mensajeError }}
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="mostrarDialogoError = false">
+            Entendido
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import MapaIncidencias from './MapaIncidencias.vue'
+import { useResolverIncidencia } from '@/composables/useResolverIncidencia'
+import { useInformarAyuntamiento } from '@/composables/useInformarAyuntamiento'
+import { WidgetInstance } from 'friendly-challenge'
 
 export default {
   name: 'IncidenciasCercanas',
@@ -130,6 +189,9 @@ export default {
     const router = useRouter()
     const route = useRoute()
     
+    const { resolverIncidencia, reportando, mensajeError } = useResolverIncidencia()
+    const { enviarWhatsApp } = useInformarAyuntamiento()
+
     const dialogVisible = ref(false)
     const cargandoUbicacion = ref(false)
     const cargandoIncidencias = ref(true)
@@ -142,6 +204,17 @@ export default {
       { title: 'Más antiguas', value: 'antiguedad' }
     ]
     const incluirSolucionadas = ref(false)
+
+    const mostrarDialogoConfirmacion = ref(false)
+    const mostrarDialogoWhatsApp = ref(false)
+    const mostrarDialogoError = ref(false)
+    const captchaContainer = ref(null)
+    const captchaSolution = ref(null)
+    const captchaWidget = ref(null)
+    const incidenciaSeleccionada = ref(null)
+    const captchaHabilitado = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true')
+
+    const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY
 
     const actualizarUbicacionUsuario = () => {
       cargandoUbicacion.value = true
@@ -230,6 +303,73 @@ export default {
       }
     }
 
+    const verificarEstadoIncidencia = async ({ incidenciaId, estado }) => {
+      incidenciaSeleccionada.value = incidenciasCalculadas.value.find(inc => inc.id === incidenciaId)
+      if (estado === 'activa') {
+        mostrarDialogoConfirmacion.value = true
+      } else if (estado === 'solucionada') {
+        mostrarDialogoWhatsApp.value = true
+      }
+    }
+
+    const confirmarSolucion = async () => {
+      if (captchaHabilitado.value && !captchaSolution.value) {
+        mostrarError('Por favor, completa el captcha.')
+        return
+      }
+
+      mostrarDialogoConfirmacion.value = false
+      try {
+        const codigoUnico = localStorage.getItem(`incidencia_${incidenciaSeleccionada.value.id}`)
+        const resultado = await resolverIncidencia(incidenciaSeleccionada.value.id, captchaSolution.value, codigoUnico)
+        if (resultado.solucionada) {
+          incidenciaSeleccionada.value.estado = 'solucionada'
+          incidenciaSeleccionada.value.fecha_solucion = new Date().toISOString()
+        } else {
+          incidenciaSeleccionada.value.reportes_solucion = resultado.reportes_solucion
+        }
+      } catch (error) {
+        mostrarError(mensajeError.value)
+      } finally {
+        if (captchaWidget.value) {
+          captchaWidget.value.reset()
+        }
+      }
+    }
+
+    const cancelarConfirmacion = () => {
+      mostrarDialogoConfirmacion.value = false
+    }
+
+    const handleEnviarWhatsApp = () => {
+      if (incidenciaSeleccionada.value) {
+        enviarWhatsApp(incidenciaSeleccionada.value)
+      }
+      mostrarDialogoWhatsApp.value = false
+    }
+
+    const mostrarError = (mensaje) => {
+      mensajeError.value = mensaje
+      mostrarDialogoError.value = true
+    }
+
+    watch(mostrarDialogoConfirmacion, async (newValue) => {
+      if (newValue && captchaHabilitado.value) {
+        await nextTick()
+        if (captchaContainer.value) {
+          captchaWidget.value = new WidgetInstance(captchaContainer.value, {
+            sitekey: friendlyCaptchaSiteKey,
+            doneCallback: (solution) => {
+              captchaSolution.value = solution
+            },
+            errorCallback: (err) => {
+              console.error("Error al resolver el Captcha:", err)
+            }
+          })
+        }
+      }
+    })
+
     onMounted(() => {
       if (route.name === 'IncidenciasCercanas') {
         dialogVisible.value = true
@@ -279,6 +419,21 @@ export default {
       formatDate,
       handleImageError,
       detenerSeguimiento,
+      verificarEstadoIncidencia,
+      reportando,
+      mensajeError,
+      mostrarDialogoConfirmacion,
+      mostrarDialogoWhatsApp,
+      mostrarDialogoError,
+      captchaContainer,
+      captchaSolution,
+      captchaWidget,
+      incidenciaSeleccionada,
+      friendlyCaptchaSiteKey,
+      confirmarSolucion,
+      cancelarConfirmacion,
+      handleEnviarWhatsApp,
+      captchaHabilitado
     }
   }
 }

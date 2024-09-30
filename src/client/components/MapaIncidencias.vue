@@ -124,9 +124,13 @@ export default {
     tipoSeleccionado: {
       type: [String, Number],
       default: 'Todas'
+    },
+    esCercanas: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion'],
+  emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion', 'verificar-estado'],
   setup(props, { emit }) {
     const router = useRouter();
     const mapContainer = ref(null)
@@ -250,6 +254,22 @@ export default {
                   <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
                 </div>
               </div>
+              ${props.esCercanas && !incidencia.ocultarVerificacion ? `
+                <div class="popup-verification">
+                  <p>¿Se solucionó esta incidencia?</p>
+                  <div class="verification-buttons">
+                    <button class="verify-btn verify-yes">
+                      <i class="mdi mdi-check"></i> Sí
+                    </button>
+                    <button class="verify-btn verify-no">
+                      <i class="mdi mdi-close"></i> No
+                    </button>
+                    <button class="verify-btn verify-unknown">
+                      <i class="mdi mdi-help"></i> No sé
+                    </button>
+                  </div>
+                </div>
+              ` : ''}
             `
 
             const marker = L.marker([incidencia.latitud, incidencia.longitud], {
@@ -286,6 +306,29 @@ export default {
               L.DomEvent.stopPropagation(e)
               abrirDetalle(incidencia)
             })
+
+            if (props.esCercanas && !incidencia.ocultarVerificacion) {
+              const verifyYesBtn = popupContent.querySelector('.verify-yes')
+              const verifyNoBtn = popupContent.querySelector('.verify-no')
+              const verifyUnknownBtn = popupContent.querySelector('.verify-unknown')
+              const verificationBlock = popupContent.querySelector('.popup-verification')
+
+              verifyYesBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                emit('verificar-estado', { incidenciaId: incidencia.id, estado: 'activa' })
+              })
+
+              verifyNoBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                emit('verificar-estado', { incidenciaId: incidencia.id, estado: 'solucionada' })
+              })
+
+              verifyUnknownBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                verificationBlock.style.display = 'none'
+                emit('verificar-estado', { incidenciaId: incidencia.id, estado: 'desconocido' })
+              })
+            }
 
             markers.push(marker)
           }
@@ -829,5 +872,61 @@ export default {
   background-color: #3388ff;
   border: 2px solid white;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.popup-verification {
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-top: 1px solid #ddd;
+  transition: opacity 0.3s ease-out, height 0.3s ease-out;
+}
+
+.popup-verification p {
+  margin: 0 0 10px 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+.verification-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  transition: opacity 0.3s ease-out;
+}
+
+.verify-btn {
+  flex: 1;
+  padding: 4px 8px; /* Reducimos el padding vertical para hacer los botones menos altos */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px; /* Reducimos el tamaño de la fuente */
+}
+
+.verify-btn i {
+  margin-right: 4px;
+  font-size: 14px; /* Ajustamos el tamaño del icono */
+}
+
+.verify-yes {
+  background-color: #4CAF50; /* Verde */
+}
+
+.verify-no {
+  background-color: #F44336; /* Rojo */
+}
+
+.verify-unknown {
+  background-color: #9e9e9e; /* Gris */
+}
+
+.verify-btn:hover {
+  opacity: 0.8;
 }
 </style>
