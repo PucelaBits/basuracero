@@ -37,8 +37,20 @@
               </v-alert>
             </v-col>
           </v-row>
+          <v-row>
+            <v-col cols="12">
+              <v-select
+                v-model="ordenSeleccionado"
+                :items="opcionesOrden"
+                label="Ordenar por"
+                density="compact"
+                variant="outlined"
+                class="mb-0"
+              ></v-select>
+            </v-col>
+          </v-row>
           <v-row dense>
-            <v-col v-for="incidencia in incidenciasCercanas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
+            <v-col v-for="incidencia in incidenciasOrdenadas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
               <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-2 incidencia-card" height="120">
                 <v-row no-gutters>
                   <v-col cols="4">
@@ -114,6 +126,11 @@ export default {
     const ubicacionUsuario = ref(null)
     const incidenciasCercanas = ref([])
     const watchId = ref(null)
+    const ordenSeleccionado = ref('distancia')
+    const opcionesOrden = [
+      { title: 'Más cercanas', value: 'distancia' },
+      { title: 'Más antiguas', value: 'antiguedad' }
+    ]
 
     const actualizarUbicacionUsuario = () => {
       if ("geolocation" in navigator) {
@@ -168,6 +185,14 @@ export default {
           .slice(0, 10)
       }
     }
+
+    const incidenciasOrdenadas = computed(() => {
+      if (ordenSeleccionado.value === 'distancia') {
+        return [...incidenciasCercanas.value].sort((a, b) => a.distancia - b.distancia)
+      } else {
+        return [...incidenciasCercanas.value].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+      }
+    })
 
     const abrirDetalleIncidencia = (incidencia) => {
       router.push({ name: 'DetalleIncidencia', params: { id: incidencia.id } })
@@ -228,7 +253,10 @@ export default {
       cerrar,
       formatDate,
       handleImageError,
-      detenerSeguimiento
+      detenerSeguimiento,
+      ordenSeleccionado,
+      opcionesOrden,
+      incidenciasOrdenadas
     }
   }
 }
