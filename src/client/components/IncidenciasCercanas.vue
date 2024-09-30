@@ -245,6 +245,8 @@ export default {
 
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY
 
+    const faldonesOcultos = ref(new Set())
+
     const actualizarUbicacionUsuario = () => {
       cargandoUbicacion.value = true
       if ("geolocation" in navigator) {
@@ -294,7 +296,7 @@ export default {
             incidencia.latitud,
             incidencia.longitud
           ),
-          faldonOculto: false
+          faldonOculto: faldonesOcultos.value.has(parseInt(incidencia.id, 10))
         }));
         cargandoIncidencias.value = false;
       }
@@ -335,6 +337,7 @@ export default {
     }
 
     const ocultarFaldon = (incidencia) => {
+      faldonesOcultos.value.add(incidencia.id);
       const index = incidenciasCalculadas.value.findIndex(inc => inc.id === incidencia.id);
       if (index !== -1) {
         incidenciasCalculadas.value[index] = reactive({
