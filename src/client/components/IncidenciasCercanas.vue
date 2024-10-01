@@ -296,8 +296,8 @@ export default {
 
     const calcularIncidenciasCercanas = () => {
       if (ubicacionUsuario.value && props.incidencias.length > 0) {
-        incidenciasCalculadas.value = props.incidencias
-          .filter(incidencia => incidencia.estado !== 'solucionada') // Filtrar incidencias no solucionadas
+        const todasLasIncidencias = props.incidencias
+          .filter(incidencia => incidencia.estado !== 'solucionada')
           .map(incidencia => ({
             ...incidencia,
             id: parseInt(incidencia.id, 10),
@@ -308,7 +308,15 @@ export default {
               incidencia.longitud
             ),
             faldonOculto: faldonesOcultos.value.has(parseInt(incidencia.id, 10))
-          }));
+          }))
+          .sort((a, b) => a.distancia - b.distancia);
+
+        const incidenciasCercanas = todasLasIncidencias.filter(inc => inc.distancia <= 1000);
+        
+        incidenciasCalculadas.value = incidenciasCercanas.length >= 10 
+          ? incidenciasCercanas 
+          : todasLasIncidencias.slice(0, 10);
+
         cargandoIncidencias.value = false;
       }
     }

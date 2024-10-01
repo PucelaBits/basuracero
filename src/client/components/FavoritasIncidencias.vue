@@ -21,7 +21,7 @@
           />
         </div>
   
-        <v-card-text>
+        <v-card-text class="px-0">
           <v-container fluid>
             <v-row v-if="cargando">
               <v-col cols="12" class="text-center">
@@ -88,7 +88,7 @@
                           </p>
                           <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
                             <v-icon x-small class="mr-1">mdi-account-group</v-icon>
-                            {{ incidencia.reportes_solucion }} {{ incidencia.reportes_solucion === 1 ? 'persona ha' : 'personas han' }} marcado como solucionada
+                            {{ incidencia.reportes_solucion }} marcaron como solucionada
                           </p>
                         </v-card-text>
                       </v-col>
