@@ -147,6 +147,13 @@ server {
     # Obtener incidencias paginadas (con bypass de caché)
     location /api/incidencias {
         proxy_pass http://localhost:5050;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache my_cache;
         proxy_cache_valid 200 1m;
         proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
@@ -182,10 +189,12 @@ server {
     location / {
         proxy_pass http://localhost:5050;
         proxy_http_version 1.1;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
         
         # Intenta servir el archivo directamente, si no, pasa la solicitud a la aplicación
         try_files $uri $uri/ @app;
