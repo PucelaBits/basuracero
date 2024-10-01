@@ -644,6 +644,7 @@ export default {
     watch(() => props.incidencia, updateMetaTags, { immediate: true, deep: true });
 
     onMounted(() => {
+      updateMetaTags();
       if (props.incidencia.latitud && props.incidencia.longitud) {
         map.value = L.map('mapa-detalle', {
           dragging: false,

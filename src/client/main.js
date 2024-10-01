@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createHead } from '@vueuse/head';
+import { createHead } from '@unhead/vue'
 import App from './App.vue'
 import routes from './router/index' 
 import { createRouter, createWebHistory } from 'vue-router'
@@ -37,6 +37,14 @@ const vuetify = createVuetify({
 const router = createRouter({
     history: createWebHistory(),
     routes
-  })
+})
 
-createApp(App).use(createHead()).use(vuetify).use(router).mount('#app')
+const head = createHead()
+
+const app = createApp(App)
+
+app.use(router)
+app.use(vuetify)
+app.use(head)
+
+app.mount('#app')
