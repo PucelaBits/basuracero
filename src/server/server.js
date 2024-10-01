@@ -5,11 +5,11 @@ const incidenciasRoutes = require('./routes/incidencias');
 const rssRoutes = require('./routes/rss');
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 5050;
 
 app.use(cors());
 app.use(express.json());
-app.set('trust proxy', true);
 
 // Servir archivos estáticos desde la carpeta 'uploads'
 app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));

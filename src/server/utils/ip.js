@@ -14,7 +14,7 @@ function obtenerIP(req) {
              'Desconocida';
   
   console.log('IP obtenida:', ip);
-  return hashearIP(ip);
+  return ip === '::1' || ip === '127.0.0.1' ? 'Desconocida' : hashearIP(ip);
 }
 
 function hashearIP(ip) {
