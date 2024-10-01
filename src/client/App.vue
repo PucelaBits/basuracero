@@ -185,15 +185,21 @@
                 <v-divider class="mt-2"></v-divider>
               </template>
             </v-select>
-            <v-row justify="center">
-              <v-switch
-                v-model="incluirSolucionadas"
-                label="Ver solucionadas"
-                @change="obtenerIncidencias"
-                density="compact"
-                hide-details
-                class="small-switch"
-              ></v-switch>
+            <v-row justify="center" class="mb-0">
+              <v-col cols="auto">
+                <v-btn-toggle
+                  v-model="filtroEstado"
+                  mandatory
+                  color="primary"
+                  rounded="pill"
+                  density="compact"
+                  elevation="1"
+                  @update:model-value="cambiarFiltroEstado"
+                >
+                  <v-btn value="activas" size="small">Activas</v-btn>
+                  <v-btn value="todas" size="small">Todas</v-btn>
+                </v-btn-toggle>
+              </v-col>
             </v-row>
           </v-card-text>
         </v-card>
@@ -836,6 +842,13 @@ export default {
 
     const tieneFavoritos = computed(() => favoritos.value.length > 0)
 
+    const filtroEstado = ref('activas')
+    
+    const cambiarFiltroEstado = () => {
+      incluirSolucionadas.value = filtroEstado.value === 'todas'
+      obtenerIncidencias(1, true)
+    }
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -898,6 +911,8 @@ export default {
       totalUsuarios,
       manejarCierreBanner,
       tieneFavoritos,
+      filtroEstado,
+      cambiarFiltroEstado,
     }
   }
 }

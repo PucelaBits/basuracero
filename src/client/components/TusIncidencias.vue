@@ -14,7 +14,8 @@
       <div class="mapa-container">
         <MapaIncidencias
           v-if="!cargando && incidenciasUsuarioFiltradas.length > 0"
-          :incidencias="incidenciasUsuarioFiltradas"
+          :key="mapKey"
+          :incidencias="incidenciasFiltradas"
           :incluirSolucionadas="true"
           :deshabilitarNuevaIncidencia="true"
           @incidencia-seleccionada="abrirDetalleIncidencia"
@@ -172,6 +173,7 @@ export default {
     const todasLasIncidencias = ref([])
     const { incidenciasUsuario, loadIncidenciasUsuario } = useIncidenciasUsuarioStore()
     const filtroEstado = ref('todas')
+    const mapKey = ref(0)
 
     const incidenciasUsuarioFiltradas = computed(() => {
       return todasLasIncidencias.value.filter(incidencia => 
@@ -265,6 +267,7 @@ export default {
       todasLasIncidencias,
       filtroEstado,
       incidenciasFiltradas,
+      mapKey,
     }
   }
 }

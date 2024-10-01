@@ -14,7 +14,7 @@
         <div class="mapa-container">
           <MapaIncidencias
             v-if="!cargando && incidenciasFavoritas.length > 0"
-            :incidencias="incidenciasFavoritas"
+            :incidencias="incidenciasFiltradas"
             :incluirSolucionadas="true"
             :deshabilitarNuevaIncidencia="true"
             @incidencia-seleccionada="abrirDetalleIncidencia"
