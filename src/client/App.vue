@@ -82,31 +82,42 @@
           </v-btn>
         </v-alert>
 
-        <v-card v-if="mostrarBanner" class="text-center custom-banner ma-4 position-relative">
-          <v-btn
-            icon="mdi-close"
-            color="primary"
-            size="smaller"
-            class="close-btn"
-            @click="cerrarBanner"
-          ></v-btn>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12">
-                <v-icon>mdi-eye</v-icon>
-                <span class="ml-2">Detecta problemas</span>
-              </v-col>
-              <v-col cols="12">
-                <v-icon>mdi-camera</v-icon>
-                <span class="ml-2">Crea una incidencia</span>
-              </v-col>
-              <v-col cols="12">
-                <v-icon>mdi-check-circle</v-icon>
-                <span class="ml-2">Verifica las solucionadas</span>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+        <v-dialog v-model="mostrarBanner" max-width="600px" transition="dialog-bottom-transition">
+          <v-card class="welcome-banner pa-0">
+            <v-card-text class="text-center">
+              <v-avatar size="80" class="mb-4" color="primary">
+                <img src="/logo.png" alt="Logo Basura Cero" style="width: 70px; height: 70px;">
+              </v-avatar>
+              
+              <h1 class="text-h5 font-weight-bold mb-4">Bienvenido a Basura Cero</h1>
+              
+              <p class="text-body-2 mb-6">
+                Proyecto colaborativo para visibilizar incidencias no solucionadas en nuestra ciudad
+              </p>
+              
+              <h2 class="text-subtitle-1 font-weight-medium mb-4">¿Cómo ayudar?</h2>
+              
+              <v-row justify="center" class="mb-6">
+                <v-col cols="4" class="text-center">
+                  <v-icon size="large" color="primary" class="mb-2">mdi-eye</v-icon>
+                  <div class="text-caption">Detecta el problema</div>
+                </v-col>
+                <v-col cols="4" class="text-center">
+                  <v-icon size="large" color="primary" class="mb-2">mdi-camera</v-icon>
+                  <div class="text-caption">Crea una incidencia</div>
+                </v-col>
+                <v-col cols="4" class="text-center">
+                  <v-icon size="large" color="primary" class="mb-2">mdi-check-circle</v-icon>
+                  <div class="text-caption">Verifica solucionadas</div>
+                </v-col>
+              </v-row>
+              
+              <v-btn color="primary" @click="cerrarBanner">
+                Empezar a colaborar
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
         
         <!-- Nuevo bloque para el aviso de instalación -->
         <v-card v-if="mostrarAviso" class="ma-4 custom-banner" color="primary">
@@ -587,7 +598,7 @@ export default {
 
     const cerrarBanner = () => {
       mostrarBanner.value = false
-      localStorage.setItem('bannerCerrado', 'true')
+      localStorage.setItem('bannerBienvenidaVisto', 'true')
     }
 
     const totalIncidenciasUsuario = ref(0)
@@ -644,8 +655,8 @@ export default {
       detectarIOS();
       window.addEventListener('beforeinstallprompt', manejarEventoInstalacion);
 
-      const bannerCerrado = localStorage.getItem('bannerCerrado')
-      if (bannerCerrado === 'true') {
+      const bannerVisto = localStorage.getItem('bannerBienvenidaVisto')
+      if (bannerVisto === 'true') {
         mostrarBanner.value = false
       }
 
@@ -1036,5 +1047,32 @@ export default {
 
 .small-switch :deep(.v-label) {
   font-size: 0.9em;
+}
+
+.welcome-banner {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 2rem;
+}
+
+.welcome-banner .v-card-text {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.welcome-banner h1, .welcome-banner h2 {
+  color: #7361a0;
+}
+
+.welcome-banner .v-icon {
+  font-size: 2.5rem;
+}
+
+.welcome-banner .text-caption {
+  font-size: 0.75rem;
+  line-height: 1.2;
 }
 </style>
