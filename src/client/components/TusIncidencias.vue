@@ -59,55 +59,81 @@
               </v-alert>
               </v-col>
             </v-row>
+            
+            <!-- Nuevo filtro -->
+            <v-row class="mb-4" justify="center">
+              <v-col cols="auto">
+                <v-btn-toggle
+                  v-model="filtroEstado"
+                  mandatory
+                  color="primary"
+                  rounded="pill"
+                  density="compact"
+                >
+                  <v-btn value="todas" size="small">Todas</v-btn>
+                  <v-btn value="activas" size="small">Activas</v-btn>
+                  <v-btn value="solucionadas" size="small">Solucionadas</v-btn>
+                </v-btn-toggle>
+              </v-col>
+            </v-row>
             <!-- Lista de incidencias -->
-            <v-col v-for="incidencia in incidenciasUsuarioFiltradas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
-              <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-0 incidencia-card" height="150">
-                <v-row no-gutters>
-                  <v-col cols="4">
-                    <v-img
-                      v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
-                      :src="incidencia.imagenes[0].ruta_imagen"
-                      height="150"
-                      cover
-                      @error="handleImageError"
-                    >
-                      <template v-slot:placeholder>
-                        <v-row class="fill-height ma-0" align="center" justify="center">
-                          <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
-                        </v-row>
-                      </template>
-                    </v-img>
-                    <div v-else class="no-image-placeholder" height="150">
-                      <v-icon>mdi-image-off</v-icon>
-                    </div>
-                  </v-col>
-                  <v-col cols="8">
-                    <v-card-text class="pl-2 pb-2 pt-1">
-                      <p class="text-caption mb-1" :title="incidencia.tipo">
-                        <v-icon x-small class="mr-1">mdi-tag-outline</v-icon>
-                        {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
-                      </p>
-                      <p class="text-caption mb-1">
-                        <v-icon x-small class="mr-1">mdi-map-marker</v-icon>
-                        {{ incidencia.direccion.length > 20 ? incidencia.direccion.substring(0, 20) + '...' : incidencia.direccion }}
-                      </p>
-                      <p class="text-caption mb-1">
-                        <v-icon x-small class="mr-1">mdi-calendar</v-icon>
-                        {{ formatDate(incidencia.fecha) }}
-                      </p>
-                      <p class="text-caption mb-1">
-                        <v-icon x-small class="mr-1" :color="incidencia.estado === 'activa' ? 'error' : 'success'">mdi-circle</v-icon>
-                        {{ incidencia.estado }}
-                      </p>
-                      <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
-                        <v-icon x-small class="mr-1">mdi-account-group</v-icon>
-                        {{ incidencia.reportes_solucion }} marcaron como solucionada
-                      </p>
-                    </v-card-text>
-                  </v-col>
-                </v-row>
-              </v-card>
-            </v-col>
+            <v-row v-if="incidenciasFiltradas.length > 0">
+              <v-col v-for="incidencia in incidenciasFiltradas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
+                <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-0 incidencia-card" height="150">
+                  <v-row no-gutters>
+                    <v-col cols="4">
+                      <v-img
+                        v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
+                        :src="incidencia.imagenes[0].ruta_imagen"
+                        height="150"
+                        cover
+                        @error="handleImageError"
+                      >
+                        <template v-slot:placeholder>
+                          <v-row class="fill-height ma-0" align="center" justify="center">
+                            <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                          </v-row>
+                        </template>
+                      </v-img>
+                      <div v-else class="no-image-placeholder" height="150">
+                        <v-icon>mdi-image-off</v-icon>
+                      </div>
+                    </v-col>
+                    <v-col cols="8">
+                      <v-card-text class="pl-2 pb-2 pt-1">
+                        <p class="text-caption mb-1" :title="incidencia.tipo">
+                          <v-icon x-small class="mr-1">mdi-tag-outline</v-icon>
+                          {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
+                        </p>
+                        <p class="text-caption mb-1">
+                          <v-icon x-small class="mr-1">mdi-map-marker</v-icon>
+                          {{ incidencia.direccion.length > 20 ? incidencia.direccion.substring(0, 20) + '...' : incidencia.direccion }}
+                        </p>
+                        <p class="text-caption mb-1">
+                          <v-icon x-small class="mr-1">mdi-calendar</v-icon>
+                          {{ formatDate(incidencia.fecha) }}
+                        </p>
+                        <p class="text-caption mb-1">
+                          <v-icon x-small class="mr-1" :color="incidencia.estado === 'activa' ? 'error' : 'success'">mdi-circle</v-icon>
+                          {{ incidencia.estado }}
+                        </p>
+                        <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
+                          <v-icon x-small class="mr-1">mdi-account-group</v-icon>
+                          {{ incidencia.reportes_solucion }} marcaron como solucionada
+                        </p>
+                      </v-card-text>
+                    </v-col>
+                  </v-row>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-row v-else>
+              <v-col cols="12">
+                <v-alert type="info">
+                  No hay incidencias que coincidan con el filtro seleccionado.
+                </v-alert>
+              </v-col>
+            </v-row>
           </v-row>
         </v-container>
       </v-card-text>
@@ -145,6 +171,7 @@ export default {
     const cargando = ref(true)
     const todasLasIncidencias = ref([])
     const { incidenciasUsuario, loadIncidenciasUsuario } = useIncidenciasUsuarioStore()
+    const filtroEstado = ref('todas')
 
     const incidenciasUsuarioFiltradas = computed(() => {
       return todasLasIncidencias.value.filter(incidencia => 
@@ -154,6 +181,16 @@ export default {
 
     const incidenciasSolucionadas = computed(() => {
       return incidenciasUsuarioFiltradas.value.filter(incidencia => incidencia.estado === 'solucionada').length
+    })
+
+    const incidenciasFiltradas = computed(() => {
+      if (filtroEstado.value === 'todas') {
+        return incidenciasUsuarioFiltradas.value
+      } else {
+        return incidenciasUsuarioFiltradas.value.filter(incidencia => 
+          incidencia.estado === (filtroEstado.value === 'activas' ? 'activa' : 'solucionada')
+        )
+      }
     })
 
     const cerrar = () => {
@@ -225,7 +262,9 @@ export default {
       formatDate,
       cargando,
       incidenciasSolucionadas,
-      todasLasIncidencias
+      todasLasIncidencias,
+      filtroEstado,
+      incidenciasFiltradas,
     }
   }
 }
@@ -267,5 +306,16 @@ export default {
   background-color: #f0f0f0;
   color: #999;
   height: 100%;
+}
+
+.v-btn-toggle {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.v-btn {
+  text-transform: none !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.0178571429em !important;
 }
 </style>
