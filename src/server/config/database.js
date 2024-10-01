@@ -13,8 +13,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error al conectar con la base de datos', err.message);
   } else {
-    console.log('Conexión exitosa con la base de datos SQLite');
-    console.log('Ruta de la base de datos:', dbPath);
     
     db.serialize(() => {
       // Crear todas las tablas necesarias
@@ -66,8 +64,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (incidencia_id) REFERENCES incidencias(id) ON DELETE CASCADE
       )`);
 
-      console.log('Tabla imagenes_incidencias creada o verificada');
-
       // Insertar tipos de incidencias predefinidos si la tabla está vacía
       db.get('SELECT COUNT(*) AS count FROM tipos_incidencias', (err, row) => {
         if (err) {
@@ -109,52 +105,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
             .catch(err => console.error('Error al insertar tipos de incidencias:', err));
         }
       });
-
-      // Verificar y añadir la columna codigo_unico si no existe
-      agregarColumnaSiNoExiste(db, 'incidencias', 'codigo_unico', 'TEXT')
-        .then(() => {
-          console.log('Verificación de columna codigo_unico completada');
-        })
-        .catch((err) => {
-          console.error('Error al verificar o añadir la columna codigo_unico:', err);
-        });
-     
-      // Verificar y añadir la columna barrio si no existe
-      agregarColumnaSiNoExiste(db, 'incidencias', 'barrio', 'TEXT')
-        .then(() => {
-          console.log('Verificación de columna barrio completada');
-        })
-        .catch((err) => {
-          console.error('Error al verificar o añadir la columna barrio:', err);
-        });
     });
   }
 });
-
-function agregarColumnaSiNoExiste(db, tabla, columna, tipo) {
-  return new Promise((resolve, reject) => {
-    db.all(`PRAGMA table_info(${tabla})`, (err, rows) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      
-      const columnaExiste = rows.some(row => row.name === columna);
-      
-      if (!columnaExiste) {
-        db.run(`ALTER TABLE ${tabla} ADD COLUMN ${columna} ${tipo}`, (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            console.log(`Columna ${columna} añadida a la tabla ${tabla}`);
-            resolve();
-          }
-        });
-      } else {
-        resolve();
-      }
-    });
-  });
-}
 
 module.exports = db;
