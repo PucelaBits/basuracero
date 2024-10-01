@@ -7,6 +7,21 @@ watch(favoritos, (newFavoritos) => {
 }, { deep: true })
 
 export const useFavoritosStore = () => {
+  const favoritosLoaded = ref(false)
+
+  const loadFavoritos = () => {
+    return new Promise((resolve) => {
+      if (favoritosLoaded.value) {
+        resolve()
+      } else {
+        watch(favoritos, () => {
+          favoritosLoaded.value = true
+          resolve()
+        }, { immediate: true })
+      }
+    })
+  }
+
   const añadirFavorito = (id) => {
     if (!favoritos.value.includes(id)) {
       favoritos.value.push(id)
@@ -26,6 +41,7 @@ export const useFavoritosStore = () => {
     favoritos,
     añadirFavorito,
     quitarFavorito,
-    esFavorito
+    esFavorito,
+    loadFavoritos
   }
 }

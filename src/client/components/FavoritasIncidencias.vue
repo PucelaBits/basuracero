@@ -1,13 +1,13 @@
 <template>
     <v-dialog v-model="dialogVisible" fullscreen :scrim="false" transition="dialog-bottom-transition">
-      <v-card v-show="dialogVisible" class="favoritas-incidencias-card">
+      <v-card v-if="!cargando" v-show="dialogVisible" class="favoritas-incidencias-card">
         <v-toolbar color="primary" class="elevation-2">
           <v-btn icon @click="cerrar">
             <v-icon>mdi-close</v-icon>
           </v-btn>
           <v-toolbar-title class="d-flex align-center">
             <v-icon left size="small" class="mr-2 mb-1">mdi-star</v-icon>
-            <span>Mis favoritas</span>
+            <span>Tus favoritas</span>
           </v-toolbar-title>
         </v-toolbar>
   
@@ -30,7 +30,7 @@
             </v-row>
             <v-row v-else-if="incidenciasFavoritas.length === 0">
               <v-col cols="12">
-                <v-alert type="info">
+                <v-alert>
                   No tienes incidencias favoritas.
                 </v-alert>
               </v-col>
@@ -108,6 +108,7 @@
           </v-container>
         </v-card-text>
       </v-card>
+      <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
     </v-dialog>
     <v-snackbar
       v-model="snackbar.show"
@@ -142,7 +143,7 @@
       const route = useRoute()
       const cargando = ref(true)
       const todasLasIncidencias = ref([])
-      const { favoritos, quitarFavorito } = useFavoritosStore()
+      const { favoritos, quitarFavorito, loadFavoritos } = useFavoritosStore()
       const snackbar = ref({
         show: false,
         text: ''
@@ -155,6 +156,22 @@
       const incidenciasSolucionadas = computed(() => {
         return incidenciasFavoritas.value.filter(incidencia => incidencia.estado === 'solucionada').length
       })
+  
+      const cargarIncidencias = async () => {
+        try {
+          cargando.value = true
+          await loadFavoritos()
+          if (props.incidencias instanceof Promise) {
+            todasLasIncidencias.value = await props.incidencias
+          } else {
+            todasLasIncidencias.value = props.incidencias
+          }
+        } catch (error) {
+          console.error('Error al cargar las incidencias:', error)
+        } finally {
+          cargando.value = false
+        }
+      }
   
       const cerrar = () => {
         dialogVisible.value = false
@@ -175,24 +192,17 @@
         return date.toLocaleDateString('es-ES', options).replace(',', '');
       }
   
-      const cargarIncidencias = async () => {
-        try {
-          if (props.incidencias instanceof Promise) {
-            todasLasIncidencias.value = await props.incidencias
-          } else {
-            todasLasIncidencias.value = props.incidencias
-          }
-        } catch (error) {
-          console.error('Error al cargar las incidencias:', error)
-        } finally {
-          cargando.value = false
-        }
-      }
-  
       const quitarDeFavoritos = (incidencia) => {
         quitarFavorito(incidencia.id)
-        // No es necesario recargar las incidencias, el computed se actualizará automáticamente
       }
+  
+      watch(() => props.incidencias, async (newIncidencias) => {
+        if (newIncidencias instanceof Promise) {
+          todasLasIncidencias.value = await newIncidencias
+        } else {
+          todasLasIncidencias.value = newIncidencias
+        }
+      }, { immediate: true })
   
       watch(() => route.name, (newRouteName) => {
         dialogVisible.value = newRouteName === 'FavoritasIncidencias'
