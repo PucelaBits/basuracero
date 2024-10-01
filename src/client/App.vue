@@ -82,7 +82,12 @@
           </v-btn>
         </v-alert>
 
-        <v-dialog v-model="mostrarBanner" max-width="600px" transition="dialog-bottom-transition">
+        <v-dialog 
+          v-model="mostrarBanner" 
+          max-width="600px" 
+          transition="dialog-bottom-transition"
+          @update:model-value="manejarCierreBanner"
+        >
           <v-card class="welcome-banner pa-0">
             <v-card-text class="text-center">
               <v-avatar size="80" class="mb-4" color="primary">
@@ -598,7 +603,17 @@ export default {
 
     const cerrarBanner = () => {
       mostrarBanner.value = false
+      guardarPreferenciaBanner()
+    }
+
+    const guardarPreferenciaBanner = () => {
       localStorage.setItem('bannerBienvenidaVisto', 'true')
+    }
+
+    const manejarCierreBanner = (valor) => {
+      if (!valor) {
+        guardarPreferenciaBanner()
+      }
     }
 
     const totalIncidenciasUsuario = ref(0)
@@ -868,6 +883,7 @@ export default {
       incidenciasActivas,
       incidenciasSolucionadas,
       totalUsuarios,
+      manejarCierreBanner,
     }
   }
 }
