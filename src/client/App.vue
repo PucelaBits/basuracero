@@ -71,13 +71,12 @@
         <v-alert
           v-if="incidenciasAntiguasUsuario > 0"
           color="#7361a0"
-          class="banner-incidencias mx-0 pt-4 pb-4 text-center text-body-2"
+          class="banner-incidencias mx-0 pt-4 pb-4 text-center text-caption"
           density="compact"
           text-align="center"
-          font-size="smaller"
           style="border-radius: 0;"
         >
-          <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>Tienes {{ incidenciasAntiguasUsuario }} incidencia{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días
+          <div><v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>Tienes {{ incidenciasAntiguasUsuario }} incidencia{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días</div>
           <v-btn text color="white" size="small" class="mt-3" @click="$router.push('/perfil')">
             <v-icon color="grey-darken-2 mr-2">mdi-check-circle</v-icon> Verifica si se {{ incidenciasAntiguasUsuario !== 1 ? 'solucionaron' : 'solucionó' }}
           </v-btn>
@@ -187,14 +186,15 @@
                   <v-col cols="2" align="center" class="pr-0">
                     <v-icon size="x-large">mdi-clock-alert</v-icon>
                   </v-col>
-                  <v-col cols="10" align="center" class="pl-0">
-                    <span class="text-body-2">Hay <strong>{{ incidenciasAntiguas }}</strong> incidencias activas<br />con más de una semana</span>
+                  <v-col cols="10" align="center" class="pl-2">
+                    <span class="text-caption">Hay <strong>{{ incidenciasAntiguas }}</strong> incidencias activas<br />con más de una semana</span>
                   </v-col>
                 </v-row>
                 <v-row align="center" class="mt-0">
                   <v-col>
                     <v-btn
                       color="white"
+                      size="small"
                       text
                       @click="irACercanas"
                     >
