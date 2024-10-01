@@ -149,15 +149,20 @@ export default {
       inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
       const finSemana = new Date(inicioSemana);
       finSemana.setDate(inicioSemana.getDate() + 6);
+      
       return {
         semana: `${formatearFecha(inicioSemana)} - ${formatearFecha(finSemana)}`,
-        mes: `${hoy.toLocaleString('es-ES', { month: 'long' })} ${hoy.getFullYear()}`,
+        mes: formatearMesAnio(hoy),
         total: `${hoy.getFullYear()}`
       };
     });
 
     const formatearFecha = (fecha) => {
       return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    };
+
+    const formatearMesAnio = (fecha) => {
+      return fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
     };
 
     onMounted(() => {
