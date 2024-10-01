@@ -117,13 +117,13 @@
             </v-row>
             
             <v-row>
-              <v-col cols="6">
+              <v-col cols="6 px-1">
                 <v-btn block color="success" @click="tomarFoto" :disabled="incidencia.imagenes.length >= 2">
                   <v-icon start>mdi-camera</v-icon>
                   Hacer foto
                 </v-btn>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="6 px-1">
                 <v-btn block color="info" @click="abrirSelectorArchivos" :disabled="incidencia.imagenes.length >= 2">
                   <v-icon start>mdi-upload</v-icon>
                   Subir fotos
