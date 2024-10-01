@@ -48,8 +48,14 @@
                 label="Ordenar por"
                 density="compact"
                 variant="outlined"
-                class="mb-0"
-              ></v-select>
+                rounded="pill"
+                hide-details
+                class="mb-2"
+              >
+                <template v-slot:prepend-inner>
+                  <v-icon size="small" color="primary">mdi-sort</v-icon>
+                </template>
+              </v-select>
             </v-col>
           </v-row>
           <v-row dense>
@@ -685,4 +691,19 @@ export default {
   margin: 0.5em auto;
 }
 
+.v-select {
+  max-width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.v-select :deep(.v-field__input) {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  min-height: 35px;
+}
+
+.v-select :deep(.v-field__append-inner) {
+  padding-top: 5px;
+}
 </style>
