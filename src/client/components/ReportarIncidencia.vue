@@ -272,6 +272,7 @@ import { WidgetInstance } from 'friendly-challenge'
 import { useRouter } from 'vue-router';
 import DetalleIncidencia from './DetalleIncidencia.vue';
 import { enviarEventoMatomo } from '../utils/analytics';
+import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore' // Importar el store
 
 const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
@@ -326,6 +327,7 @@ export default {
     const cameraInput = ref(null)
     const fileInput = ref(null)
     const aceptaLicencia = ref(false)
+    const { incidenciasUsuario, añadirIncidenciaUsuario } = useIncidenciasUsuarioStore() // Usar el store
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -473,7 +475,10 @@ export default {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         const { id, codigoUnico } = response.data;
-        localStorage.setItem(`incidencia_${id}`, codigoUnico);
+        
+        // Usar el store para añadir la incidencia del usuario
+        añadirIncidenciaUsuario(id)
+        
         enviarEventoMatomo('Incidencia', 'Enviar', 'Éxito', incidencia.value.tipo_id);
         emit('incidencia-creada', id);
         cerrar();
@@ -718,6 +723,7 @@ export default {
       abrirSelectorArchivos,
       onCameraCapture,
       aceptaLicencia,
+      incidenciasUsuario,
     }
   }
 }

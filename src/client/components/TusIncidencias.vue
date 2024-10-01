@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="dialogVisible" fullscreen :scrim="false" transition="dialog-bottom-transition">
-    <v-card v-show="dialogVisible" class="tus-incidencias-card">
+    <v-card v-if="!cargando" v-show="dialogVisible" class="tus-incidencias-card">
       <v-toolbar color="primary" class="elevation-2">
         <v-btn icon @click="cerrar">
           <v-icon>mdi-close</v-icon>
@@ -13,8 +13,8 @@
 
       <div class="mapa-container">
         <MapaIncidencias
-          v-if="!cargando && incidenciasUsuario.length > 0"
-          :incidencias="incidenciasUsuario"
+          v-if="!cargando && incidenciasUsuarioFiltradas.length > 0"
+          :incidencias="incidenciasUsuarioFiltradas"
           :incluirSolucionadas="true"
           :deshabilitarNuevaIncidencia="true"
           @incidencia-seleccionada="abrirDetalleIncidencia"
@@ -28,7 +28,7 @@
               <v-progress-circular indeterminate color="primary"></v-progress-circular>
             </v-col>
           </v-row>
-          <v-row v-else-if="incidenciasUsuario.length === 0">
+          <v-row v-else-if="incidenciasUsuarioFiltradas.length === 0">
             <v-col cols="12">
               <v-alert type="info">
                 No has reportado ninguna incidencia aún.
@@ -40,7 +40,7 @@
             <v-col cols="12" class="text-center mb-4">
               <p class="text-body-2 text-grey">
                 <v-icon color="grey" class="mr-1">mdi-file-document-multiple</v-icon>
-                <span class="mr-4">{{ incidenciasUsuario.length }}</span>
+                <span class="mr-4">{{ incidenciasUsuarioFiltradas.length }}</span>
                 <v-icon color="grey" class="mr-1">mdi-check-circle</v-icon>
                 <span>{{ incidenciasSolucionadas }}</span>
               </p>
@@ -60,7 +60,7 @@
               </v-col>
             </v-row>
             <!-- Lista de incidencias -->
-            <v-col v-for="incidencia in incidenciasUsuario" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
+            <v-col v-for="incidencia in incidenciasUsuarioFiltradas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
               <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-0 incidencia-card" height="150">
                 <v-row no-gutters>
                   <v-col cols="4">
@@ -112,6 +112,12 @@
         </v-container>
       </v-card-text>
     </v-card>
+    <v-card v-else-if="!cargando && incidenciasUsuarioFiltradas.length === 0" v-show="dialogVisible" class="tus-incidencias-card">
+      <v-card-text>
+        No tienes incidencias registradas.
+      </v-card-text>
+    </v-card>
+    <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
   </v-dialog>
 </template>
 
@@ -119,6 +125,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import MapaIncidencias from './MapaIncidencias.vue'
+import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore'
 
 export default {
   name: 'TusIncidencias',
@@ -137,26 +144,16 @@ export default {
     const route = useRoute()
     const cargando = ref(true)
     const todasLasIncidencias = ref([])
+    const { incidenciasUsuario, loadIncidenciasUsuario } = useIncidenciasUsuarioStore()
 
-    const incidenciasUsuario = computed(() => {
-      const incidenciasIds = Object.keys(localStorage)
-        .filter(key => key.startsWith('incidencia_'))
-        .map(key => parseInt(key.split('_')[1], 10))
-      
-      console.log('IDs de incidencias en localStorage:', incidenciasIds)
-      console.log('Todas las incidencias:', todasLasIncidencias.value)
-      
-      const incidenciasFiltradas = todasLasIncidencias.value.filter(incidencia => 
-        incidenciasIds.includes(incidencia.id)
+    const incidenciasUsuarioFiltradas = computed(() => {
+      return todasLasIncidencias.value.filter(incidencia => 
+        incidenciasUsuario.value.includes(incidencia.id)
       )
-      
-      console.log('Incidencias filtradas:', incidenciasFiltradas)
-      
-      return incidenciasFiltradas
     })
 
     const incidenciasSolucionadas = computed(() => {
-      return incidenciasUsuario.value.filter(incidencia => incidencia.estado === 'solucionada').length
+      return incidenciasUsuarioFiltradas.value.filter(incidencia => incidencia.estado === 'solucionada').length
     })
 
     const cerrar = () => {
@@ -180,11 +177,18 @@ export default {
 
     const cargarIncidencias = async () => {
       try {
-        if (props.incidencias instanceof Promise) {
-          todasLasIncidencias.value = await props.incidencias
-        } else {
-          todasLasIncidencias.value = props.incidencias
-        }
+        cargando.value = true
+        await loadIncidenciasUsuario()
+
+        await new Promise(resolve => {
+          const unwatch = watch(() => props.incidencias, (newIncidencias) => {
+            if (Array.isArray(newIncidencias) && newIncidencias.length > 0) {
+              todasLasIncidencias.value = newIncidencias
+              unwatch()
+              resolve()
+            }
+          }, { immediate: true })
+        })
       } catch (error) {
         console.error('Error al cargar las incidencias:', error)
       } finally {
@@ -214,13 +218,14 @@ export default {
 
     return {
       dialogVisible,
-      incidenciasUsuario,
+      incidenciasUsuarioFiltradas,
       cerrar,
       abrirDetalleIncidencia,
       handleImageError,
       formatDate,
       cargando,
-      incidenciasSolucionadas
+      incidenciasSolucionadas,
+      todasLasIncidencias
     }
   }
 }

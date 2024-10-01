@@ -351,6 +351,7 @@ import { enviarEventoMatomo } from './utils/analytics';
 import RankingBarrios from './components/RankingBarrios.vue';
 import FavoritasIncidencias from './components/FavoritasIncidencias.vue'
 import { useFavoritosStore } from './store/favoritosStore'
+import { useIncidenciasUsuarioStore } from './store/incidenciasUsuarioStore'
 
 export default {
   name: 'App',
@@ -629,10 +630,11 @@ export default {
     const totalIncidenciasUsuario = ref(0)
     const incidenciasSolucionadasUsuario = ref(0)
 
+    const { incidenciasUsuario, loadIncidenciasUsuario } = useIncidenciasUsuarioStore()
+
     const obtenerIncidenciasUsuario = async () => {
-      const incidenciasIds = Object.keys(localStorage)
-        .filter(key => key.startsWith('incidencia_'))
-        .map(key => key.replace('incidencia_', ''));
+      await loadIncidenciasUsuario()
+      const incidenciasIds = incidenciasUsuario.value.map(id => id.toString());
 
       totalIncidenciasUsuario.value = incidenciasIds.length;
 
@@ -653,9 +655,7 @@ export default {
       const diasAtras = new Date();
       diasAtras.setDate(diasAtras.getDate() - 7);
       
-      const incidenciasIds = Object.keys(localStorage)
-        .filter(key => key.startsWith('incidencia_'))
-        .map(key => key.replace('incidencia_', ''));
+      const incidenciasIds = incidenciasUsuario.value.map(id => id.toString());
 
       incidenciasAntiguasUsuario.value = todasLasIncidencias.value.filter(incidencia => 
         incidenciasIds.includes(incidencia.id.toString()) &&
