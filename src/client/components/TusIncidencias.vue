@@ -219,17 +219,32 @@ export default {
         cargando.value = true
         await loadIncidenciasUsuario()
 
-        await new Promise(resolve => {
-          const unwatch = watch(() => props.incidencias, (newIncidencias) => {
-            if (Array.isArray(newIncidencias) && newIncidencias.length > 0) {
-              todasLasIncidencias.value = newIncidencias
-              unwatch()
-              resolve()
-            }
-          }, { immediate: true })
-        })
+        const shouldContinueWatching = ref(true)
+
+        await Promise.race([
+          new Promise(resolve => {
+            watch(() => props.incidencias, (newIncidencias) => {
+              if (Array.isArray(newIncidencias) && newIncidencias.length > 0 && shouldContinueWatching.value) {
+                todasLasIncidencias.value = newIncidencias
+                shouldContinueWatching.value = false
+                resolve()
+              }
+            }, { immediate: true })
+          }),
+          new Promise((_, reject) => setTimeout(() => {
+            shouldContinueWatching.value = false
+            reject(new Error('Tiempo de espera agotado'))
+          }, 10000))
+        ])
       } catch (error) {
         console.error('Error al cargar las incidencias:', error)
+        if (error.message === 'Tiempo de espera agotado') {
+          console.error('La carga de incidencias ha excedido el tiempo límite')
+        } else if (error.name === 'NetworkError') {
+          console.error('Error de red al cargar las incidencias')
+        } else {
+          console.error('Error inesperado:', error.message)
+        }
       } finally {
         cargando.value = false
       }

@@ -416,8 +416,6 @@ export default {
 
     const obtenerIncidencias = async (page = currentPage.value, forzarActualizacion = false) => {
       try {
-        console.log('Obteniendo incidencias...', { page, forzarActualizacion, tipoSeleccionado: tipoSeleccionado.value, incluirSolucionadas: incluirSolucionadas.value });
-        
         const params = {
           page: page,
           limit: itemsPerPage,
@@ -430,7 +428,6 @@ export default {
         }
         
         const response = await axios.get(`/api/incidencias`, { params });
-        console.log('Respuesta recibida:', response.data);
         
         incidencias.value = response.data.incidencias;
         currentPage.value = response.data.currentPage;
@@ -440,10 +437,7 @@ export default {
         // Forzar actualización de la vista
         await nextTick();
         incidencias.value = [...incidencias.value];
-        
-        console.log('Incidencias actualizadas:', incidencias.value);
 
-        // Actualizar todasLasIncidencias
         await obtenerTodasLasIncidencias(true);
         calcularIncidenciasAntiguasUsuario();
         
@@ -487,7 +481,6 @@ export default {
         const ultimaActualizacion = response.data.ultimaActualizacion;
         
         if (ultimaActualizacion > ultimaActualizacionLocal.value) {
-          console.log('Se detectaron nuevas actualizaciones');
           obtenerIncidencias(currentPage.value, true);
           obtenerTodasLasIncidencias(true);
           ultimaActualizacionLocal.value = ultimaActualizacion;
@@ -650,8 +643,6 @@ export default {
       incidenciasSolucionadasUsuario.value = todasLasIncidencias.filter(inc => 
         incidenciasIds.includes(inc.id.toString()) && inc.estado === 'solucionada'
       ).length;
-
-      console.log('Incidencias del usuario:', { total: totalIncidenciasUsuario.value, solucionadas: incidenciasSolucionadasUsuario.value });
     };
 
     const incidenciasAntiguasUsuario = ref(0);
@@ -667,8 +658,6 @@ export default {
         incidencia.estado === 'activa' &&
         new Date(incidencia.fecha) < diasAtras
       ).length;
-
-      console.log('Incidencias antiguas del usuario:', incidenciasAntiguasUsuario.value);
     };
 
     // Actualizar cuando cambien las incidencias
@@ -703,12 +692,10 @@ export default {
     });
 
     watch(() => tipoSeleccionado.value, async () => {
-      console.log('Tipo seleccionado cambiado:', tipoSeleccionado.value);
       await obtenerIncidencias(1, true);
     });
 
     watch(() => incluirSolucionadas.value, async () => {
-      console.log('Incluir solucionadas cambiado:', incluirSolucionadas.value);
       await obtenerIncidencias(1, true);
       await obtenerTodasLasIncidencias(true);
     });
@@ -729,7 +716,6 @@ export default {
     }
 
     const actualizarUbicacion = (ubicacion) => {
-      console.log('Ubicación seleccionada:', ubicacion);  // Añade este log
       ubicacionSeleccionada.value = ubicacion
       mostrarFormulario.value = true  // Abre el formulario automáticamente
       // Scroll al formulario y focus en el primer campo
