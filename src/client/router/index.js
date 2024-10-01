@@ -16,7 +16,20 @@ const routes = [
     path: '/incidencia/:id',
     name: 'DetalleIncidencia',
     component: DetalleIncidencia,
-    props: true
+    props: true,
+    meta: {
+      title: 'Detalle de Incidencia',
+      metaTags: [
+        {
+          name: 'description',
+          content: 'Detalles de la incidencia'
+        },
+        {
+          property: 'og:description',
+          content: 'Detalles de la incidencia'
+        }
+      ]
+    }
   },
   {
     path: '/ranking',

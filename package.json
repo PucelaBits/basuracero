@@ -16,7 +16,10 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "@unhead/vue": "^1.11.7",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
+    "@vueuse/core": "^11.1.0",
+    "@vueuse/head": "^2.0.0",
     "axios": "^1.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

@@ -354,6 +354,7 @@ import 'leaflet/dist/leaflet.css';
 import { WidgetInstance } from 'friendly-challenge';
 import { enviarEventoMatomo } from '../utils/analytics';
 import { useFavoritosStore } from '../store/favoritosStore'; // Añade esta línea
+import { useHead } from '@unhead/vue';
 
 export default {
   name: 'DetalleIncidencia',
@@ -593,6 +594,54 @@ export default {
       // Enviar evento de Matomo
       enviarEventoMatomo('Incidencia', isFavorite.value ? 'Añadir a favoritos' : 'Quitar de favoritos', `ID: ${props.incidencia.id}`);
     };
+
+    const updateMetaTags = () => {
+      const title = `Basura Cero - Incidencia ${props.incidencia.id}`;
+      const description = `${props.incidencia.tipo} en ${props.incidencia.direccion.split(',')[0]}, ${props.incidencia.direccion.split(',')[1]}` || 'Detalles de la incidencia en Basura Cero';
+      const imageUrl = props.incidencia.imagenes && props.incidencia.imagenes.length > 0
+        ? new URL(props.incidencia.imagenes[0].ruta_imagen, window.location.origin).href
+        : '';
+      const url = window.location.href;
+
+      useHead({
+        title,
+        meta: [
+          { name: 'description', content: description },
+          // Open Graph / Facebook
+          { property: 'og:type', content: 'website' },
+          { property: 'og:url', content: url },
+          { property: 'og:title', content: title },
+          { property: 'og:description', content: description },
+          { property: 'og:image', content: imageUrl },
+          { property: 'og:image:alt', content: `Imagen de la incidencia ${props.incidencia.id}` },
+          { property: 'og:site_name', content: 'Basura Cero' },
+          // Twitter
+          { name: 'twitter:card', content: 'summary_large_image' },
+          { name: 'twitter:url', content: url },
+          { name: 'twitter:title', content: title },
+          { name: 'twitter:description', content: description },
+          { name: 'twitter:image', content: imageUrl },
+          { name: 'twitter:image:alt', content: `Imagen de la incidencia ${props.incidencia.id}` },
+          // Para iOS
+          { name: 'apple-mobile-web-app-title', content: title },
+          // Para Android
+          { name: 'application-name', content: title },
+          // Para WhatsApp
+          { property: 'og:image:width', content: '1200' },
+          { property: 'og:image:height', content: '630' },
+          // Para LinkedIn
+          { property: 'og:image:secure_url', content: imageUrl },
+          // Para Pinterest
+          { name: 'pinterest:media', content: imageUrl },
+          { name: 'pinterest:description', content: description },
+        ],
+        link: [
+          { rel: 'canonical', href: url }
+        ]
+      });
+    };
+
+    watch(() => props.incidencia, updateMetaTags, { immediate: true, deep: true });
 
     onMounted(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
