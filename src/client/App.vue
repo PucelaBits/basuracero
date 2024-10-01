@@ -139,9 +139,8 @@
                   color="white"
                   text
                   @click="instalarPWA"
-                  size="large"
                 >
-                  <v-icon>mdi-cellphone</v-icon> Añademe a tu pantalla principal
+                  <v-icon class="mr-2">mdi-cellphone</v-icon> Añademe a tu pantalla principal
                 </v-btn>
                 <v-btn
                   color="primary"
