@@ -21,6 +21,12 @@
           </template>
           <v-list-item-title>Tus incidencias</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/favoritas" v-if="tieneFavoritos">
+          <template v-slot:prepend>
+            <v-icon>mdi-star</v-icon>
+          </template>
+          <v-list-item-title>Tus favoritas</v-list-item-title>
+        </v-list-item>
         <v-list-item to="/cercanas">
           <template v-slot:prepend>
             <v-icon>mdi-map-marker-radius</v-icon>
@@ -322,6 +328,7 @@
     <IncidenciasCercanas :incidencias="todasLasIncidencias" />
     <TusIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
     <RankingBarrios />
+    <FavoritasIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
   </v-app>
 </template>
 
@@ -342,6 +349,8 @@ import TusIncidencias from './components/TusIncidencias.vue'
 import { obtenerTiposIncidencias } from './utils/api'
 import { enviarEventoMatomo } from './utils/analytics';
 import RankingBarrios from './components/RankingBarrios.vue';
+import FavoritasIncidencias from './components/FavoritasIncidencias.vue'
+import { useFavoritosStore } from './store/favoritosStore'
 
 export default {
   name: 'App',
@@ -354,7 +363,8 @@ export default {
     RankingUsuarios,
     IncidenciasCercanas,
     TusIncidencias,
-    RankingBarrios
+    RankingBarrios,
+    FavoritasIncidencias
   },
   setup() {
     const incidencias = ref([])
@@ -823,6 +833,10 @@ export default {
       totalUsuarios.value = usuariosUnicos.size;
     };
 
+    const { favoritos } = useFavoritosStore()
+
+    const tieneFavoritos = computed(() => favoritos.value.length > 0)
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -884,6 +898,7 @@ export default {
       incidenciasSolucionadas,
       totalUsuarios,
       manejarCierreBanner,
+      tieneFavoritos,
     }
   }
 }

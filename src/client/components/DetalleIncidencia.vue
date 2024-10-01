@@ -35,6 +35,17 @@
           <span :class="['estado-pastilla', incidencia.estado]">
             {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
           </span>
+          <!-- Nuevo botón de favoritos -->
+          <v-btn
+            icon
+            x-small
+            class="favorite-btn"
+            @click="toggleFavorite"
+          >
+            <v-icon small :color="isFavorite ? 'yellow darken-2' : 'grey lighten-1'">
+              {{ isFavorite ? 'mdi-star' : 'mdi-star-outline' }}
+            </v-icon>
+          </v-btn>
         </div>
         
         <v-btn icon dark class="close-btn" @click="cerrar">
@@ -313,6 +324,16 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Añadir esto al final del template -->
+    <v-snackbar
+      v-model="snackbar"
+      :timeout="2000"
+      color="success"
+      bottom
+    >
+      {{ snackbarText }}
+    </v-snackbar>
   </v-dialog>
 </template>
 
@@ -326,6 +347,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { WidgetInstance } from 'friendly-challenge';
 import { enviarEventoMatomo } from '../utils/analytics';
+import { useFavoritosStore } from '../store/favoritosStore'; // Añade esta línea
 
 export default {
   name: 'DetalleIncidencia',
@@ -360,6 +382,8 @@ export default {
     const mostrarDialogoExito = ref(false);
     const route = useRoute();
     const imagenSeleccionadaIndex = ref(0);
+    const snackbar = ref(false);
+    const snackbarText = ref('');
 
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
 
@@ -543,6 +567,26 @@ export default {
       router.replace({ query: {} });
     };
 
+    const { favoritos, añadirFavorito, quitarFavorito, esFavorito } = useFavoritosStore();
+
+    const isFavorite = computed(() => esFavorito(props.incidencia.id));
+
+    const toggleFavorite = () => {
+      if (isFavorite.value) {
+        quitarFavorito(props.incidencia.id);
+        snackbarText.value = 'Eliminada de favoritos';
+      } else {
+        añadirFavorito(props.incidencia.id);
+        snackbarText.value = 'Añadida a favoritos';
+      }
+
+      // Mostrar el snackbar
+      snackbar.value = true;
+
+      // Enviar evento de Matomo
+      enviarEventoMatomo('Incidencia', isFavorite.value ? 'Añadir a favoritos' : 'Quitar de favoritos', `ID: ${props.incidencia.id}`);
+    };
+
     onMounted(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
         map.value = L.map('mapa-detalle', {
@@ -578,6 +622,10 @@ export default {
       if (route.query.mostrarDialogoExito === 'true') {
         mostrarDialogoExito.value = true;
       }
+
+      // Comprobar si la incidencia está en favoritos
+      const favorites = JSON.parse(localStorage.getItem('favoriteIncidencias') || '[]');
+      isFavorite.value = favorites.includes(props.incidencia.id);
     });
 
     onUnmounted(() => {
@@ -699,6 +747,10 @@ export default {
       cerrarDialogoExito,
       clickGeoLink,
       imagenSeleccionadaIndex,
+      isFavorite,
+      toggleFavorite,
+      snackbar,
+      snackbarText,
     };
   }
 };
@@ -740,36 +792,25 @@ a {
   left: 10px;
   display: flex;
   gap: 5px;
+  align-items: center;
+  z-index: 1;
 }
 
-.popup-chip {
-  background-color: white;
-  color: #392763;
-  padding: 2px 8px;
+.popup-chip, .estado-pastilla {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #333;
+  padding: 4px 8px;
   border-radius: 16px;
   font-size: 12px;
-  font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
 }
 
 .estado-pastilla {
-  padding: 2px 8px;
+  padding: 4px 8px;
   border-radius: 16px;
   font-size: 12px;
-  font-weight: bold;
-}
-
-.estado-pastilla.activa {
-  background-color: #e74c3c;
-  color: white;
-}
-
-.estado-pastilla.solucionada {
-  background-color: #2ecc71;
   color: white;
 }
 
@@ -886,5 +927,15 @@ a {
   right: 20px;
   z-index: 1000;
   background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.favorite-btn {
+  width: 24px !important;
+  height: 24px !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.favorite-btn .v-icon {
+  font-size: 16px;
 }
 </style>

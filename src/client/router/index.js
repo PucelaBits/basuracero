@@ -4,6 +4,7 @@ import RankingUsuarios from '../components/RankingUsuarios.vue'
 import IncidenciasCercanas from '../components/IncidenciasCercanas.vue'
 import TusIncidencias from '../components/TusIncidencias.vue'
 import RankingBarrios from '../components/RankingBarrios.vue'
+import FavoritasIncidencias from '../components/FavoritasIncidencias.vue'
 
 const routes = [
   {
@@ -37,6 +38,12 @@ const routes = [
     path: '/ranking/barrios',
     name: 'RankingBarrios',
     component: RankingBarrios
+  },
+  {
+    path: '/favoritas',
+    name: 'FavoritasIncidencias',
+    component: FavoritasIncidencias,
+    props: true
   },
 ]
 
