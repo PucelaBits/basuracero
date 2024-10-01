@@ -284,10 +284,16 @@
           Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
           <br>
           <br><span class="subtitle-text"><strong>Nota:</strong> Si es la primera vez que hablas con el bot necesitarás mandarle primero "Hola" para activarle</span>
+          <v-checkbox
+            v-model="añadirAFavoritas"
+            label="Añadir a mis favoritas"
+            class="mt-2 mb-4"
+            :value="true"
+          ></v-checkbox>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="enviarWhatsApp">Aceptar</v-btn>
+          <v-btn color="primary" text @click="enviarWhatsAppYFavoritos">Aceptar</v-btn>
           <v-btn color="error" text @click="mostrarDialogoWhatsApp = false">Cancelar</v-btn>
         </v-card-actions>
       </v-card>
@@ -384,6 +390,7 @@ export default {
     const imagenSeleccionadaIndex = ref(0);
     const snackbar = ref(false);
     const snackbarText = ref('');
+    const añadirAFavoritas = ref(true);
 
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
 
@@ -719,6 +726,13 @@ export default {
       }
     });
 
+    const enviarWhatsAppYFavoritos = () => {
+      handleEnviarWhatsApp();
+      if (añadirAFavoritas.value && !isFavorite.value) {
+        toggleFavorite();
+      }
+    };
+
     return {
       dialog,
       cerrar,
@@ -751,6 +765,8 @@ export default {
       toggleFavorite,
       snackbar,
       snackbarText,
+      añadirAFavoritas,
+      enviarWhatsAppYFavoritos,
     };
   }
 };

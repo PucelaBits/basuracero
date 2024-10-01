@@ -153,10 +153,15 @@
           Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
           <br>
           <br><span class="subtitle-text"><strong>Nota:</strong> Si es la primera vez que hablas con el bot necesitarás mandarle primero "Hola" para activarle</span>
+          <v-checkbox
+            v-model="añadirAFavoritas"
+            label="Añadir a mis favoritas"
+            class="mt-2 mb-4"
+            :value="true"
+          ></v-checkbox>
         </v-card-text>
         <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="handleEnviarWhatsApp">Aceptar</v-btn>
+          <v-btn color="primary" text @click="enviarWhatsAppYFavoritos">Aceptar</v-btn>
           <v-btn color="error" text @click="mostrarDialogoWhatsApp = false">Cancelar</v-btn>
         </v-card-actions>
       </v-card>
@@ -202,6 +207,7 @@ import { useRouter, useRoute } from 'vue-router'
 import MapaIncidencias from './MapaIncidencias.vue'
 import { useResolverIncidencia } from '@/composables/useResolverIncidencia'
 import { useInformarAyuntamiento } from '@/composables/useInformarAyuntamiento'
+import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
 
 export default {
@@ -219,6 +225,7 @@ export default {
     
     const { resolverIncidencia, reportando, mensajeError } = useResolverIncidencia()
     const { enviarWhatsApp } = useInformarAyuntamiento()
+    const { añadirFavorito, quitarFavorito, esFavorito, loadFavoritos } = useFavoritosStore()
 
     const dialogVisible = ref(false)
     const cargandoUbicacion = ref(false)
@@ -246,6 +253,8 @@ export default {
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY
 
     const faldonesOcultos = ref(new Set())
+
+    const añadirAFavoritas = ref(true)
 
     const actualizarUbicacionUsuario = () => {
       cargandoUbicacion.value = true
@@ -287,17 +296,19 @@ export default {
 
     const calcularIncidenciasCercanas = () => {
       if (ubicacionUsuario.value && props.incidencias.length > 0) {
-        incidenciasCalculadas.value = props.incidencias.map(incidencia => ({
-          ...incidencia,
-          id: parseInt(incidencia.id, 10),
-          distancia: calcularDistancia(
-            ubicacionUsuario.value.latitud,
-            ubicacionUsuario.value.longitud,
-            incidencia.latitud,
-            incidencia.longitud
-          ),
-          faldonOculto: faldonesOcultos.value.has(parseInt(incidencia.id, 10))
-        }));
+        incidenciasCalculadas.value = props.incidencias
+          .filter(incidencia => incidencia.estado !== 'solucionada') // Filtrar incidencias no solucionadas
+          .map(incidencia => ({
+            ...incidencia,
+            id: parseInt(incidencia.id, 10),
+            distancia: calcularDistancia(
+              ubicacionUsuario.value.latitud,
+              ubicacionUsuario.value.longitud,
+              incidencia.latitud,
+              incidencia.longitud
+            ),
+            faldonOculto: faldonesOcultos.value.has(parseInt(incidencia.id, 10))
+          }));
         cargandoIncidencias.value = false;
       }
     }
@@ -350,24 +361,25 @@ export default {
     const verificarEstadoIncidencia = async (incidenciaId, estado) => {
       try {
         const idNumerico = parseInt(incidenciaId, 10)
-        incidenciaSeleccionada.value = incidenciasCalculadas.value.find(inc => inc.id === idNumerico);
+        incidenciaSeleccionada.value = incidenciasCalculadas.value.find(inc => inc.id === idNumerico)
         if (!incidenciaSeleccionada.value) {
           return
         }
 
         if (estado === 'activa') {
-          mostrarDialogoWhatsApp.value = true;
+          añadirAFavoritas.value = !esFavorito(incidenciaSeleccionada.value.id)
+          mostrarDialogoWhatsApp.value = true
         } else if (estado === 'solucionada') {
-          mostrarDialogoConfirmacion.value = true;
-          await nextTick();
-          inicializarCaptcha();
+          mostrarDialogoConfirmacion.value = true
+          await nextTick()
+          inicializarCaptcha()
         } else {
-          ocultarFaldon(incidenciaSeleccionada.value);
+          ocultarFaldon(incidenciaSeleccionada.value)
         }
       } catch (error) {
         console.error('Error en verificarEstadoIncidencia:', error)
       }
-    };
+    }
 
     const inicializarCaptcha = () => {
       if (captchaHabilitado.value && captchaContainer.value) {
@@ -430,9 +442,20 @@ export default {
       mostrarDialogoAdvertencia.value = true;
     };
 
-    const handleEnviarWhatsApp = () => {
+    const enviarWhatsAppYFavoritos = async () => {
       if (incidenciaSeleccionada.value) {
-        enviarWhatsApp(incidenciaSeleccionada.value)
+        await enviarWhatsApp(incidenciaSeleccionada.value)
+        if (añadirAFavoritas.value) {
+          añadirFavorito(incidenciaSeleccionada.value.id)
+          // Actualizar el estado de la incidencia en la lista
+          const index = incidenciasCalculadas.value.findIndex(inc => inc.id === incidenciaSeleccionada.value.id)
+          if (index !== -1) {
+            incidenciasCalculadas.value[index] = {
+              ...incidenciasCalculadas.value[index],
+              esFavorita: true
+            }
+          }
+        }
       }
       mostrarDialogoWhatsApp.value = false
     }
@@ -459,11 +482,17 @@ export default {
       }
     })
 
-    onMounted(() => {
+    onMounted(async () => {
       if (route.name === 'IncidenciasCercanas') {
         dialogVisible.value = true
         actualizarUbicacionUsuario()
       }
+      await loadFavoritos()
+      // Actualizar el estado de favoritos para todas las incidencias
+      incidenciasCalculadas.value = incidenciasCalculadas.value.map(incidencia => ({
+        ...incidencia,
+        esFavorita: esFavorito(incidencia.id)
+      }))
     })
 
     watch(() => props.incidencias, (newIncidencias) => {
@@ -522,10 +551,11 @@ export default {
       friendlyCaptchaSiteKey,
       confirmarSolucion,
       cancelarConfirmacion,
-      handleEnviarWhatsApp,
+      enviarWhatsAppYFavoritos,
       captchaHabilitado,
       ocultarFaldon,
-      mostrarError
+      mostrarError,
+      añadirAFavoritas
     }
   }
 }
