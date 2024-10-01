@@ -12,7 +12,8 @@
     "borrar-incidencia": "node scripts/borrarIncidencia.js",
     "tipos": "node scripts/gestionarTipos.js",
     "rellenar-barrios": "node scripts/rellenarBarrios.js",
-    "migrar-imagenes": "node scripts/migrarImagenes.js"
+    "migrar-imagenes": "node scripts/migrarImagenes.js",
+    "borrar-reportes-solucion": "node scripts/borrarReportesSolucion.js"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

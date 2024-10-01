@@ -509,7 +509,14 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
             if (err) {
               return res.status(500).json({ error: 'Error al actualizar la incidencia' });
             }
-            return res.json({ solucionada: true, mensaje: 'Incidencia marcada como solucionada' });
+            // Añadir registro a la tabla de reportes de solución
+            db.run('INSERT INTO reportes_solucion (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
+              if (err) {
+                console.error('Error al registrar el reporte de solución:', err);
+                // No devolvemos error al cliente, ya que la incidencia se marcó como solucionada correctamente
+              }
+              return res.json({ solucionada: true, mensaje: 'Incidencia marcada como solucionada' });
+            });
           });
         } else {
           // El código único no coincide, continuar con el proceso normal de reporte
