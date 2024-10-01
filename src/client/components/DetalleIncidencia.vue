@@ -31,10 +31,6 @@
         
         <!-- Pastillas de tipo y estado -->
         <div class="pastillas-container">
-          <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
-          <span :class="['estado-pastilla', incidencia.estado]">
-            {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
-          </span>
           <!-- Nuevo botón de favoritos -->
           <v-btn
             icon
@@ -46,6 +42,10 @@
               {{ isFavorite ? 'mdi-star' : 'mdi-star-outline' }}
             </v-icon>
           </v-btn>
+          <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
+          <span :class="['estado-pastilla', incidencia.estado]">
+            {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
+          </span>
         </div>
         
         <v-btn icon dark class="close-btn" @click="cerrar">
