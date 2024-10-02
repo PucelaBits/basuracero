@@ -371,6 +371,7 @@ export default {
   emits: ['update:modelValue', 'cerrar'],
   setup(props, { emit }) {
     const router = useRouter();
+    const route = useRoute();
     const dialog = ref(props.modelValue);
     const mostrarDialogoConfirmacion = ref(false);
     const mostrarDialogoAdvertencia = ref(false);
@@ -387,7 +388,6 @@ export default {
     const captchaSolutionInadecuado = ref(null);
     const captchaWidgetInadecuado = ref(null);
     const mostrarDialogoExito = ref(false);
-    const route = useRoute();
     const imagenSeleccionadaIndex = ref(0);
     const snackbar = ref(false);
     const snackbarText = ref('');
@@ -447,7 +447,6 @@ export default {
 
     const cerrar = () => {
       dialog.value = false;
-      router.push('/');
     };
 
     const abrirImagenCompleta = (index) => {
@@ -571,8 +570,11 @@ export default {
 
     const cerrarDialogoExito = () => {
       mostrarDialogoExito.value = false;
-      // Eliminar el parámetro de la URL
-      router.replace({ query: {} });
+      router.replace({ 
+        name: route.name, 
+        params: route.params,
+        query: {} 
+      });
     };
 
     const { favoritos, añadirFavorito, quitarFavorito, esFavorito } = useFavoritosStore();

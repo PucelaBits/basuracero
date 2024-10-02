@@ -83,7 +83,7 @@
           style="border-radius: 0;"
         >
           <div><v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>Tienes {{ incidenciasAntiguasUsuario }} incidencia{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días</div>
-          <v-btn text color="white" size="small" class="mt-3" @click="$router.push('/perfil')">
+          <v-btn text color="white" size="small" class="mt-3" @click="$router.push({ name: 'TusIncidencias' })">
             <v-icon color="grey-darken-2 mr-2">mdi-check-circle</v-icon> Verifica si se {{ incidenciasAntiguasUsuario !== 1 ? 'solucionaron' : 'solucionó' }}
           </v-btn>
         </v-alert>
@@ -753,6 +753,7 @@ export default {
     const abrirDetalleIncidencia = (incidencia) => {
       incidenciaSeleccionada.value = incidencia;
       mostrarDetalleIncidencia.value = true;
+      router.push({ name: 'DetalleIncidencia', params: { id: incidencia.id } });
     }
 
     const abrirDetalleIncidenciaPorId = async (id) => {
@@ -765,8 +766,13 @@ export default {
     }
 
     const cerrarDetalleIncidencia = () => {
-      incidenciaSeleccionada.value = null;
       mostrarDetalleIncidencia.value = false;
+      incidenciaSeleccionada.value = null;
+      if (window.history.length > 2) {
+        router.go(-1);
+      } else {
+        router.push('/');
+      }
     }
 
     const seleccionarEnMapa = () => {

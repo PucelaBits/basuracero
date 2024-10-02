@@ -70,7 +70,7 @@
 <script>
 import { ref } from 'vue';
 import DetalleIncidencia from './DetalleIncidencia.vue';
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 export default {
   name: 'ListaIncidencias',
@@ -86,6 +86,7 @@ export default {
   },
   setup(props, { emit }) {
     const router = useRouter();
+    const route = useRoute();
     const incidenciaSeleccionada = ref(null);
 
     const abrirDetalle = (incidencia) => {

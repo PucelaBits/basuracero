@@ -210,9 +210,12 @@
       }
   
       const cerrar = () => {
-        dialogVisible.value = false
-        router.push('/')
+        if (route.name === 'FavoritasIncidencias') {
+        router.push({ name: 'Home' });
+      } else {
+        dialogVisible.value = false;
       }
+    }
   
       const abrirDetalleIncidencia = (incidencia) => {
         router.push({ name: 'DetalleIncidencia', params: { id: incidencia.id } })

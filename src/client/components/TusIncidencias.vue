@@ -196,8 +196,11 @@ export default {
     })
 
     const cerrar = () => {
-      dialogVisible.value = false
-      router.push('/')
+      if (route.name === 'TusIncidencias') {
+        router.push({ name: 'Home' });
+      } else {
+        dialogVisible.value = false;
+      }
     }
 
     const abrirDetalleIncidencia = (incidencia) => {
@@ -259,7 +262,7 @@ export default {
 
     watch(dialogVisible, (newValue) => {
       if (!newValue && route.name === 'TusIncidencias') {
-        router.push('/')
+        router.push({ name: 'Home' });
       }
     })
 

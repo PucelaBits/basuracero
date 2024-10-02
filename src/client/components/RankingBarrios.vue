@@ -147,9 +147,12 @@
       };
   
       const cerrar = () => {
-        dialogVisible.value = false;
-        router.push('/');
-      };
+        if (route.name === 'RankingBarrios') {
+          router.push({ name: 'Home' });
+        } else {
+          dialogVisible.value = false;
+        }
+      }
   
       const obtenerRanking = async () => {
         try {

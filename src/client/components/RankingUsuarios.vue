@@ -113,9 +113,12 @@ export default {
     };
 
     const cerrar = () => {
-      dialogVisible.value = false;
-      router.push('/');
-    };
+      if (route.name === 'RankingUsuarios') {
+        router.push({ name: 'Home' });
+      } else {
+        dialogVisible.value = false;
+      }
+    }
 
     const obtenerRanking = async () => {
       try {

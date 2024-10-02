@@ -340,8 +340,11 @@ export default {
     }
 
     const cerrar = () => {
-      dialogVisible.value = false
-      router.push('/')
+      if (route.name === 'IncidenciasCercanas') {
+        router.push({ name: 'Home' });
+      } else {
+        dialogVisible.value = false;
+      }
     }
 
     const formatDate = (dateString) => {
@@ -498,8 +501,9 @@ export default {
 
     onMounted(async () => {
       if (route.name === 'IncidenciasCercanas') {
-        dialogVisible.value = true
-        actualizarUbicacionUsuario()
+        cargandoIncidencias.value = true
+        dialogVisible.value = true;
+        actualizarUbicacionUsuario();
       }
       await loadFavoritos()
       // Actualizar el estado de favoritos para todas las incidencias
@@ -516,12 +520,8 @@ export default {
     }, { immediate: true });
 
     watch(() => route.name, (newRouteName) => {
-      dialogVisible.value = newRouteName === 'IncidenciasCercanas'
-      if (dialogVisible.value) {
-        cargandoIncidencias.value = true
-        actualizarUbicacionUsuario()
-      }
-    })
+      dialogVisible.value = newRouteName === 'IncidenciasCercanas';
+    });
 
     watch(dialogVisible, (newValue) => {
       if (newValue) {
