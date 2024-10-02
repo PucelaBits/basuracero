@@ -105,7 +105,7 @@
                             </p>
                             <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
                               <v-icon x-small class="mr-1">mdi-account-group</v-icon>
-                              {{ incidencia.reportes_solucion }} marcaron como solucionada
+                              {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de solucionada
                             </p>
                           </v-card-text>
                         </v-col>

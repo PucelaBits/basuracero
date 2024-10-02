@@ -75,16 +75,23 @@
 
         <!-- Banner de notificación -->
         <v-alert
-          v-if="incidenciasAntiguasUsuario > 0"
+          v-if="incidenciasAntiguasUsuario > 0 || incidenciasConReportesSolucion > 0"
           color="#7361a0"
           class="banner-incidencias mx-0 pt-4 pb-4 text-center text-caption"
           density="compact"
           text-align="center"
           style="border-radius: 0;"
         >
-          <div><v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>Tienes {{ incidenciasAntiguasUsuario }} incidencia{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días</div>
+          <div v-if="incidenciasAntiguasUsuario > 0">
+            <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>
+            {{ incidenciasAntiguasUsuario }} incidencia{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días
+          </div>
+          <div v-if="incidenciasConReportesSolucion > 0">
+            <v-icon color="white" size="small" class="mr-2">mdi-check-circle-outline</v-icon>
+            {{ incidenciasConReportesSolucion }} incidencia{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }} con votos de solucionada{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }}
+          </div>
           <v-btn text color="white" size="small" class="mt-3" @click="$router.push({ name: 'TusIncidencias' })">
-            <v-icon color="grey-darken-2 mr-2">mdi-check-circle</v-icon> Verifica si se {{ incidenciasAntiguasUsuario !== 1 ? 'solucionaron' : 'solucionó' }}
+            <v-icon color="grey-darken-2 mr-2">mdi-check-circle</v-icon> Verifica tus incidencias
           </v-btn>
         </v-alert>
 
@@ -646,6 +653,7 @@ export default {
     };
 
     const incidenciasAntiguasUsuario = ref(0);
+    const incidenciasConReportesSolucion = ref(0);
 
     const calcularIncidenciasAntiguasUsuario = () => {
       const diasAtras = new Date();
@@ -658,10 +666,16 @@ export default {
         incidencia.estado === 'activa' &&
         new Date(incidencia.fecha) < diasAtras
       ).length;
+
+      incidenciasConReportesSolucion.value = todasLasIncidencias.value.filter(incidencia => 
+        incidenciasIds.includes(incidencia.id.toString()) &&
+        incidencia.estado === 'activa' &&
+        (incidencia.reportes_solucion > 0)
+      ).length;
     };
 
-    // Actualizar cuando cambien las incidencias
-    watch(todasLasIncidencias, calcularIncidenciasAntiguasUsuario);
+    // Asegúrate de llamar a esta función cuando se carguen las incidencias
+    watch([todasLasIncidencias, incidenciasUsuario], calcularIncidenciasAntiguasUsuario, { immediate: true });
 
     onMounted(() => {
       obtenerIncidencias(1, true);
@@ -898,6 +912,8 @@ export default {
       incidenciasSolucionadasUsuario,
       obtenerIncidenciasUsuario,
       incidenciasAntiguasUsuario,
+      incidenciasConReportesSolucion,
+      calcularIncidenciasAntiguasUsuario,
       incidenciasActivas,
       incidenciasSolucionadas,
       totalUsuarios,
