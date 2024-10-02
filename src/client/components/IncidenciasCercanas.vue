@@ -340,10 +340,9 @@ export default {
     }
 
     const cerrar = () => {
+      dialogVisible.value = false;
       if (route.name === 'IncidenciasCercanas') {
         router.push({ name: 'Home' });
-      } else {
-        dialogVisible.value = false;
       }
     }
 
@@ -526,6 +525,8 @@ export default {
     watch(dialogVisible, (newValue) => {
       if (newValue) {
         actualizarUbicacionUsuario()
+      } else if (!newValue && route.name === 'IncidenciasCercanas') {
+        router.push({ name: 'Home' });
       }
     })
 
