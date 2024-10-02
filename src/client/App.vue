@@ -57,6 +57,21 @@
           </template>
           <v-list-item-title>Compartir</v-list-item-title>
         </v-list-item>
+        <v-list-item>
+          <v-menu offset-y>
+            <template v-slot:activator="{ props }">
+              <v-list-item v-bind="props" prepend-icon="mdi-database" title="Tus datos"></v-list-item>
+            </template>
+            <v-list>
+              <v-list-item @click="exportarDatos">
+                <v-list-item-title>Exportar datos</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="importarDatos">
+                <v-list-item-title>Importar datos</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -364,6 +379,7 @@ import RankingBarrios from './components/RankingBarrios.vue';
 import FavoritasIncidencias from './components/FavoritasIncidencias.vue'
 import { useFavoritosStore } from './store/favoritosStore'
 import { useIncidenciasUsuarioStore } from './store/incidenciasUsuarioStore'
+import { useGestionDatos } from './composables/useGestionDatos';
 
 export default {
   name: 'App',
@@ -659,7 +675,10 @@ export default {
       const diasAtras = new Date();
       diasAtras.setDate(diasAtras.getDate() - 7);
       
-      const incidenciasIds = incidenciasUsuario.value.map(id => id.toString());
+      // Verificar si incidenciasUsuario.value es un array
+      const incidenciasIds = Array.isArray(incidenciasUsuario.value) 
+        ? incidenciasUsuario.value.map(id => id.toString())
+        : [];
 
       incidenciasAntiguasUsuario.value = todasLasIncidencias.value.filter(incidencia => 
         incidenciasIds.includes(incidencia.id.toString()) &&
@@ -855,6 +874,8 @@ export default {
       obtenerIncidencias(1, true)
     }
 
+    const { exportarDatos, importarDatos } = useGestionDatos();
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -921,6 +942,8 @@ export default {
       tieneFavoritos,
       filtroEstado,
       cambiarFiltroEstado,
+      exportarDatos,
+      importarDatos
     }
   }
 }
