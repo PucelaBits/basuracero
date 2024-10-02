@@ -58,6 +58,22 @@ const reporteLimiter = rateLimit({
   }
 });
 
+// Función para sanitizar y validar el nombre
+function sanitizarNombre(nombre) {
+  if (!nombre) return '';
+  // Eliminar espacios al inicio y al final, y limitar a 100 caracteres
+  return nombre.trim().slice(0, 100);
+}
+
+// Función para validar el nombre
+function validarNombre(nombre) {
+  const nombreSanitizado = sanitizarNombre(nombre);
+  if (nombreSanitizado.length === 0) {
+    return 'El nombre es requerido';
+  }
+  return null; // null significa que no hay error
+}
+
 // Función de validación
 const validarIncidencia = (incidencia) => {
   const errores = [];
@@ -481,7 +497,14 @@ router.get('/:id', (req, res) => {
 router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
   const incidenciaId = req.params.id;
   const ip = obtenerIP(req);
-  const { 'frc-captcha-solution': captchaSolution, codigoUnico } = req.body;
+  const { 'frc-captcha-solution': captchaSolution, codigoUnico, nombre } = req.body;
+
+  // Sanitizar y validar el nombre
+  const nombreSanitizado = sanitizarNombre(nombre);
+  const errorNombre = validarNombre(nombreSanitizado);
+  if (errorNombre) {
+    return res.status(400).json({ error: errorNombre });
+  }
 
   try {
     // Validar el captcha
@@ -510,7 +533,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
               return res.status(500).json({ error: 'Error al actualizar la incidencia' });
             }
             // Añadir registro a la tabla de reportes de solución
-            db.run('INSERT INTO reportes_solucion (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
+            db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombreSanitizado], (err) => {
               if (err) {
                 console.error('Error al registrar el reporte de solución:', err);
                 // No devolvemos error al cliente, ya que la incidencia se marcó como solucionada correctamente
@@ -520,12 +543,12 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
           });
         } else {
           // El código único no coincide, continuar con el proceso normal de reporte
-          procesarReporteSolucion(incidenciaId, ip, res);
+          procesarReporteSolucion(incidenciaId, ip, nombreSanitizado, res);
         }
       });
     } else {
       // No se proporcionó código único, continuar con el proceso normal de reporte
-      procesarReporteSolucion(incidenciaId, ip, res);
+      procesarReporteSolucion(incidenciaId, ip, nombreSanitizado, res);
     }
   } catch (error) {
     console.error('Error al procesar la solicitud:', error);
@@ -533,7 +556,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
   }
 });
 
-function procesarReporteSolucion(incidenciaId, ip, res) {
+function procesarReporteSolucion(incidenciaId, ip, nombreSanitizado, res) {
   // Verificar si el usuario ya ha reportado esta incidencia
   db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
     if (err) {
@@ -544,7 +567,7 @@ function procesarReporteSolucion(incidenciaId, ip, res) {
     }
 
     // Insertar el nuevo reporte
-    db.run('INSERT INTO reportes_solucion (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
+    db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombreSanitizado], (err) => {
       if (err) {
         return res.status(500).json({ error: 'Error al registrar el reporte' });
       }

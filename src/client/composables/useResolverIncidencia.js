@@ -6,13 +6,14 @@ export function useResolverIncidencia() {
   const reportando = ref(false);
   const mensajeError = ref('');
 
-  const resolverIncidencia = async (incidenciaId, captchaSolution, codigoUnico) => {
+  const resolverIncidencia = async (id, captchaSolution, codigoUnico, nombre) => {
     reportando.value = true;
     try {
-      enviarEventoMatomo('Incidencia', 'Resolver', `ID: ${incidenciaId}`);
-      const response = await axios.post(`/api/incidencias/${incidenciaId}/solucionada`, {
+      enviarEventoMatomo('Incidencia', 'Resolver', `ID: ${id}`);
+      const response = await axios.post(`/api/incidencias/${id}/solucionada`, {
         'frc-captcha-solution': captchaSolution,
-        codigoUnico
+        codigoUnico,
+        nombre
       });
       reportando.value = false;
       return response.data;

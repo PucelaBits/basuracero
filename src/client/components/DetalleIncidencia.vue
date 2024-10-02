@@ -213,12 +213,19 @@
         <v-card-title class="headline">Confirmar resolución</v-card-title>
         <v-card-text>
           ¿Has verificado presencialmente que la incidencia ha sido solucionada?
-          <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
+          <v-text-field
+            v-model="nombreUsuario"
+            label="Tu nombre o apodo"
+            :rules="[v => !!v || 'El nombre o apodo es necesario']"
+            required
+            class="mt-4"
+          ></v-text-field>
+          <div ref="captchaContainer" class="frc-captcha mt-0" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
           <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="green darken-1" text @click="confirmarSolucion">Sí</v-btn>
+          <v-btn color="green darken-1" text @click="confirmarSolucion" :disabled="!nombreUsuario">Sí</v-btn>
           <v-btn color="red darken-1" text @click="cancelarConfirmacion">No</v-btn>
         </v-card-actions>
       </v-card>
@@ -472,16 +479,37 @@ export default {
     const { reportando, mensajeError, resolverIncidencia } = useResolverIncidencia();
     const { enviarWhatsApp } = useInformarAyuntamiento();
 
+    const nombreUsuario = ref('');
+
+    const cargarNombreGuardado = () => {
+      const nombreGuardado = localStorage.getItem('nombreUsuario');
+      if (nombreGuardado) {
+        nombreUsuario.value = nombreGuardado;
+      }
+    };
+
+    const guardarNombre = () => {
+      if (nombreUsuario.value) {
+        localStorage.setItem('nombreUsuario', nombreUsuario.value);
+      }
+    };
+
     const confirmarSolucion = async () => {
       if (!captchaSolution.value) {
         mostrarError('Por favor, completa el captcha.');
         return;
       }
 
+      if (!nombreUsuario.value) {
+        mostrarError('Por favor, ingresa tu nombre o apodo.');
+        return;
+      }
+
+      guardarNombre();
       mostrarDialogoConfirmacion.value = false;
       try {
         const codigoUnico = localStorage.getItem(`incidencia_${props.incidencia.id}`);
-        const resultado = await resolverIncidencia(props.incidencia.id, captchaSolution.value, codigoUnico);
+        const resultado = await resolverIncidencia(props.incidencia.id, captchaSolution.value, codigoUnico, nombreUsuario.value);
         if (isComponentMounted.value) {
           if (resultado.solucionada) {
             props.incidencia.estado = 'solucionada';
@@ -694,6 +722,8 @@ export default {
       // Comprobar si la incidencia está en favoritos
       const favorites = JSON.parse(localStorage.getItem('favoriteIncidencias') || '[]');
       isFavorite.value = favorites.includes(props.incidencia.id);
+
+      cargarNombreGuardado();
     });
 
     onUnmounted(() => {
@@ -828,6 +858,7 @@ export default {
       snackbarText,
       añadirAFavoritas,
       enviarWhatsAppYFavoritos,
+      nombreUsuario,
     };
   }
 };
