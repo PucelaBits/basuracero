@@ -321,6 +321,14 @@
 
     <v-footer class="pa-4">
       <v-row justify="center" no-gutters>
+        <v-row class="mb-12 text-grey" justify="center" cols="10">
+          <v-col cols="1" class="text-center d-flex justify-center align-center">
+            <v-icon color="grey" size="x-large">mdi-account-group</v-icon>
+          </v-col>
+          <v-col cols="9 pl-6">
+            <span class="text-caption">Servicio creado por vecinos voluntarios, independiente de cualquier organismo</span>
+          </v-col>
+        </v-row>
         <v-col class="text-center" cols="4" sm="auto">
           <a href="https://t.me/basuraceroapp" target="_blank" rel="noopener noreferrer">Contacto</a>
         </v-col>
