@@ -477,7 +477,7 @@ export default {
         const { id, codigoUnico } = response.data;
         
         // Usar el store para añadir la incidencia del usuario
-        añadirIncidenciaUsuario(id)
+        añadirIncidenciaUsuario(id, codigoUnico)
         
         enviarEventoMatomo('Incidencia', 'Enviar', 'Éxito', incidencia.value.tipo_id);
         emit('incidencia-creada', id);

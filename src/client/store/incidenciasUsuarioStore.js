@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-const incidenciasUsuario = ref([])
+const incidenciasUsuario = ref({})
 const incidenciasLoaded = ref(false)
 
 export const useIncidenciasUsuarioStore = () => {
@@ -20,10 +20,10 @@ export const useIncidenciasUsuarioStore = () => {
     })
   }
 
-  const añadirIncidenciaUsuario = (id) => {
-    if (!incidenciasUsuario.value.includes(id)) {
-      incidenciasUsuario.value.push(id)
-      localStorage.setItem(`incidencia_${id}`, 'true')
+  const añadirIncidenciaUsuario = (id, codigoUnico) => {
+    if (!incidenciasUsuario.value[id]) {
+      incidenciasUsuario.value[id] = codigoUnico
+      localStorage.setItem(`incidencia_${id}`, codigoUnico)
     }
   }
 
