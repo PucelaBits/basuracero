@@ -69,7 +69,13 @@ export function useGestionDatos() {
             // Añadir nuevas incidencias
             incidenciasUsuarioData.forEach(id => añadirIncidenciaUsuario(id));
 
-            alert('Datos importados con éxito');
+            alert('Datos importados con éxito. La página se recargará para aplicar los cambios.');
+            
+            // Recargar la página después de un breve retraso
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000); // Espera 1 segundo antes de recargar
+
           } catch (error) {
             console.error('Error al importar datos:', error);
             alert('Error al importar datos. Por favor, asegúrate de que el archivo es válido.');

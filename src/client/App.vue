@@ -57,22 +57,31 @@
           </template>
           <v-list-item-title>Compartir</v-list-item-title>
         </v-list-item>
-        <v-list-item>
-          <v-menu offset-y>
-            <template v-slot:activator="{ props }">
-              <v-list-item v-bind="props" prepend-icon="mdi-database" title="Tus datos"></v-list-item>
-            </template>
-            <v-list>
-              <v-list-item @click="exportarDatos">
-                <v-list-item-title>Exportar datos</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="importarDatos">
-                <v-list-item-title>Importar datos</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-list-item>
       </v-list>
+      
+      <!-- Nuevo contenedor para el icono de "Tus datos" -->
+      <template v-slot:append>
+        <v-list>
+          <v-list-item>
+            <v-menu offset-y>
+              <template v-slot:activator="{ props }">
+                <div v-bind="props" class="d-flex align-center">
+                  <v-icon icon="mdi-database" size="default" class="mr-8" color="grey"></v-icon>
+                  <v-list-item-title color="grey">Tus datos</v-list-item-title>
+                </div>
+              </template>
+              <v-list>
+                <v-list-item @click="exportarDatos">
+                  <v-list-item-title>Exportar datos</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="iniciarImportarDatos">
+                  <v-list-item-title>Importar datos</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </v-list-item>
+        </v-list>
+      </template>
     </v-navigation-drawer>
 
     <v-main class="bg-grey-lighten-4">
@@ -356,6 +365,26 @@
     <TusIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
     <RankingBarrios />
     <FavoritasIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
+
+    <v-dialog v-model="mostrarConfirmacionImportar" max-width="400">
+      <v-card>
+        <v-card-title class="headline">
+          Confirmar importación
+        </v-card-title>
+        <v-card-text>
+          ¿Estás seguro de que deseas importar datos? Esta acción borrará todos los datos actuales y los reemplazará con los nuevos.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey darken-1" text @click="mostrarConfirmacionImportar = false">
+            Cancelar
+          </v-btn>
+          <v-btn color="primary" @click="confirmarImportarDatos">
+            Confirmar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -874,7 +903,18 @@ export default {
       obtenerIncidencias(1, true)
     }
 
+    const mostrarConfirmacionImportar = ref(false);
     const { exportarDatos, importarDatos } = useGestionDatos();
+
+    const iniciarImportarDatos = () => {
+      mostrarConfirmacionImportar.value = true;
+    };
+
+    const confirmarImportarDatos = async () => {
+      mostrarConfirmacionImportar.value = false;
+      await importarDatos();
+      // Aquí puedes añadir lógica adicional después de la importación si es necesario
+    };
 
     return {
       incidencias,
@@ -943,7 +983,9 @@ export default {
       filtroEstado,
       cambiarFiltroEstado,
       exportarDatos,
-      importarDatos
+      iniciarImportarDatos,
+      confirmarImportarDatos,
+      mostrarConfirmacionImportar,
     }
   }
 }
