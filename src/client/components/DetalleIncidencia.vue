@@ -447,6 +447,15 @@ export default {
 
     const cerrar = () => {
       dialog.value = false;
+      if (route.query.mostrarDialogoExito === 'true') {
+        router.replace({ 
+          name: 'DetalleIncidencia',
+          params: { id: props.incidencia.id },
+          query: {} 
+        });
+      } else {
+        router.push({ name: 'Home' });
+      }
     };
 
     const abrirImagenCompleta = (index) => {
