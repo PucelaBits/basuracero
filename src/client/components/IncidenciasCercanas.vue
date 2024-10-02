@@ -101,6 +101,10 @@
                         <v-icon x-small class="mr-1">mdi-calendar</v-icon>
                         {{ formatDate(incidencia.fecha, true) }}
                       </p>
+                      <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
+                        <v-icon x-small class="mr-1">mdi-account-group</v-icon>
+                        {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de solucionada
+                      </p>
                       <p class="text-caption mb-1">
                         <v-icon x-small class="mr-1">mdi-map-marker-distance</v-icon>
                         {{ incidencia.distancia.toFixed(0) }} m
@@ -630,14 +634,15 @@ export default {
 }
 
 .popup-verification {
-  background-color: #f0f0f0;
+  background-color: #ffffff;
   border-top: 1px solid #ddd;
   padding: 4px 8px;
+  border: none;
 }
 
 .popup-verification p {
   margin: 0 0 4px 0;
-  font-weight: bold;
+  font-weight: normal;
   font-size: 0.8rem;
 }
 
@@ -655,11 +660,12 @@ export default {
   cursor: pointer;
   font-weight: bold;
   transition: opacity 0.3s;
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
+  background-color: #ffffff; /* Gris claro de fondo */
+  box-shadow: none;
 }
 
 .verify-btn .v-icon {
@@ -668,15 +674,15 @@ export default {
 }
 
 .verify-yes {
-  background-color: #4caf4f86 !important;
+  color: #4caf4f !important; /* Verde para sí */
 }
 
 .verify-no {
-  background-color: #c4807c86 !important;
+  color: #c4807c !important; /* Rojo para no */
 }
 
 .verify-unknown {
-  background-color: #9e9e9e82 !important;
+  color: #9e9e9e !important; /* Gris para desconocido */
 }
 
 .verify-btn:hover {
