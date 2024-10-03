@@ -14,6 +14,7 @@
     "rellenar-barrios": "node scripts/rellenarBarrios.js",
     "migrar-imagenes": "node scripts/migrarImagenes.js",
     "borrar-reportes-solucion": "node scripts/borrarReportesSolucion.js",
+    "rellenar-direcciones": "node scripts/rellenarDirecciones.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
