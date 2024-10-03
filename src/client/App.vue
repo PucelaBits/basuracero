@@ -474,6 +474,13 @@ export default {
 
     const cargaInicial = ref(true);
 
+    const manejarIncidencias = (incidencias) => {
+      return incidencias.map(incidencia => ({
+        ...incidencia,
+        imagen: incidencia.imagenes && incidencia.imagenes.length > 0 ? incidencia.imagenes[0] : null
+      }));
+    };
+
     const obtenerIncidencias = async (page = currentPage.value, forzarActualizacion = false) => {
       try {
         const params = {
@@ -489,7 +496,7 @@ export default {
         
         const response = await axios.get(`/api/incidencias`, { params });
         
-        incidencias.value = response.data.incidencias;
+        incidencias.value = manejarIncidencias(response.data.incidencias);
         currentPage.value = response.data.currentPage;
         totalPages.value = response.data.totalPages;
         totalIncidencias.value = response.data.totalItems;
@@ -503,7 +510,7 @@ export default {
         
         cargaInicial.value = false;
       } catch (error) {
-        console.error('Error al obtener incidencias:', error.response ? error.response.data : error.message);
+        console.error('Error al obtener incidencias:', error);
       }
     };
 
@@ -521,13 +528,13 @@ export default {
         }
         
         const response = await axios.get(`/api/incidencias/todas`, { params });
-        todasLasIncidencias.value = response.data.incidencias;
-        todasLasIncidenciasConSolucionadas.value = response.data.incidencias;
+        todasLasIncidencias.value = manejarIncidencias(response.data.incidencias);
+        todasLasIncidenciasConSolucionadas.value = manejarIncidencias(response.data.incidencias);
         
         // Actualizar estadísticas aquí
         actualizarEstadisticas(response.data.incidencias);
       } catch (error) {
-        console.error('Error al obtener todas las incidencias:', error.response ? error.response.data : error.message);
+        console.error('Error al obtener todas las incidencias:', error);
       }
     }
 

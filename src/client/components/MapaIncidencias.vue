@@ -237,8 +237,8 @@ export default {
             popupContent.innerHTML = `
               <div class="popup-header">
                 <div class="popup-image-container">
-                  <img src="${incidencia.imagenes[0].ruta_imagen}" alt="${incidencia.tipo}" class="popup-image">
-                  ${incidencia.imagenes.length > 1 ? `
+                  <img src="${incidencia.imagenes && incidencia.imagenes.length > 0 ? incidencia.imagenes[0].ruta_imagen : ''}" alt="${incidencia.tipo}" class="popup-image">
+                  ${incidencia.imagenes && incidencia.imagenes.length > 1 ? `
                     <div class="popup-image-controls">
                       <button class="popup-image-prev"><i class="mdi mdi-chevron-left"></i></button>
                       <button class="popup-image-next"><i class="mdi mdi-chevron-right"></i></button>
@@ -287,7 +287,7 @@ export default {
             })
 
             // Añadir funcionalidad al carrusel
-            if (incidencia.imagenes.length > 1) {
+            if (incidencia.imagenes && incidencia.imagenes.length > 1) {
               let currentImageIndex = 0
               const popupImageElement = popupContent.querySelector('.popup-image')
               const prevButton = popupContent.querySelector('.popup-image-prev')
@@ -531,9 +531,15 @@ export default {
       stopWatchingUserLocation()
     })
 
-    watch(() => props.incidencias, () => {
-      updateMarkers();
-    }, { deep: true });
+    watch(() => props.incidencias, (newIncidencias) => {
+      try {
+        if (newIncidencias.length > 0) {
+          updateMarkers();
+        }
+      } catch (error) {
+        console.error('Error en el observador de incidencias:', error);
+      }
+    }, { immediate: true });
 
     watch(() => props.incluirSolucionadas, updateMarkers)
     watch(() => props.ubicacionSeleccionada, (newUbicacion) => {
