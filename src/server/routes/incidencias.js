@@ -135,15 +135,24 @@ router.get('/tipos', (req, res) => {
 
 // Crear una nueva incidencia
 router.post('/', crearIncidenciaLimiter, (req, res) => {
-  upload(req, res, async (err) => {
-    if (err instanceof multer.MulterError) {
-      return res.status(400).json({ error: 'Error al subir las imágenes' });
-    } else if (err) {
-      return res.status(500).json({ error: 'Error interno del servidor' });
+  upload(req, res, async function (err) {
+    if (err) {
+      return res.status(500).json({ error: 'Error al subir la imagen' });
+    }
+
+    console.log('Nombre recibido:', req.body.nombre);
+    console.log('Tipo de nombre:', typeof req.body.nombre);
+
+    // Validar el nombre
+    const nombre = req.body.nombre ? req.body.nombre.trim() : '';
+    const nombreValido = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,20}$/.test(nombre);
+
+    if (!nombre || typeof nombre !== 'string' || !nombreValido) {
+      console.log('Nombre inválido detectado');
+      return res.status(400).json({ error: 'El nombre no es válido. Debe contener solo letras, números y espacios, y tener entre 1 y 20 caracteres.' });
     }
 
     const { tipo_id, descripcion, latitud, longitud, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
-    const nombre = req.body.nombre ? req.body.nombre.trim() : '';
 
     const errores = validarIncidencia({...req.body, nombre});
     if (errores.length > 0) {
@@ -703,7 +712,7 @@ router.get('/barrios/ranking', (req, res) => {
   switch (periodo) {
     case 'semana':
       fechaInicio = new Date(fechaFin);
-      fechaInicio.setDate(fechaInicio.getDate() - fechaInicio.getDay() + (fechaInicio.getDay() === 0 ? -6 : 1)); // Lunes de esta semana
+      fechaInicio.setDate(fechaFin.getDate() - fechaFin.getDay() + (fechaFin.getDay() === 0 ? -6 : 1)); // Lunes de esta semana
       fechaInicio.setHours(0, 0, 0, 0);
       break;
     case 'mes':

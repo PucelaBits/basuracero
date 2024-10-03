@@ -22,7 +22,12 @@
             <v-text-field
               v-model="incidencia.nombre"
               label="Tu nombre o apodo"
-              :rules="[v => !!v || 'El nombre o apodo es necesario']"
+              :rules="[
+                v => !!v || 'El nombre o apodo es necesario',
+                v => /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,20}$/.test(v) || 'Solo letras, números y espacios. Máximo 20 caracteres.'
+              ]"
+              counter="20"
+              maxlength="20"
               required
             ></v-text-field>
             
