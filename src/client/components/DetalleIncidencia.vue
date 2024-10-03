@@ -481,6 +481,20 @@ export default {
 
     const nombreUsuario = ref('');
 
+    const validarNombre = (nombre) => {
+      if (!nombre || typeof nombre !== 'string') {
+        return 'El nombre es requerido y debe ser una cadena de texto';
+      }
+      const nombreTrimmed = nombre.trim();
+      if (nombreTrimmed.length === 0 || nombreTrimmed.length > 20) {
+        return 'El nombre debe tener entre 1 y 20 caracteres';
+      }
+      if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrimmed)) {
+        return 'El nombre solo puede contener letras, números y espacios';
+      }
+      return null; // null significa que no hay error
+    };
+
     const cargarNombreGuardado = () => {
       const nombreGuardado = localStorage.getItem('nombreUsuario');
       if (nombreGuardado) {
@@ -500,8 +514,9 @@ export default {
         return;
       }
 
-      if (!nombreUsuario.value) {
-        mostrarError('Por favor, ingresa tu nombre o apodo.');
+      const errorNombre = validarNombre(nombreUsuario.value);
+      if (errorNombre) {
+        mostrarError(errorNombre);
         return;
       }
 

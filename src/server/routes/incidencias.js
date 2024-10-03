@@ -58,18 +58,17 @@ const reporteLimiter = rateLimit({
   }
 });
 
-// Función para sanitizar y validar el nombre
-function sanitizarNombre(nombre) {
-  if (!nombre) return '';
-  // Eliminar espacios al inicio y al final, y limitar a 100 caracteres
-  return nombre.trim().slice(0, 100);
-}
-
 // Función para validar el nombre
 function validarNombre(nombre) {
-  const nombreSanitizado = sanitizarNombre(nombre);
-  if (nombreSanitizado.length === 0) {
-    return 'El nombre es requerido';
+  if (!nombre || typeof nombre !== 'string') {
+    return 'El nombre es requerido y debe ser una cadena de texto';
+  }
+  const nombreTrimmed = nombre.trim();
+  if (nombreTrimmed.length === 0 || nombreTrimmed.length > 20) {
+    return 'El nombre debe tener entre 1 y 20 caracteres';
+  }
+  if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrimmed)) {
+    return 'El nombre solo puede contener letras, números y espacios';
   }
   return null; // null significa que no hay error
 }
@@ -140,21 +139,14 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
       return res.status(500).json({ error: 'Error al subir la imagen' });
     }
 
-    console.log('Nombre recibido:', req.body.nombre);
-    console.log('Tipo de nombre:', typeof req.body.nombre);
-
-    // Validar el nombre
-    const nombre = req.body.nombre ? req.body.nombre.trim() : '';
-    const nombreValido = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,20}$/.test(nombre);
-
-    if (!nombre || typeof nombre !== 'string' || !nombreValido) {
-      console.log('Nombre inválido detectado');
-      return res.status(400).json({ error: 'El nombre no es válido. Debe contener solo letras, números y espacios, y tener entre 1 y 20 caracteres.' });
+    const errorNombre = validarNombre(req.body.nombre);
+    if (errorNombre) {
+      return res.status(400).json({ error: errorNombre });
     }
 
     const { tipo_id, descripcion, latitud, longitud, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
 
-    const errores = validarIncidencia({...req.body, nombre});
+    const errores = validarIncidencia({...req.body, nombre: req.body.nombre});
     if (errores.length > 0) {
       return res.status(400).json({ errores });
     }
@@ -179,7 +171,7 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
         // Insertar la incidencia en la base de datos
         const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, direccion, ip, codigo_unico, barrio) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`;
         
-        db.run(sql, [tipo_id, descripcion, latitud, longitud, nombre, direccion, ip, codigoUnico, req.body.barrio], function(err) {
+        db.run(sql, [tipo_id, descripcion, latitud, longitud, req.body.nombre, direccion, ip, codigoUnico, req.body.barrio], function(err) {
           if (err) {
             console.error('Error al insertar en la base de datos:', err);
             db.run('ROLLBACK');
@@ -533,9 +525,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
   const ip = obtenerIP(req);
   const { 'frc-captcha-solution': captchaSolution, codigoUnico, nombre } = req.body;
 
-  // Sanitizar y validar el nombre
-  const nombreSanitizado = sanitizarNombre(nombre);
-  const errorNombre = validarNombre(nombreSanitizado);
+  const errorNombre = validarNombre(nombre);
   if (errorNombre) {
     return res.status(400).json({ error: errorNombre });
   }
@@ -571,7 +561,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 
       // Añadir registro a la tabla de reportes de solución
       await new Promise((resolve, reject) => {
-        db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombreSanitizado], (err) => {
+        db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombre], (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -580,7 +570,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
       return res.json({ solucionada: true, mensaje: 'Incidencia marcada como solucionada' });
     } else {
       // Procesar reporte de solución sin código único
-      const resultado = await procesarReporteSolucion(incidenciaId, ip, nombreSanitizado);
+      const resultado = await procesarReporteSolucion(incidenciaId, ip, nombre);
       return res.json(resultado);
     }
   } catch (error) {
@@ -589,7 +579,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
   }
 });
 
-async function procesarReporteSolucion(incidenciaId, ip, nombreSanitizado) {
+async function procesarReporteSolucion(incidenciaId, ip, nombre) {
   // Verificar si el usuario ya ha reportado esta incidencia
   const reporteExistente = await new Promise((resolve, reject) => {
     db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
@@ -604,7 +594,7 @@ async function procesarReporteSolucion(incidenciaId, ip, nombreSanitizado) {
 
   // Insertar el nuevo reporte
   await new Promise((resolve, reject) => {
-    db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombreSanitizado], (err) => {
+    db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombre], (err) => {
       if (err) reject(err);
       else resolve();
     });
