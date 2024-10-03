@@ -39,24 +39,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (tipo_id) REFERENCES tipos_incidencias(id)
       )`);
 
-      // Verificar si la columna usuario existe en reportes_solucion, si no, crearla
-      db.all("PRAGMA table_info(reportes_solucion)", (err, rows) => {
-        if (err) {
-          console.error('Error al verificar la estructura de la tabla reportes_solucion:', err.message);
-        } else {
-          const columnExists = rows.some(row => row.name === 'usuario');
-          if (!columnExists) {
-            db.run("ALTER TABLE reportes_solucion ADD COLUMN usuario TEXT", (err) => {
-              if (err) {
-                console.error('Error al añadir la columna usuario a reportes_solucion:', err.message);
-              } else {
-                console.log('Columna usuario añadida con éxito a reportes_solucion.');
-              }
-            });
-          }
-        }
-      });
-
       db.run(`CREATE TABLE IF NOT EXISTS reportes_solucion (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         incidencia_id INTEGER,
