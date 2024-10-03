@@ -164,33 +164,46 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
       const ip = obtenerIP(req);
       const codigoUnico = generarCodigoUnico();
 
-      // Insertar la incidencia en la base de datos
-      const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, direccion, ip, codigo_unico, barrio) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`;
-      
-      db.run(sql, [tipo_id, descripcion, latitud, longitud, nombre, direccion, ip, codigoUnico, req.body.barrio], async function(err) {
-        if (err) {
-          console.error('Error al insertar en la base de datos:', err);
-          return res.status(500).json({ error: err.message });
-        }
+      db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
 
-        const incidenciaId = this.lastID;
+        // Insertar la incidencia en la base de datos
+        const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, direccion, ip, codigo_unico, barrio) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`;
+        
+        db.run(sql, [tipo_id, descripcion, latitud, longitud, nombre, direccion, ip, codigoUnico, req.body.barrio], function(err) {
+          if (err) {
+            console.error('Error al insertar en la base de datos:', err);
+            db.run('ROLLBACK');
+            return res.status(500).json({ error: err.message });
+          }
 
-        // Procesar y guardar las imágenes
-        for (const file of req.files) {
-          const filename = `${uuidv4()}.jpg`;
-          const filepath = path.join(uploadsDir, filename);
-          
-          await sharp(file.buffer)
-            .rotate()
-            .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 80 })
-            .toFile(filepath);
+          const incidenciaId = this.lastID;
 
-          // Insertar la imagen en la tabla imagenes_incidencias
-          await db.run('INSERT INTO imagenes_incidencias (incidencia_id, ruta_imagen) VALUES (?, ?)', [incidenciaId, filename]);
-        }
+          // Procesar y guardar las imágenes
+          const insertImagePromises = req.files.map(async file => {
+            const filename = `${uuidv4()}.jpg`;
+            const filepath = path.join(uploadsDir, filename);
+            
+            await sharp(file.buffer)
+              .rotate()
+              .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 80 })
+              .toFile(filepath);
 
-        res.json({ id: incidenciaId, codigoUnico: codigoUnico });
+            return db.run('INSERT INTO imagenes_incidencias (incidencia_id, ruta_imagen) VALUES (?, ?)', [incidenciaId, filename]);
+          });
+
+          Promise.all(insertImagePromises)
+            .then(() => {
+              db.run('COMMIT');
+              res.json({ id: incidenciaId, codigoUnico: codigoUnico });
+            })
+            .catch(err => {
+              console.error('Error al insertar imágenes:', err);
+              db.run('ROLLBACK');
+              res.status(500).json({ error: 'Error al guardar las imágenes' });
+            });
+        });
       });
     } catch (error) {
       console.error('Error al procesar la incidencia:', error);
