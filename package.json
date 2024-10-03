@@ -15,6 +15,7 @@
     "migrar-imagenes": "node scripts/migrarImagenes.js",
     "borrar-reportes-solucion": "node scripts/borrarReportesSolucion.js",
     "rellenar-direcciones": "node scripts/rellenarDirecciones.js",
+    "asignar-imagen": "node scripts/asignarImagen.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
