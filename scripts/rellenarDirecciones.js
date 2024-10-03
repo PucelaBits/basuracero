@@ -11,7 +11,7 @@ async function obtenerDireccion(lat, lon) {
     const data = response.data;
     return {
       direccion: data.display_name,
-      barrio: data.address.neighbourhood || data.address.suburb || ''
+      barrio: data.address.suburb || data.address.neighbourhood || ''
     };
   } catch (error) {
     console.error('Error al obtener la dirección:', error);

@@ -403,7 +403,7 @@ export default {
             const response = await fetch(url)
             const data = await response.json()
             direccion.value = data.display_name
-            incidencia.value.barrio = data.address.neighbourhood || data.address.suburb || ''
+            incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || ''
           } catch (error) {
             console.error('Error al obtener la dirección:', error)
             direccion.value = 'No se pudo obtener la dirección'
