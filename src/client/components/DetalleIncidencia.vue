@@ -529,13 +529,16 @@ export default {
           if (resultado.solucionada) {
             props.incidencia.estado = 'solucionada';
             props.incidencia.fecha_solucion = new Date().toISOString();
+            snackbarText.value = resultado.esAutor ? 'Incidencia marcada como solucionada' : 'Se añadió tu voto de solucionada';
           } else {
             props.incidencia.reportes_solucion = resultado.reportes_solucion;
+            snackbarText.value = 'Se añadió tu voto de solucionada';
           }
+          snackbar.value = true;
         }
       } catch (error) {
         if (isComponentMounted.value) {
-          mostrarError(mensajeError.value);
+          mostrarError(error.response?.data?.error || 'Error al marcar como solucionada');
         }
       } finally {
         if (captchaWidget.value) {

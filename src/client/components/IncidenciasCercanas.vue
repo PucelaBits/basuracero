@@ -215,6 +215,15 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    
+    <v-snackbar
+      v-model="snackbar"
+      :timeout="2000"
+      color="success"
+      bottom
+    >
+      {{ snackbarText }}
+    </v-snackbar>
   </v-dialog>
 </template>
 
@@ -274,6 +283,9 @@ export default {
     const añadirAFavoritas = ref(true)
 
     const nombreUsuario = ref('');
+
+    const snackbar = ref(false);
+    const snackbarText = ref('');
 
     const validarNombre = (nombre) => {
       if (!nombre || typeof nombre !== 'string') {
@@ -451,6 +463,11 @@ export default {
       }
     };
 
+    const mostrarMensaje = (mensaje) => {
+      snackbarText.value = mensaje;
+      snackbar.value = true;
+    };
+
     const confirmarSolucion = async () => {
       if (!captchaSolution.value) {
         mostrarError('Por favor, completa el captcha.');
@@ -477,12 +494,14 @@ export default {
             faldonOculto: true
           };
           actualizarIncidencias();
+          mostrarMensaje(resultado.esAutor ? 'Incidencia marcada como solucionada' : 'Se añadió tu voto de solucionada');
         } else {
           incidenciaSeleccionada.value.reportes_solucion = resultado.reportes_solucion;
+          mostrarMensaje('Se añadió tu voto de solucionada');
         }
       } catch (error) {
         console.error('Error en confirmarSolucion:', error);
-        mostrarError(mensajeError.value);
+        mostrarError(error.response?.data?.error || 'Error al marcar como solucionada');
       } finally {
         if (captchaWidget.value) {
           captchaWidget.value.reset();
@@ -619,7 +638,10 @@ export default {
       ocultarFaldon,
       mostrarError,
       añadirAFavoritas,
-      nombreUsuario
+      nombreUsuario,
+      snackbar,
+      snackbarText,
+      mostrarMensaje
     }
   }
 }
