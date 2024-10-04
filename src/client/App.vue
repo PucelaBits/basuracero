@@ -343,17 +343,14 @@
 
     <!-- Diálogo para iOS -->
     <v-dialog v-model="mostrarDialogoIOS" max-width="400">
-      <v-card>
+      <v-card class="text-caption">
         <v-card-title class="headline">
           <v-icon>mdi-cellphone</v-icon> Cómo añadir en iOS
         </v-card-title>
         <v-card-text>
-          Para añadir la aplicación en tu dispositivo iOS:
-          <br>
-          <br>
-          <v-icon>mdi-share</v-icon> Toca el icono de compartir en Safari
-          <br>
-          <v-icon>mdi-plus</v-icon> Desplázate y selecciona "Añadir a la pantalla de inicio"
+          <p class="mb-5">Para añadir la aplicación en tu dispositivo iOS</p>
+          <p class="mb-2"><img src="/img/ios-share.svg" alt="Imagen de compartir en iOS" class="mr-1"> Toca el icono de compartir en Safari</p>
+          <p class="mb-2"><v-icon class="ios-plus-icon mr-1">mdi-plus</v-icon> Desplázate y selecciona "Añadir a la pantalla de inicio"</p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -1180,6 +1177,15 @@ export default {
 
 .small-switch :deep(.v-label) {
   font-size: 0.9em;
+}
+
+.ios-plus-icon {
+  font-weight: bold; 
+  font-size: 1rem; 
+  border: 1px solid grey; 
+  border-radius: 5px; 
+  padding: 2px; 
+  color: grey;
 }
 
 .welcome-banner {

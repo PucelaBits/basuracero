@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="18px" height="18px" viewBox="0 0 18 18" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" jetway-hooks="{}">
+    <title>ic_ios_share_grey600_18dp</title>
+    <g jetway-hook-id="3CFF4884-86AA-4EF9-A113-6BD1DC363F6A" id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g jetway-hook-id="CF0C0EC1-559E-4F3C-8FCE-923CC4E87978" id="ic_ios_share_grey600_18dp">
+            <polygon jetway-hook-id="A24487B5-D992-4EC9-9509-B8327FA59357" id="Path" points="0 0 18 0 18 18 0 18"></polygon>
+            <path d="M12,3.75 L10.935,4.815 L9.7425,3.6225 L9.7425,12 L8.2575,12 L8.2575,3.6225 L7.065,4.815 L6,3.75 L9,0.75 L12,3.75 Z M15,7.5 L15,15.75 C15,16.575 14.325,17.25 13.5,17.25 L4.5,17.25 C3.6675,17.25 3,16.575 3,15.75 L3,7.5 C3,6.6675 3.6675,6 4.5,6 L6.75,6 L6.75,7.5 L4.5,7.5 L4.5,15.75 L13.5,15.75 L13.5,7.5 L11.25,7.5 L11.25,6 L13.5,6 C14.325,6 15,6.6675 15,7.5 Z" jetway-hook-id="0932833F-8BC0-41AD-BDF7-443244BBC034" id="Shape" fill="#80868B" fill-rule="nonzero"></path>
+        </g>
+    </g>
+</svg>
