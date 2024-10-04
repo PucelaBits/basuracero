@@ -30,6 +30,7 @@
     "feed": "^4.2.2",
     "friendly-challenge": "^0.9.18",
     "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "multer": "^1.4.5-lts.1",
     "sharp": "^0.33.5",
     "sqlite3": "^5.1.7",

@@ -23,6 +23,7 @@
 <script>
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import L from 'leaflet'
+import 'leaflet.markercluster' // Asegúrate de importar el plugin
 import { useRouter } from 'vue-router'
 import { enviarEventoMatomo } from '../utils/analytics'
 
@@ -139,7 +140,7 @@ export default {
     const router = useRouter();
     const mapContainer = ref(null)
     let map = null
-    let markers = []
+    let markerClusterGroup = null // Nueva variable para el grupo de clusters
     let tempMarker = null
     let userMarker = null
     let userCircle = null
@@ -175,6 +176,33 @@ export default {
           subdomains: 'abcd',
           maxZoom: 20
         }).addTo(map)
+
+        // Inicializar el grupo de clusters con opciones ajustadas
+        markerClusterGroup = L.markerClusterGroup({
+          disableClusteringAtZoom: 15, // Aumentamos este valor para que no agrupe en zooms altos
+          maxClusterRadius: 20, // Reducimos este valor para que solo agrupe marcadores muy cercanos
+          spiderfyOnMaxZoom: false,
+          chunkedLoading: true,
+          zoomToBoundsOnClick: true,
+          iconCreateFunction: function(cluster) {
+            const childCount = cluster.getChildCount();
+            let c = ' marker-cluster-';
+            if (childCount < 5) {
+              c += 'small';
+            } else if (childCount < 20) {
+              c += 'medium';
+            } else {
+              c += 'large';
+            }
+            return L.divIcon({ 
+              html: '<div><span>' + childCount + '</span></div>', 
+              className: 'marker-cluster' + c, 
+              iconSize: new L.Point(40, 40) 
+            });
+          }
+        });
+
+        map.addLayer(markerClusterGroup);
 
         if (!props.deshabilitarNuevaIncidencia) {
         map.on('click', (event) => {
@@ -220,8 +248,7 @@ export default {
     const updateMarkers = () => {
       if (map && props.incidencias) {
         // Limpiar marcadores existentes
-        markers.forEach(marker => map.removeLayer(marker))
-        markers = []
+        markerClusterGroup.clearLayers()
 
         // Filtrar incidencias según el tipo seleccionado
         const incidenciasFiltradas = props.tipoSeleccionado === 'Todas'
@@ -278,13 +305,16 @@ export default {
 
             const marker = L.marker([incidencia.latitud, incidencia.longitud], {
               icon: createCustomIcon(incidencia.estado)
-            }).addTo(map)
+            })
 
             marker.bindPopup(popupContent, { 
               maxWidth: 250, 
               minWidth: 250,
               className: 'custom-popup-class' 
             })
+
+            // Añadir el marcador al grupo de clusters en lugar de directamente al mapa
+            markerClusterGroup.addLayer(marker)
 
             // Añadir funcionalidad al carrusel
             if (incidencia.imagenes && incidencia.imagenes.length > 1) {
@@ -323,14 +353,12 @@ export default {
                 })
               })
             }
-
-            markers.push(marker)
           }
         })
 
-        // Solo ajustar la vista si no hay marcadores o si el mapa está en su vista inicial
-        if (markers.length > 0 && (!map.getZoom() || map.getZoom() === 13)) {
-          const bounds = L.latLngBounds(markers.map(marker => marker.getLatLng()))
+        // Ajustar la vista si es necesario
+        if (markerClusterGroup.getLayers().length > 0 && (!map.getZoom() || map.getZoom() === 13)) {
+          const bounds = markerClusterGroup.getBounds()
           map.fitBounds(bounds)
         }
       }
@@ -934,5 +962,44 @@ export default {
 
 .verify-btn:hover {
   opacity: 0.8;
+}
+
+/* Estilos para los clusters */
+.marker-cluster-small {
+  background-color: rgba(255, 165, 0, 0.6); /* Naranja suave */
+}
+.marker-cluster-small div {
+  background-color: rgba(255, 140, 0, 0.6); /* Naranja suave */
+}
+
+.marker-cluster-medium {
+  background-color: rgba(255, 100, 0, 0.6); /* Naranja más oscuro */
+}
+.marker-cluster-medium div {
+  background-color: rgba(255, 100, 0, 0.6); /* Naranja más oscuro */
+}
+
+.marker-cluster-large {
+  background-color: rgba(255, 0, 0, 0.6); /* Rojo suave */
+}
+.marker-cluster-large div {
+  background-color: rgba(255, 0, 0, 0.6); /* Rojo suave */
+}
+
+.marker-cluster {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+.marker-cluster div {
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
+  border-radius: 15px;
+  font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+.marker-cluster span {
+  line-height: 30px;
 }
 </style>
