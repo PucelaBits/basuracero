@@ -171,7 +171,7 @@ export default {
     const initMap = () => {
       if (mapContainer.value && !map) {
         map = L.map(mapContainer.value, { 
-          closePopupOnClick: true,
+          closePopupOnClick: false,
           closePopupOnMove: false
         }).setView([41.652251, -4.724532], props.zoomForzado || 13)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -209,9 +209,13 @@ export default {
         map.addLayer(markerClusterGroup);
 
         if (!props.deshabilitarNuevaIncidencia) {
-        map.on('click', (event) => {
-          addTempMarker(event.latlng.lat, event.latlng.lng)
-          })
+          map.on('click', (event) => {
+            addTempMarker(event.latlng.lat, event.latlng.lng);
+          });
+        } else {
+          map.on('click', () => {
+            map.closePopup();
+          });
         }
 
         if (props.seguirUsuario && props.ubicacionUsuario) {
@@ -227,7 +231,7 @@ export default {
 
     const addTempMarker = (lat, lng) => {
       if (tempMarker) {
-        map.removeLayer(tempMarker)
+        map.removeLayer(tempMarker);
       }
       tempMarker = L.marker([lat, lng], {
         icon: L.divIcon({
@@ -236,22 +240,27 @@ export default {
           iconSize: [30, 42],
           iconAnchor: [15, 42]
         })
-      }).addTo(map)
+      }).addTo(map);
       
-      if (!props.deshabilitarNuevaIncidencia) {
-        const popupContent = L.DomUtil.create('div')
-        const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent)
-        addButton.innerHTML = 'Añadir incidencia aquí'
-        L.DomEvent.on(addButton, 'click', () => {
-          enviarEventoMatomo('Incidencia', 'Nueva', 'Mapa');
-          emit('ubicacion-seleccionada', { latitud: lat, longitud: lng })
-          emit('abrir-formulario')
-        })
-        tempMarker.bindPopup(popupContent, {
-          closeButton: false,
-          className: 'custom-popup-class'
-        }).openPopup()
-      }
+      const popupContent = L.DomUtil.create('div');
+      const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent);
+      addButton.innerHTML = 'Añadir incidencia aquí';
+      L.DomEvent.on(addButton, 'click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        enviarEventoMatomo('Incidencia', 'Nueva', 'Mapa');
+        emit('ubicacion-seleccionada', { latitud: lat, longitud: lng });
+        emit('abrir-formulario');
+        map.closePopup(); // Cerrar el popup después de emitir los eventos
+      });
+
+      tempMarker.bindPopup(popupContent, {
+        closeButton: false,
+        className: 'custom-popup-class'
+      });
+
+      setTimeout(() => {
+        tempMarker.openPopup();
+      }, 100);
     }
 
     const updateMarkers = () => {
@@ -589,6 +598,7 @@ export default {
     }
 
     onMounted(() => {
+      console.log('Inicializando mapa, deshabilitarNuevaIncidencia:', props.deshabilitarNuevaIncidencia);
       initMap()
       updateMarkers()
       if (props.seguirUsuario) {
