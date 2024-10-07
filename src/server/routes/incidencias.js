@@ -17,6 +17,9 @@ const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(process.env.CIUDAD_LAT_MAX);
 const CIUDAD_LON_MIN = parseFloat(process.env.CIUDAD_LON_MIN);
 const CIUDAD_LON_MAX = parseFloat(process.env.CIUDAD_LON_MAX);
+const REPORTES_PARA_SOLUCIONAR = parseInt(process.env.REPORTES_PARA_SOLUCIONAR) || 3;
+const DIAS_PARA_CONSIDERAR_ANTIGUA = parseInt(process.env.DIAS_PARA_CONSIDERAR_ANTIGUA) || 14;
+const REPORTES_PARA_SOLUCIONAR_ANTIGUA = parseInt(process.env.REPORTES_PARA_SOLUCIONAR_ANTIGUA) || 2;
 
 // Asegurarse de que la carpeta uploads existe
 const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
@@ -518,50 +521,6 @@ router.get('/:id', (req, res) => {
   });
 });
 
-async function procesarReporteSolucion(incidenciaId, ip, nombre) {
-  // Verificar si el usuario ya ha reportado esta incidencia
-  const reporteExistente = await new Promise((resolve, reject) => {
-    db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-
-  if (reporteExistente) {
-    // Si ya existe un reporte, lanzar un error
-    throw new Error('Ya has reportado esta incidencia como solucionada');
-  }
-
-  // Si no existe un reporte previo, continuar con el proceso de inserción
-  await new Promise((resolve, reject) => {
-    db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario, fecha) VALUES (?, ?, ?, datetime("now", "localtime"))', [incidenciaId, ip, nombre], (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
-
-  // Contar el número de reportes para esta incidencia
-  const { count } = await new Promise((resolve, reject) => {
-    db.get('SELECT COUNT(*) as count FROM reportes_solucion WHERE incidencia_id = ?', [incidenciaId], (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-
-  // Si hay 3 o más reportes, marcar la incidencia como solucionada
-  if (count >= 3) {
-    await new Promise((resolve, reject) => {
-      db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now", "localtime") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-    return { solucionada: true, reportes_solucion: count };
-  } else {
-    return { solucionada: false, reportes_solucion: count };
-  }
-}
-
 // Reportar incidencia como solucionada
 router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
   const incidenciaId = req.params.id;
@@ -594,18 +553,30 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 
     const esAutor = incidencia.codigo_unico === codigoUnico;
 
+    // Verificar si ya existe un reporte de esta IP
+    const reporteExistente = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM reportes_solucion WHERE incidencia_id = ? AND ip = ?', [incidenciaId, ip], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (reporteExistente && !esAutor) {
+      return res.status(400).json({ error: 'Ya has reportado esta incidencia como solucionada' });
+    }
+
+    // Insertar el reporte de solución
+    await new Promise((resolve, reject) => {
+      db.run('INSERT INTO reportes_solucion (incidencia_id, ip, fecha) VALUES (?, ?, datetime("now", "localtime"))', [incidenciaId, ip], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
     if (esAutor) {
       // El código único coincide, marcar como solucionada inmediatamente
       await new Promise((resolve, reject) => {
         db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now", "localtime") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-
-      // Añadir registro a la tabla de reportes de solución
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario, fecha) VALUES (?, ?, ?, datetime("now", "localtime"))', [incidenciaId, ip, nombre], (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -618,14 +589,59 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
       });
     } else {
       // Procesar reporte de solución sin código único
-      const resultado = await procesarReporteSolucion(incidenciaId, ip, nombre);
-      return res.json(resultado);
+      const resultado = await procesarReporteSolucion(incidenciaId);
+      
+      return res.json({
+        solucionada: resultado.solucionada,
+        reportes_solucion: resultado.reportes_solucion,
+        mensaje: resultado.solucionada ? 'La incidencia ha sido marcada como solucionada' : 'Reporte de solución registrado, pero la incidencia aún no se ha marcado como solucionada'
+      });
     }
   } catch (error) {
     console.error('Error al procesar la solicitud:', error);
     res.status(400).json({ error: error.message });
   }
 });
+
+async function procesarReporteSolucion(incidenciaId) {
+  // Obtener la fecha de creación de la incidencia
+  const incidencia = await new Promise((resolve, reject) => {
+    db.get('SELECT fecha FROM incidencias WHERE id = ?', [incidenciaId], (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+
+  const fechaCreacion = new Date(incidencia.fecha);
+  const ahora = new Date();
+  const diasTranscurridos = (ahora - fechaCreacion) / (1000 * 60 * 60 * 24);
+
+  // Determinar el número de reportes necesarios
+  const reportesNecesarios = diasTranscurridos > DIAS_PARA_CONSIDERAR_ANTIGUA
+    ? REPORTES_PARA_SOLUCIONAR_ANTIGUA
+    : REPORTES_PARA_SOLUCIONAR;
+
+  // Contar el número de reportes para esta incidencia
+  const { count } = await new Promise((resolve, reject) => {
+    db.get('SELECT COUNT(*) as count FROM reportes_solucion WHERE incidencia_id = ?', [incidenciaId], (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+
+  // Si hay suficientes reportes, marcar la incidencia como solucionada
+  if (count >= reportesNecesarios) {
+    await new Promise((resolve, reject) => {
+      db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now", "localtime") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    return { solucionada: true, reportes_solucion: count };
+  } else {
+    return { solucionada: false, reportes_solucion: count };
+  }
+}
 
 // Reportar incidencia como contenido inadecuado o spam
 router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
