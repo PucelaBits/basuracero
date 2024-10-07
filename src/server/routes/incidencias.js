@@ -534,7 +534,7 @@ async function procesarReporteSolucion(incidenciaId, ip, nombre) {
 
   // Si no existe un reporte previo, continuar con el proceso de inserción
   await new Promise((resolve, reject) => {
-    db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombre], (err) => {
+    db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario, fecha) VALUES (?, ?, ?, datetime("now", "localtime"))', [incidenciaId, ip, nombre], (err) => {
       if (err) reject(err);
       else resolve();
     });
@@ -551,7 +551,7 @@ async function procesarReporteSolucion(incidenciaId, ip, nombre) {
   // Si hay 3 o más reportes, marcar la incidencia como solucionada
   if (count >= 3) {
     await new Promise((resolve, reject) => {
-      db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
+      db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now", "localtime") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
         if (err) reject(err);
         else resolve();
       });
@@ -597,7 +597,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
     if (esAutor) {
       // El código único coincide, marcar como solucionada inmediatamente
       await new Promise((resolve, reject) => {
-        db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
+        db.run('UPDATE incidencias SET estado = ?, fecha_solucion = datetime("now", "localtime") WHERE id = ?', ['solucionada', incidenciaId], (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -605,7 +605,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 
       // Añadir registro a la tabla de reportes de solución
       await new Promise((resolve, reject) => {
-        db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario) VALUES (?, ?, ?)', [incidenciaId, ip, nombre], (err) => {
+        db.run('INSERT INTO reportes_solucion (incidencia_id, ip, usuario, fecha) VALUES (?, ?, ?, datetime("now", "localtime"))', [incidenciaId, ip, nombre], (err) => {
           if (err) reject(err);
           else resolve();
         });
