@@ -77,7 +77,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             'Basura u objetos abandonados',
             'Vegetación crecida o descuidada',
             'Bache/desperfecto en calzada o acera',
-            'Moviliario urbano dañado',
+            'Mobiliario urbano dañado',
             'Señalización ausente o deficiente',
             'Alumbrado defectuoso o insuficiente',
             'Animal muerto o plaga',
