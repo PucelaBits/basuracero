@@ -5,6 +5,7 @@ import IncidenciasCercanas from '../components/IncidenciasCercanas.vue'
 import TusIncidencias from '../components/TusIncidencias.vue'
 import RankingBarrios from '../components/RankingBarrios.vue'
 import FavoritasIncidencias from '../components/FavoritasIncidencias.vue'
+import MaratonGuide from '../components/MaratonGuide.vue'
 
 const routes = [
   {
@@ -57,6 +58,11 @@ const routes = [
     name: 'FavoritasIncidencias',
     component: FavoritasIncidencias,
     props: true
+  },
+  {
+    path: '/organizar-evento',
+    name: 'OrganizarEvento',
+    component: MaratonGuide
   },
 ]
 

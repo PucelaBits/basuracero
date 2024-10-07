@@ -45,6 +45,12 @@
           </template>
           <v-list-item-title>Ranking de barrios</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/organizar-evento" active-class="primary--text">
+          <template v-slot:prepend>
+            <v-icon>mdi-calendar-star</v-icon>
+          </template>
+          <v-list-item-title>Organiza un evento</v-list-item-title>
+        </v-list-item>
         <v-list-item href="https://t.me/basuraceroapp" target="_blank">
           <template v-slot:prepend>
             <v-icon>mdi-account-group</v-icon>
@@ -390,6 +396,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <MaratonGuide v-if="$route.name === 'OrganizarEvento'" />
   </v-app>
 </template>
 
@@ -414,6 +422,7 @@ import FavoritasIncidencias from './components/FavoritasIncidencias.vue'
 import { useFavoritosStore } from './store/favoritosStore'
 import { useIncidenciasUsuarioStore } from './store/incidenciasUsuarioStore'
 import { useGestionDatos } from './composables/useGestionDatos';
+import MaratonGuide from './components/MaratonGuide.vue'
 
 export default {
   name: 'App',
@@ -427,7 +436,8 @@ export default {
     IncidenciasCercanas,
     TusIncidencias,
     RankingBarrios,
-    FavoritasIncidencias
+    FavoritasIncidencias,
+    MaratonGuide
   },
   setup() {
     const incidencias = ref([])
