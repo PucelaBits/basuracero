@@ -635,12 +635,8 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
 
   try {
     // Validar el captcha
-    const captchaResponse = await axios.post('https://api.friendlycaptcha.com/api/v1/siteverify', {
-      solution: captchaSolution,
-      secret: friendlyCaptchaSecret
-    });
-
-    if (!captchaResponse.data.success) {
+    const captchaValido = await verificarCaptcha(captchaSolution);
+    if (!captchaValido) {
       return res.status(400).json({ error: 'Captcha inválido' });
     }
 
@@ -658,7 +654,7 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
 
     // Insertar el nuevo reporte
     await new Promise((resolve, reject) => {
-      db.run('INSERT INTO reportes_inadecuado (incidencia_id, ip) VALUES (?, ?)', [incidenciaId, ip], (err) => {
+      db.run('INSERT INTO reportes_inadecuado (incidencia_id, ip, fecha) VALUES (?, ?, datetime("now", "localtime"))', [incidenciaId, ip], (err) => {
         if (err) reject(err);
         else resolve();
       });
@@ -675,7 +671,7 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
     // Si hay 3 o más reportes, marcar la incidencia como spam
     if (count >= 3) {
       await new Promise((resolve, reject) => {
-        db.run('UPDATE incidencias SET estado = ? WHERE id = ?', ['spam', incidenciaId], (err) => {
+        db.run('UPDATE incidencias SET estado = ?, fecha_spam = datetime("now", "localtime") WHERE id = ?', ['spam', incidenciaId], (err) => {
           if (err) reject(err);
           else resolve();
         });
