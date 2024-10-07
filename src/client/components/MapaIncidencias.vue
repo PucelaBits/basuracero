@@ -170,7 +170,10 @@ export default {
 
     const initMap = () => {
       if (mapContainer.value && !map) {
-        map = L.map(mapContainer.value).setView([41.652251, -4.724532], props.zoomForzado || 13)
+        map = L.map(mapContainer.value, { 
+          closePopupOnClick: true,
+          closePopupOnMove: false
+        }).setView([41.652251, -4.724532], props.zoomForzado || 13)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
@@ -179,11 +182,12 @@ export default {
 
         // Inicializar el grupo de clusters con opciones ajustadas
         markerClusterGroup = L.markerClusterGroup({
-          disableClusteringAtZoom: 15, // Aumentamos este valor para que no agrupe en zooms altos
-          maxClusterRadius: 20, // Reducimos este valor para que solo agrupe marcadores muy cercanos
+          disableClusteringAtZoom: 15,
+          maxClusterRadius: 20,
           spiderfyOnMaxZoom: false,
           chunkedLoading: true,
           zoomToBoundsOnClick: true,
+          removeOutsideVisibleBounds: false, // Añade esta línea
           iconCreateFunction: function(cluster) {
             const childCount = cluster.getChildCount();
             let c = ' marker-cluster-';
@@ -213,6 +217,11 @@ export default {
         if (props.seguirUsuario && props.ubicacionUsuario) {
           map.setView([props.ubicacionUsuario.latitud, props.ubicacionUsuario.longitud], 16)
         }
+
+        // Añadir un evento de clic al mapa para cerrar popups
+        map.on('click', () => {
+          map.closePopup();
+        });
       }
     }
 
@@ -305,13 +314,14 @@ export default {
 
             const marker = L.marker([incidencia.latitud, incidencia.longitud], {
               icon: createCustomIcon(incidencia.estado)
-            })
-
-            marker.bindPopup(popupContent, { 
+            }).bindPopup(popupContent, { 
               maxWidth: 250, 
               minWidth: 250,
-              className: 'custom-popup-class' 
-            })
+              className: 'custom-popup-class',
+              closeButton: true,
+              autoClose: true, // Añadir esta línea
+              closeOnClick: true // Cambiar a true
+            });
 
             // Añadir el marcador al grupo de clusters en lugar de directamente al mapa
             markerClusterGroup.addLayer(marker)
@@ -500,6 +510,17 @@ export default {
         const { latitud, longitud } = newPosition
         const newLatLng = L.latLng(latitud, longitud)
         
+        // Guardar el estado de los popups abiertos
+        const openPopups = [];
+        map.eachLayer((layer) => {
+          if (layer instanceof L.Popup && map.hasLayer(layer)) {
+            openPopups.push({
+              latlng: layer.getLatLng(),
+              content: layer.getContent()
+            });
+          }
+        });
+        
         if (!userMarker) {
           userMarker = L.marker(newLatLng, {
             icon: L.divIcon({
@@ -515,13 +536,37 @@ export default {
             radius: 50
           }).addTo(map)
 
-          // Solo centramos y hacemos zoom la primera vez
-          map.setView(newLatLng, 16, { animate: true, duration: 1 })
+          map.setView(newLatLng, 16, { 
+            animate: true, 
+            duration: 1, 
+            closePopupOnMove: false
+          });
         } else {
-          // En actualizaciones posteriores, solo movemos el marcador y el círculo
-          userMarker.slideTo(newLatLng, { duration: 1000 })
-          userCircle.slideTo(newLatLng, { duration: 1000 })
+          userMarker.slideTo(newLatLng, { duration: 1000 });
+          userCircle.slideTo(newLatLng, { duration: 1000 });
+          
+          map.panTo(newLatLng, { 
+            animate: true, 
+            duration: 1, 
+            easeLinearity: 0.25
+          });
         }
+        
+        // Restaurar los popups abiertos
+        setTimeout(() => {
+          openPopups.forEach((popupInfo) => {
+            L.popup({
+              maxWidth: 250,
+              minWidth: 250,
+              className: 'custom-popup-class',
+              closeButton: true,
+              closeOnClick: false
+            })
+              .setLatLng(popupInfo.latlng)
+              .setContent(popupInfo.content)
+              .openOn(map);
+          });
+        }, 50);
       }
     }
 
@@ -1001,5 +1046,29 @@ export default {
 }
 .marker-cluster span {
   line-height: 30px;
+}
+
+/* Estilos para el botón de cierre del popup */
+.leaflet-popup-close-button {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 18px !important;
+  line-height: 24px !important;
+  border-radius: 50% !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+  transition: background-color 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  top: 10px !important;
+  right: 10px !important;
+}
+
+.leaflet-popup-close-button:hover {
+  background-color: rgba(0, 0, 0, 0.7) !important;
 }
 </style>
