@@ -16,7 +16,11 @@ export function useResolverIncidencia() {
         nombre
       });
       reportando.value = false;
-      return response.data;
+      return {
+        solucionada: response.data.solucionada,
+        reportes_solucion: response.data.reportes_solucion,
+        esAutor: response.data.esAutor || false
+      };
     } catch (error) {
       console.error('Error al marcar como solucionada:', error);
       mensajeError.value = error.response?.data?.error || 'Error al marcar como solucionada';
