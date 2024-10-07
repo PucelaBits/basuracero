@@ -217,7 +217,7 @@
                     <v-list-item v-for="incidencia in incidenciasCercanas" :key="incidencia.id" @click="abrirIncidenciaCercana(incidencia.id)">
                       <template v-slot:prepend>
                         <v-avatar size="50">
-                          <v-img :src="incidencia.imagen" cover></v-img>
+                          <v-img :src="incidencia.imagenes && incidencia.imagenes.length > 0 ? incidencia.imagenes[0].ruta_imagen : ''" cover></v-img>
                         </v-avatar>
                       </template>
                       <v-list-item-title>{{ incidencia.tipo }}</v-list-item-title>
@@ -530,6 +530,7 @@ export default {
     const verificarIncidenciasCercanas = () => {
       if (incidencia.value.tipo_id && incidencia.value.latitud && incidencia.value.longitud) {
         incidenciasCercanas.value = props.todasLasIncidencias
+          .filter(inc => inc.estado === 'activa') // Filtrar solo incidencias activas
           .map(inc => {
             const distancia = calcularDistancia(
               incidencia.value.latitud, 
