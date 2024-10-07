@@ -551,7 +551,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
       return res.status(404).json({ error: 'Incidencia no encontrada' });
     }
 
-    const esAutor = incidencia.codigo_unico === codigoUnico;
+    const esAutor = incidencia.codigo_unico && codigoUnico && incidencia.codigo_unico === codigoUnico;
 
     // Verificar si ya existe un reporte de esta IP
     const reporteExistente = await new Promise((resolve, reject) => {
@@ -567,9 +567,15 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 
     // Insertar el reporte de solución
     await new Promise((resolve, reject) => {
-      db.run('INSERT INTO reportes_solucion (incidencia_id, ip, fecha) VALUES (?, ?, datetime("now", "localtime"))', [incidenciaId, ip], (err) => {
-        if (err) reject(err);
-        else resolve();
+      db.run('INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario) VALUES (?, ?, datetime("now", "localtime"), ?)', 
+        [incidenciaId, ip, nombre], 
+        (err) => {
+          if (err) {
+            console.error('Error al insertar reporte de solución:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
       });
     });
 
