@@ -861,12 +861,17 @@ export default {
     const cerrarDetalleIncidencia = () => {
       mostrarDetalleIncidencia.value = false;
       incidenciaSeleccionada.value = null;
-      if (window.history.length > 2) {
-        router.go(-1);
+
+      const previousRoute = router.options.history.state.back;
+
+      if (previousRoute && ['IncidenciasCercanas', 'TusIncidencias', 'FavoritasIncidencias'].includes(previousRoute.name)) {
+        // Volver a la vista de diálogo anterior
+        router.push({ name: previousRoute.name });
       } else {
-        router.push('/');
+        // Si no hay una vista de diálogo anterior, volver al Home
+        router.push({ name: 'Home' });
       }
-    }
+    };
 
     const seleccionarEnMapa = () => {
       mostrarFormulario.value = false

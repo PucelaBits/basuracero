@@ -190,3 +190,40 @@ describe('POST /api/incidencias/:id/solucionada con captcha inválido', () => {
     expect(response.body).toHaveProperty('error', 'Captcha inválido');
   });
 });
+
+// Pruebas para la validación del nombre de usuario
+describe('POST /api/incidencias con validación de nombre', () => {
+  it('debería rechazar un nombre de usuario inválido', async () => {
+    const response = await request(app)
+      .post('/api/incidencias')
+      .field('nombre', '!@#$%^&*()') // Nombre inválido
+      .field('tipo_id', '1')
+      .field('descripcion', 'Test description')
+      .field('latitud', '40.416775')
+      .field('longitud', '-3.703790')
+      .field('direccion', 'Test address')
+      .field('frc-captcha-solution', 'test-captcha-solution')
+      .attach('imagenes', Buffer.from('fake image data'), 'test_image.jpg');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('El nombre no es válido');
+  });
+
+  it('debería aceptar un nombre de usuario válido', async () => {
+    const response = await request(app)
+      .post('/api/incidencias')
+      .field('nombre', 'Usuario Válido')
+      .field('tipo_id', '1')
+      .field('descripcion', 'Test description')
+      .field('latitud', '40.416775')
+      .field('longitud', '-3.703790')
+      .field('direccion', 'Test address')
+      .field('frc-captcha-solution', 'test-captcha-solution')
+      .attach('imagenes', Buffer.from('fake image data'), 'test_image.jpg');
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('codigoUnico');
+  });
+});

@@ -421,6 +421,11 @@ export default {
       enviarEventoMatomo('Incidencia', 'Clic en ruta', `ID: ${props.incidencia.id}`);
     };
 
+    const cerrar = () => {
+      dialog.value = false;
+      emit('cerrar');
+    };
+
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
     });
@@ -451,19 +456,6 @@ export default {
         }
       }
     });
-
-    const cerrar = () => {
-      dialog.value = false;
-      if (route.query.mostrarDialogoExito === 'true') {
-        router.replace({ 
-          name: 'DetalleIncidencia',
-          params: { id: props.incidencia.id },
-          query: {} 
-        });
-      } else {
-        router.push({ name: 'Home' });
-      }
-    };
 
     const abrirImagenCompleta = (index) => {
       imagenSeleccionadaIndex.value = index;
