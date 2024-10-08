@@ -279,9 +279,7 @@ export default {
 
     const cerrar = () => {
       dialogVisible.value = false
-      if (route.name === 'OrganizarEvento') {
-        router.push({ name: 'Home' })
-      }
+      router.push({ name: 'Home' })
     }
 
     watch(() => route.name, (newRouteName) => {
