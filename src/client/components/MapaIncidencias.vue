@@ -598,7 +598,6 @@ export default {
     }
 
     onMounted(() => {
-      console.log('Inicializando mapa, deshabilitarNuevaIncidencia:', props.deshabilitarNuevaIncidencia);
       initMap()
       updateMarkers()
       if (props.seguirUsuario) {
