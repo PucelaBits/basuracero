@@ -61,14 +61,14 @@
                     {{ usuario.incidencias }}
                   </v-chip>
                   <v-chip
-                    :color="usuario.incidenciasSolucionadas > 0 ? 'success' : 'grey'"
+                    :color="usuario.incidenciasPropiasSolucionadas > 0 ? 'success' : 'grey'"
                     outlined
                     x-small
                     class="mr-2"
-                    :class="{ 'grey--text': usuario.incidenciasSolucionadas === 0 }"
+                    :class="{ 'grey--text': usuario.incidenciasPropiasSolucionadas === 0 }"
                   >
                     <v-icon start size="x-small">mdi-check-circle</v-icon>
-                    {{ usuario.incidenciasSolucionadas }}
+                    {{ usuario.incidenciasPropiasSolucionadas }}
                   </v-chip>
                   <v-chip
                     color="grey"
@@ -148,14 +148,25 @@ export default {
       try {
         const periodos = ['semana', 'mes', 'total'];
         const responses = await Promise.all(
-          periodos.map(periodo => 
-            axios.get(`/api/incidencias/usuarios/ranking?periodo=${periodo}&minIncidencias=${periodo === 'total' ? 2 : 1}`)
-          )
+          periodos.map(periodo => {
+            let url = `/api/incidencias/usuarios/ranking?periodo=${periodo}`;
+            if (periodo === 'total') {
+              url += '&minIncidencias=2&minVotos=5';
+            } else {
+              url += '&minIncidencias=1&minVotos=1';
+            }
+            return axios.get(url);
+          })
         );
 
         responses.forEach((response, index) => {
           const periodo = periodos[index];
-          rankings.value[periodo] = response.data.ranking;
+          rankings.value[periodo] = response.data.ranking.map(usuario => ({
+            ...usuario,
+            incidenciasPropias: usuario.incidencias,
+            incidenciasPropiasSolucionadas: usuario.incidenciasSolucionadas,
+            votosSolucion: usuario.votosSolucion
+          }));
           usuariosUnicos.value[periodo] = response.data.usuariosUnicos;
           totalIncidencias.value[periodo] = response.data.totalIncidencias;
           incidenciasSolucionadas.value[periodo] = response.data.incidenciasSolucionadas;
