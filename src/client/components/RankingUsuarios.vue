@@ -153,7 +153,7 @@ export default {
             if (periodo === 'total') {
               url += '&minIncidencias=2&minVotos=5';
             } else {
-              url += '&minIncidencias=1&minVotos=1';
+              url += '&minIncidencias=0&minVotos=0';
             }
             return axios.get(url);
           })

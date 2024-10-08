@@ -414,21 +414,33 @@ router.get('/usuarios/ranking', (req, res) => {
         MAX(TRIM(i.nombre)) as nombre,
         COUNT(DISTINCT i.id) as incidencias,
         COUNT(DISTINCT CASE WHEN i.estado = 'solucionada' THEN i.id ELSE NULL END) as incidencias_solucionadas,
-        COUNT(DISTINCT rs.id) as votos_solucion
+        0 as votos_solucion
       FROM incidencias i
-      LEFT JOIN reportes_solucion rs ON LOWER(TRIM(rs.usuario)) = LOWER(TRIM(i.nombre)) AND rs.fecha >= ? AND rs.fecha <= ?
       WHERE i.estado != 'spam' AND i.fecha >= ? AND i.fecha <= ?
+      GROUP BY nombre_lower
+
+      UNION ALL
+
+      SELECT 
+        COALESCE(LOWER(TRIM(rs.usuario)), 'usuario anónimo') as nombre_lower,
+        MAX(TRIM(rs.usuario)) as nombre,
+        0 as incidencias,
+        0 as incidencias_solucionadas,
+        COUNT(DISTINCT rs.id) as votos_solucion
+      FROM reportes_solucion rs
+      WHERE rs.fecha >= ? AND rs.fecha <= ?
       GROUP BY nombre_lower
     )
     SELECT 
       nombre_lower,
-      nombre,
-      incidencias,
-      incidencias_solucionadas,
-      votos_solucion
+      MAX(nombre) as nombre,
+      SUM(incidencias) as incidencias,
+      SUM(incidencias_solucionadas) as incidencias_solucionadas,
+      SUM(votos_solucion) as votos_solucion
     FROM usuarios_con_actividad
-    WHERE incidencias >= ? OR votos_solucion >= ?
-    ORDER BY (incidencias + votos_solucion) DESC, nombre_lower
+    GROUP BY nombre_lower
+    HAVING SUM(incidencias) >= ? OR SUM(votos_solucion) >= ?
+    ORDER BY SUM(incidencias) DESC, SUM(votos_solucion) DESC, nombre_lower
   `;
 
   db.all(sqlRanking, [
