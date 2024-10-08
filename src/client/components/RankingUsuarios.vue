@@ -12,9 +12,14 @@
       </v-toolbar>
 
       <v-card-text class="pa-4">
-        <p class="text-body-1 text-center mb-6">
-          Estos son los usuarios de nuestra comunidad que más incidencias han enviado
-        </p>
+        <v-row class="text-body-2 mb-6 mt-2">
+          <v-col cols="2" class="d-flex align-center justify-end">
+            <v-icon>mdi-account-group</v-icon>
+          </v-col>
+          <v-col cols="10">
+            Estos son los usuarios más activos de nuestra comunidad
+          </v-col>
+        </v-row>
 
         <v-tabs v-model="tab" centered>
           <v-tab value="semana">Semana</v-tab>
@@ -59,16 +64,35 @@
                     :color="usuario.incidenciasSolucionadas > 0 ? 'success' : 'grey'"
                     outlined
                     x-small
+                    class="mr-2"
                     :class="{ 'grey--text': usuario.incidenciasSolucionadas === 0 }"
                   >
                     <v-icon start size="x-small">mdi-check-circle</v-icon>
                     {{ usuario.incidenciasSolucionadas }}
+                  </v-chip>
+                  <v-chip
+                    color="grey"
+                    outlined
+                    x-small
+                    :class="{ 'grey--text': usuario.votosSolucion === 0 }"
+                  >
+                    <v-icon start size="x-small">mdi-eye-check</v-icon>
+                    {{ usuario.votosSolucion }}
                   </v-chip>
                 </template>
               </v-list-item>
             </v-list>
           </v-window-item>
         </v-window>
+
+        <div class="text-caption text-center mt-3 text-grey">
+          <v-icon>mdi-file-document-multiple</v-icon>
+          Enviadas
+          <v-icon class="ml-4">mdi-check-circle</v-icon>
+          Solucionadas
+          <v-icon class="ml-4">mdi-eye-check</v-icon>
+          Revisadas
+        </div>
       </v-card-text>
     </v-card>
   </v-dialog>

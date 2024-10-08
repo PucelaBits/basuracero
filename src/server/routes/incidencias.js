@@ -405,8 +405,12 @@ router.get('/usuarios/ranking', (req, res) => {
       COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo') as nombre_lower,
       MAX(TRIM(nombre)) as nombre,
       COUNT(*) as incidencias,
-      SUM(CASE WHEN estado = 'solucionada' THEN 1 ELSE 0 END) as incidencias_solucionadas
-    FROM incidencias
+      SUM(CASE WHEN estado = 'solucionada' THEN 1 ELSE 0 END) as incidencias_solucionadas,
+      (SELECT COUNT(*) 
+       FROM reportes_solucion rs 
+       WHERE rs.usuario = COALESCE(LOWER(TRIM(i.nombre)), 'usuario anónimo')
+       AND rs.fecha >= ? AND rs.fecha <= ?) as votos_solucion
+    FROM incidencias i
     WHERE estado != 'spam' AND fecha >= ? AND fecha <= ?
     GROUP BY COALESCE(LOWER(TRIM(nombre)), 'usuario anónimo')
     HAVING COUNT(*) >= ?
@@ -431,7 +435,7 @@ router.get('/usuarios/ranking', (req, res) => {
     WHERE estado = 'solucionada' AND fecha >= ? AND fecha <= ?
   `;
 
-  db.all(sqlRanking, [fechaInicio.toISOString(), fechaFin.toISOString(), minIncidencias], (err, rows) => {
+  db.all(sqlRanking, [fechaInicio.toISOString(), fechaFin.toISOString(), fechaInicio.toISOString(), fechaFin.toISOString(), minIncidencias], (err, rows) => {
     if (err) {
       console.error('Error al obtener el ranking de usuarios:', err);
       res.status(500).json({ error: 'Error interno del servidor' });
@@ -442,7 +446,8 @@ router.get('/usuarios/ranking', (req, res) => {
       posicion: index + 1,
       nombre: row.nombre || 'Usuario anónimo',
       incidencias: row.incidencias,
-      incidenciasSolucionadas: row.incidencias_solucionadas
+      incidenciasSolucionadas: row.incidencias_solucionadas,
+      votosSolucion: row.votos_solucion
     }));
 
     db.get(sqlUsuariosUnicos, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowUsuarios) => {

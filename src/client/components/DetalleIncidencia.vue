@@ -165,7 +165,7 @@
               :disabled="reportando"
               color="success"
             >
-              <v-icon left>mdi-check-circle</v-icon>
+              <v-icon left class="mr-1">mdi-check-circle</v-icon>
               <span>{{ reportando ? 'Resolviendo...' : 'Resolver' }}</span>
             </v-btn>
           </v-col>

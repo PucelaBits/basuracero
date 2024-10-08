@@ -12,9 +12,14 @@
         </v-toolbar>
   
         <v-card-text class="pa-4">
-          <p class="text-body-1 text-center mb-6">
-            Estos son los barrios con más incidencias reportadas
-          </p>
+          <v-row class="text-body-2 mb-6 mt-2">
+          <v-col cols="2" class="d-flex align-center justify-end">
+            <v-icon>mdi-home-city</v-icon>
+          </v-col>
+            <v-col cols="10">
+              Estos son los barrios con más actividad en nuestra comunidad
+            </v-col>
+          </v-row>
   
           <v-tabs v-model="tab" centered>
             <v-tab value="semana">Semana</v-tab>
@@ -103,6 +108,12 @@
               </v-list>
             </v-window-item>
           </v-window>
+          <div class="text-caption text-center mt-3 text-grey">
+            <v-icon>mdi-file-document-multiple</v-icon>
+            Enviadas
+            <v-icon class="ml-4">mdi-check-circle</v-icon>
+            Solucionadas
+          </div>
         </v-card-text>
       </v-card>
     </v-dialog>
