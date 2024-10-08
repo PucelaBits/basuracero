@@ -12,31 +12,21 @@
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text class="text-center">
+        <v-card-text class="pb-0">
           <v-alert color="grey" elevation="2" class="aviso-formulario">
-            <span style="font-size: 0.8em;"><v-icon>mdi-information</v-icon> Evitar informar de incidencias que lleven menos de 24h activas</span>
+            <v-row align="center" no-gutters>
+              <v-col cols="2" class="text-center">
+                <v-icon>mdi-information</v-icon>
+              </v-col>
+              <v-col cols="10" class="pl-2">
+                <span class="text-caption">Procura informar sólo si lleva <br /> <u class="font-weight-bold">más de 24h</u> sin solución</span>
+              </v-col>
+            </v-row>
           </v-alert>
         </v-card-text>
         <v-card-text>
           <v-form ref="form" @submit.prevent="enviarIncidencia" v-model="formValido">
-            <v-text-field
-              v-model="incidencia.nombre"
-              label="Tu nombre o apodo"
-              :rules="[
-                v => !!v || 'El nombre o apodo es necesario',
-                v => /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,20}$/.test(v) || 'Solo letras, números y espacios. Máximo 20 caracteres.'
-              ]"
-              counter="20"
-              maxlength="20"
-              required
-            ></v-text-field>
-            
-            <v-checkbox
-              v-model="recordarNombre"
-              label="Recordar mi nombre"
-              class="mb-4"
-            ></v-checkbox>
-            
+            <v-divider class="my-4"><span style="color: grey;">Incidencia</span></v-divider>
             <v-select
               v-model="incidencia.tipo_id"
               :items="tiposIncidencias"
@@ -45,15 +35,25 @@
               label="Tipo"
               :rules="[v => !!v || 'El tipo es necesario']"
               required
-            ></v-select>
+              class="mt-4"
+            >
+              <template v-slot:prepend>
+                <v-icon size="small">mdi-tag</v-icon>
+              </template>
+            </v-select>
             
             <v-textarea
               v-model="incidencia.descripcion"
               label="Descripción"
               :rules="[v => !!v || 'La descripción es necesaria']"
               required
+              rows="5"
+              auto-grow
             >
-              <template v-slot:append-inner>
+              <template v-slot:prepend>
+                <v-icon size="small">mdi-text</v-icon>
+              </template>
+                <template v-slot:append-inner>
                 <div class="mic-container">
                   <v-icon
                     v-if="reconocimientoVozDisponible"
@@ -75,7 +75,7 @@
               :rules="[v => !!v || 'La latitud es necesaria']"
               required
               @input="obtenerDireccion"
-              v-show="false"
+              style="display: none;"
             ></v-text-field>
             
             <v-text-field
@@ -86,7 +86,7 @@
               :rules="[v => !!v || 'La longitud es necesaria']"
               required
               @input="obtenerDireccion"
-              v-show="false"
+              style="display: none;"
             ></v-text-field>
             
             <v-textarea
@@ -102,26 +102,27 @@
               :error-messages="validarCoordenadas() !== true ? [validarCoordenadas()] : []"
             >
               <template v-slot:prepend>
-                <v-icon>mdi-map-marker</v-icon>
+                <v-icon size="small">mdi-map-marker</v-icon>
               </template>
             </v-textarea>
             
             <v-row justify="center" class="mb-4">
-              <v-col cols="12" class="text-center">
-                <v-btn @click="obtenerUbicacion" color="primary" :loading="obteniendoUbicacion">
-                  <v-icon left>mdi-map-marker</v-icon>
-                  &nbsp;Usar tu ubicación
+              <v-col cols="6" class="text-center">
+                <v-btn @click="obtenerUbicacion" color="primary" :loading="obteniendoUbicacion" size="small">
+                  <v-icon left size="small">mdi-map-marker</v-icon>
+                  &nbsp;Tu ubicación
                 </v-btn>
               </v-col>
-              <v-col cols="12" class="text-center">
-                <v-btn @click="seleccionarEnMapa" color="secondary">
-                  <v-icon left>mdi-map</v-icon>
-                  &nbsp;Seleccionar en mapa
+              <v-col cols="6" class="text-center">
+                <v-btn @click="seleccionarEnMapa" color="secondary" size="small">
+                  <v-icon left size="small">mdi-map</v-icon>
+                  &nbsp;Clic en mapa
                 </v-btn>
               </v-col>
             </v-row>
-            
-            <v-row>
+
+            <v-divider class="my-4"><span style="color: grey;">Fotos</span></v-divider>
+            <v-row class="mt-4">
               <v-col cols="6 px-1">
                 <v-btn block color="success" @click="tomarFoto" :disabled="incidencia.imagenes.length >= 2">
                   <v-icon start>mdi-camera</v-icon>
@@ -139,7 +140,7 @@
             <v-list v-if="incidencia.imagenes.length > 0" class="mt-3">
               <v-list-item v-for="(imagen, index) in incidencia.imagenes" :key="index">
                 <template v-slot:prepend>
-                  <v-icon icon="mdi-file-image"></v-icon>
+                  <v-icon size="small">mdi-file-image</v-icon>
                 </template>
                 <v-list-item-title>{{ imagen.name }}</v-list-item-title>
                 <template v-slot:append>
@@ -185,8 +186,33 @@
 
             <div class="subtitle-text text-center mt-4">
               <v-icon color="grey mr-2">mdi-information</v-icon>
-              <span color="grey">Máx. 2 fotos.No incluya caras de personas, matrículas o info personal</span>
+              <span color="grey">Máx. 2 fotos. No incluyas caras de personas, matrículas o info personal</span>
             </div>
+
+            <v-divider class="my-4"><span style="color: grey;">Tus datos</span></v-divider>
+
+            <v-text-field
+              v-model="incidencia.nombre"
+              label="Tu nombre o apodo"
+              :rules="[
+                v => !!v || 'El nombre o apodo es necesario',
+                v => /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]{1,20}$/.test(v) || 'Solo letras, números y espacios. Máximo 20 caracteres.'
+              ]"
+              counter="20"
+              maxlength="20"
+              required
+              class="mt-4"
+            >
+              <template v-slot:prepend>
+                <v-icon>mdi-account</v-icon>
+              </template>
+            </v-text-field>
+            
+            <v-checkbox
+              v-model="recordarNombre"
+              label="Recordar mi nombre"
+              class="mb-4"
+            ></v-checkbox>
 
             <v-checkbox
               v-model="aceptaLicencia"
@@ -750,6 +776,8 @@ export default {
 .aviso-formulario {
   color: #696969 !important;
   background-color: #f6f6f6 !important;
+  padding: 14px 5px !important;
+  line-height: 1 !important;
 }
 
 .mic-container {
