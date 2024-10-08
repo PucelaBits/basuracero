@@ -107,22 +107,31 @@
         <v-alert
           v-if="incidenciasAntiguasUsuario > 0 || incidenciasConReportesSolucion > 0"
           color="#7361a0"
-          class="banner-incidencias mx-0 pt-4 pb-4 text-center text-caption"
+          class="banner-incidencias mx-auto pt-2 pb-4 text-center text-caption"
           density="compact"
           text-align="center"
           style="border-radius: 0;"
         >
-          <div v-if="incidenciasAntiguasUsuario > 0">
-            <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>
-            {{ incidenciasAntiguasUsuario }} incidencia{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días
+          <div style="max-width: 250px; margin: 0 auto;">
+            <h3 class="mb-2">Tus incidencias</h3>
+            <div class="d-flex justify-space-between align-center mb-2" v-if="incidenciasAntiguasUsuario > 0">
+              <div class="d-flex align-center">
+                <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>
+                <span>Más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días</span>
+              </div>
+              <span class="numero-incidencias ml-2">{{ incidenciasAntiguasUsuario }}</span>
+            </div>
+            <div class="d-flex justify-space-between align-center" v-if="incidenciasConReportesSolucion > 0">
+              <div class="d-flex align-center">
+                <v-icon color="white" size="small" class="mr-2">mdi-check-circle-outline</v-icon>
+                <span>Con votos de solucionada{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }}</span>
+              </div>
+              <span class="numero-incidencias ml-2">{{ incidenciasConReportesSolucion }}</span>
+            </div>
+            <v-btn text color="white" size="small" class="mt-3" @click="$router.push({ name: 'TusIncidencias' })">
+              <v-icon color="grey-darken-2 mr-2">mdi-eye-check</v-icon> REVISAR
+            </v-btn>
           </div>
-          <div v-if="incidenciasConReportesSolucion > 0">
-            <v-icon color="white" size="small" class="mr-2">mdi-check-circle-outline</v-icon>
-            {{ incidenciasConReportesSolucion }} incidencia{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }} con votos de solucionada{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }}
-          </div>
-          <v-btn text color="white" size="small" class="mt-3" @click="$router.push({ name: 'TusIncidencias' })">
-            <v-icon color="grey-darken-2 mr-2">mdi-check-circle</v-icon> Verifica tus incidencias
-          </v-btn>
         </v-alert>
 
         <v-dialog 
@@ -1223,5 +1232,17 @@ export default {
 .welcome-banner .text-caption {
   font-size: 0.75rem;
   line-height: 1.2;
+}
+
+.numero-incidencias {
+  font-weight: bold;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #7361a0;
+  background-color: white;
 }
 </style>
