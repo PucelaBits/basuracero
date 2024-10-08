@@ -77,6 +77,27 @@
                 </v-btn-toggle>
               </v-col>
             </v-row>
+            
+            <!-- Nuevo desplegable de orden -->
+            <v-row class="mb-4" justify="center">
+              <v-col cols="auto">
+                <v-select
+                  v-model="ordenSeleccionado"
+                  :items="opcionesOrden"
+                  label="Ordenar por"
+                  density="compact"
+                  variant="outlined"
+                  rounded="pill"
+                  hide-details
+                  class="orden-select"
+                >
+                  <template v-slot:prepend-inner>
+                    <v-icon size="small" color="primary">mdi-sort</v-icon>
+                  </template>
+                </v-select>
+              </v-col>
+            </v-row>
+            
             <!-- Lista de incidencias -->
             <v-row v-if="incidenciasFiltradas.length > 0">
               <v-col v-for="incidencia in incidenciasFiltradas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
@@ -174,6 +195,12 @@ export default {
     const { incidenciasUsuario, loadIncidenciasUsuario } = useIncidenciasUsuarioStore()
     const filtroEstado = ref('todas')
     const mapKey = ref(0)
+    const ordenSeleccionado = ref('fecha_desc')
+    const opcionesOrden = [
+      { title: 'Más recientes', value: 'fecha_desc' },
+      { title: 'Más antiguas', value: 'fecha_asc' },
+      { title: 'Más votos de solucionadas', value: 'votos_desc' }
+    ]
 
     const incidenciasUsuarioFiltradas = computed(() => {
       return todasLasIncidencias.value.filter(incidencia => 
@@ -186,13 +213,29 @@ export default {
     })
 
     const incidenciasFiltradas = computed(() => {
-      if (filtroEstado.value === 'todas') {
-        return incidenciasUsuarioFiltradas.value
-      } else {
-        return incidenciasUsuarioFiltradas.value.filter(incidencia => 
+      let incidencias = [...incidenciasUsuarioFiltradas.value] // Crear una copia para no mutar el original
+      
+      // Aplicar ordenamiento primero
+      switch (ordenSeleccionado.value) {
+        case 'fecha_asc':
+          incidencias.sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+          break
+        case 'fecha_desc':
+          incidencias.sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+          break
+        case 'votos_desc':
+          incidencias.sort((a, b) => (b.reportes_solucion || 0) - (a.reportes_solucion || 0))
+          break
+      }
+      
+      // Luego aplicar filtro por estado
+      if (filtroEstado.value !== 'todas') {
+        incidencias = incidencias.filter(incidencia => 
           incidencia.estado === (filtroEstado.value === 'activas' ? 'activa' : 'solucionada')
         )
       }
+      
+      return incidencias
     })
 
     const cerrar = () => {
@@ -286,6 +329,8 @@ export default {
       filtroEstado,
       incidenciasFiltradas,
       mapKey,
+      ordenSeleccionado,
+      opcionesOrden,
     }
   }
 }
@@ -338,5 +383,19 @@ export default {
   font-size: 0.75rem !important;
   font-weight: 500 !important;
   letter-spacing: 0.0178571429em !important;
+}
+
+.orden-select {
+  max-width: 250px;
+}
+
+.orden-select :deep(.v-field__input) {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  min-height: 35px;
+}
+
+.orden-select :deep(.v-field__append-inner) {
+  padding-top: 5px;
 }
 </style>
