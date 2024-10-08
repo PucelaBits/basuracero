@@ -15,6 +15,37 @@
         <v-container fluid>
           <v-row justify="center">
             <v-col cols="12" sm="11" md="10" lg="8">
+              <v-img
+                src="/img/evento.jpg"
+                alt="Imagen de evento"
+                width="100%"
+                class="mb-4"
+              ></v-img>
+
+              <!-- Objetivo -->
+              <v-card class="mb-6">
+                <v-card-text>
+                  <v-row align="center" class="mb-4">
+                    <v-col cols="auto">
+                      <v-icon size="large">mdi-target</v-icon>
+                    </v-col>
+                    <v-col>
+                      <h3 class="text-h6 font-weight-bold mb-2">Objetivo</h3>
+                      <p class="text-body-3">Facilitar la coordinación entre vecinos para reportar y validar incidencias en nuestros barrios</p>
+                    </v-col>
+                  </v-row>
+                  <v-alert
+                    type="info"
+                    variant="tonal"
+                    color="primary"
+                    density="compact"
+                    class="mb-0"
+                  >
+                    <strong>¡Tú eliges!</strong><br /> Puedes participar solo, con amigos y familiares o unirte a un grupo de vecinos<br /><br /> Únete a <u><a href="https://t.me/basuraceroapp" target="_blank">nuestro grupo de Telegram</a></u> para conocer a otros vecinos activos
+                  </v-alert>
+                </v-card-text>
+              </v-card>
+
               <!-- Índice de navegación rápida -->
               <v-card class="mb-3 mt-2">
                 <v-card-title class="text-subtitle-1 pb-0">Índice</v-card-title>
@@ -24,29 +55,6 @@
                       <v-list-item-title class="text-caption">{{ paso.titulo }}</v-list-item-title>
                     </v-list-item>
                   </v-list>
-                </v-card-text>
-              </v-card>
-
-              <!-- Contenido existente de MaratonGuide -->
-              <v-card class="mb-6">
-                <v-card-text>
-                  <v-row align="center" class="mb-4">
-                    <v-col cols="auto">
-                      <v-icon size="large">mdi-target</v-icon>
-                    </v-col>
-                    <v-col>
-                      <h3 class="text-h6 font-weight-bold mb-1">Objetivo</h3>
-                      <p class="text-body-1">Facilitar la coordinación entre vecinos para reportar y validar incidencias en nuestros barrios</p>
-                    </v-col>
-                  </v-row>
-                  <v-alert
-                    type="info"
-                    variant="tonal"
-                    density="compact"
-                    class="mb-0"
-                  >
-                    <strong>¡Tú eliges!</strong> Participa solo o únete a un grupo. Cada acción cuenta para mejorar nuestra ciudad
-                  </v-alert>
                 </v-card-text>
               </v-card>
 
