@@ -862,13 +862,12 @@ export default {
       mostrarDetalleIncidencia.value = false;
       incidenciaSeleccionada.value = null;
 
+      const currentRoute = router.currentRoute.value;
       const previousRoute = router.options.history.state.back;
 
-      if (previousRoute && ['IncidenciasCercanas', 'TusIncidencias', 'FavoritasIncidencias'].includes(previousRoute.name)) {
-        // Volver a la vista de diálogo anterior
-        router.push({ name: previousRoute.name });
-      } else {
-        // Si no hay una vista de diálogo anterior, volver al Home
+      if (previousRoute && ['IncidenciasCercanas', 'TusIncidencias', 'FavoritasIncidencias'].includes(router.resolve(previousRoute).name)) {
+        router.push(previousRoute);
+      } else if (currentRoute.name !== 'Home') {
         router.push({ name: 'Home' });
       }
     };
