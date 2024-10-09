@@ -433,7 +433,8 @@ export default {
     watch(dialog, (newValue) => {
       emit('update:modelValue', newValue);
       if (!newValue) {
-        emit('cerrar');
+        dialog.value = false;
+  router.go(-1);
       }
     });
 
