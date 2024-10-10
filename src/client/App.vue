@@ -323,7 +323,12 @@
 
     <ImageModal ref="imageModal" />
 
-    <v-snackbar v-model="mostrarMensajeExito" :timeout="3000" color="success">
+    <v-snackbar 
+      v-model="mostrarMensajeExito" 
+      :timeout="timeoutSnackbar" 
+      :color="colorSnackbar"
+      :location="posicionSnackbar"
+    >
       {{ mensajeExito }}
     </v-snackbar>
 
@@ -873,8 +878,12 @@ export default {
     };
 
     const seleccionarEnMapa = () => {
-      mostrarFormulario.value = false
-    }
+      mostrarFormulario.value = false;
+      nextTick(() => {
+        scrollToTop();
+        mostrarSnackbar('👆 Haz clic en cualquier parte del mapa', 'warning', 3000, 'top');
+      });
+    };
 
     const scrollToTop = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -951,6 +960,18 @@ export default {
       // Aquí puedes añadir lógica adicional después de la importación si es necesario
     };
 
+    const timeoutSnackbar = ref(3000)
+    const colorSnackbar = ref('success')
+    const posicionSnackbar = ref('bottom')
+
+    const mostrarSnackbar = (mensaje, color = 'success', timeout = 3000, posicion = 'bottom') => {
+      mensajeExito.value = mensaje;
+      colorSnackbar.value = color;
+      timeoutSnackbar.value = timeout;
+      posicionSnackbar.value = posicion;
+      mostrarMensajeExito.value = true;
+    };
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -1021,10 +1042,20 @@ export default {
       iniciarImportarDatos,
       confirmarImportarDatos,
       mostrarConfirmacionImportar,
+      timeoutSnackbar,
+      colorSnackbar,
+      posicionSnackbar,
+      mostrarSnackbar
     }
   }
 }
 </script>
+
+<style>
+.leaflet-control-attribution {
+  font-size: 9px !important;
+}
+</style>
 
 <style scoped>
 .titulo {

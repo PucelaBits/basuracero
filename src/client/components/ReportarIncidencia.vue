@@ -88,7 +88,7 @@
               @input="obtenerDireccion"
               style="display: none;"
             ></v-text-field>
-            
+
             <v-textarea
               v-model="direccion"
               label="Dirección"
@@ -97,7 +97,7 @@
               auto-grow
               rows="2"
               row-height="18"
-              class="mb-4"
+              class="mb-0 mt-3"
               :rules="[validarCoordenadas]"
               :error-messages="validarCoordenadas() !== true ? [validarCoordenadas()] : []"
             >
@@ -105,7 +105,7 @@
                 <v-icon size="small">mdi-map-marker</v-icon>
               </template>
             </v-textarea>
-            
+
             <v-row justify="center" class="mb-4">
               <v-col cols="6" class="text-center">
                 <v-btn @click="obtenerUbicacion" color="primary" :loading="obteniendoUbicacion" size="small">
@@ -120,6 +120,13 @@
                 </v-btn>
               </v-col>
             </v-row>
+
+            <MiniMapa
+                v-if="incidencia.latitud && incidencia.longitud && validarCoordenadas() === true"
+                :latitud="parseFloat(incidencia.latitud)"
+                :longitud="parseFloat(incidencia.longitud)"
+                class="mb-5"
+              />
 
             <v-divider class="my-4"><span style="color: grey;">Fotos</span></v-divider>
             <v-row class="mt-4">
@@ -303,7 +310,8 @@ import { WidgetInstance } from 'friendly-challenge'
 import { useRouter } from 'vue-router';
 import DetalleIncidencia from './DetalleIncidencia.vue';
 import { enviarEventoMatomo } from '../utils/analytics';
-import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore' // Importar el store
+import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore'
+import MiniMapa from './MiniMapa.vue';
 
 const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
@@ -313,7 +321,8 @@ const CIUDAD_LON_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LON_MAX);
 export default {
   name: 'ReportarIncidencia',
   components: {
-    DetalleIncidencia
+    DetalleIncidencia,
+    MiniMapa
   },
   props: {
     modelValue: Boolean,
@@ -358,7 +367,7 @@ export default {
     const cameraInput = ref(null)
     const fileInput = ref(null)
     const aceptaLicencia = ref(false)
-    const { incidenciasUsuario, añadirIncidenciaUsuario } = useIncidenciasUsuarioStore() // Usar el store
+    const { incidenciasUsuario, añadirIncidenciaUsuario } = useIncidenciasUsuarioStore()
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -828,6 +837,13 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+.mini-mapa-container {
+  margin-top: 0 !important;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  overflow: hidden;
 }
 
 </style>
