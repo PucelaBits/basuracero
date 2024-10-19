@@ -288,9 +288,9 @@
           Informar por WhatsApp
         </v-card-title>
         <v-card-text>
-          Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
+          Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando y copiando al portapapeles la descripción y la dirección
           <br>
-          <br><span class="subtitle-text"><strong>Nota:</strong> Si es la primera vez que hablas con el bot necesitarás mandarle primero "Hola" para activarle</span>
+          <br><span class="subtitle-text"><strong>Nota:</strong> Es posible que necesites mandarle primero "Hola" para activarle.</span>
           <v-checkbox
             v-model="añadirAFavoritas"
             label="Añadir a mis favoritas"
