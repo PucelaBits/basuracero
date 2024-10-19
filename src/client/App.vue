@@ -350,7 +350,13 @@
           </v-col>
         </v-row>
         <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://t.me/basuraceroapp" target="_blank" rel="noopener noreferrer">Contacto</a>
+          <a href="https://t.me/basuraceroapp" target="_blank" rel="noopener noreferrer">Comunidad</a>
+        </v-col>
+        <v-col class="text-center" cols="4" sm="auto">
+          <a href="https://x.com/basuraceroapp" target="_blank" rel="noopener noreferrer">Twitter</a>
+        </v-col>
+        <v-col class="text-center" cols="4" sm="auto">
+          <a href="mailto:basuracero@pucelabits.org" target="_blank" rel="noopener noreferrer">Contacto</a>
         </v-col>
         <v-col class="text-center" cols="4" sm="auto">
           <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">Licencia</a>
@@ -1112,7 +1118,7 @@ export default {
 
 .floating-btn {
   position: fixed !important;
-  bottom: 24px !important;
+  bottom: 50px !important;
   right: 24px !important;
   z-index: 99 !important;
   width: 64px !important;
