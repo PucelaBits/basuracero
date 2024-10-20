@@ -2,16 +2,19 @@ const express = require('express');
 const router = express.Router();
 const { Feed } = require('feed');
 const db = require('../config/database');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 router.get('/', (req, res) => {
   const feed = new Feed({
     title: "Basura Cero - Últimas Incidencias",
     description: "Las últimas incidencias reportadas en Basura Cero",
-    id: "https://basuracero.pucelabits.org/",
-    link: "https://basuracero.pucelabits.org/",
+    id: `${process.env.BASE_URL}/`,
+    link: `${process.env.BASE_URL}/`,
     language: "es",
-    image: "https://basuracero.pucelabits.org/favicon.png",
-    favicon: "https://basuracero.pucelabits.org/favicon.png",
+    image: `${process.env.BASE_URL}/favicon.png`,
+    favicon: `${process.env.BASE_URL}/favicon.png`,
     copyright: "Basura Cero"
   });
 
@@ -49,13 +52,13 @@ router.get('/', (req, res) => {
       
       let contenidoImagenes = '';
       imagenes.forEach(imagen => {
-        contenidoImagenes += `<img src="https://basuracero.pucelabits.org/uploads/${imagen}" alt="${incidencia.tipo}">`;
+        contenidoImagenes += `<img src="${process.env.BASE_URL}/uploads/${imagen}" alt="${incidencia.tipo}">`;
       });
 
       feed.addItem({
         title: `${incidencia.tipo}: ${incidencia.descripcion.substring(0, 100)}...`,
-        id: `https://basuracero.pucelabits.org/incidencia/${incidencia.id}`,
-        link: `https://basuracero.pucelabits.org/incidencia/${incidencia.id}`,
+        id: `${process.env.BASE_URL}/incidencia/${incidencia.id}`,
+        link: `${process.env.BASE_URL}/incidencia/${incidencia.id}`,
         description: incidencia.descripcion,
         content: `
             <p>📍 ${direccion}</p>
@@ -64,7 +67,7 @@ router.get('/', (req, res) => {
             ${contenidoImagenes}
         `,
         date: new Date(incidencia.fecha),
-        image: imagenes.length > 0 ? `https://basuracero.pucelabits.org/uploads/${imagenes[0]}` : undefined
+        image: imagenes.length > 0 ? `${process.env.BASE_URL}/uploads/${imagenes[0]}` : undefined
       });
     })).then(() => {
       res.set('Content-Type', 'application/rss+xml');
@@ -73,6 +76,55 @@ router.get('/', (req, res) => {
       console.error('Error al procesar las incidencias para RSS:', error);
       res.status(500).send('Error interno del servidor');
     });
+  });
+});
+
+// Modificar la ruta del feed RSS de spam
+router.get('/spam', (req, res) => {
+  const feed = new Feed({
+    title: "Basura Cero - Últimos reportes de contenido inadecuado",
+    description: "Los últimos reportes de contenido inadecuado en Basura Cero",
+    id: `${process.env.BASE_URL}/`,
+    link: `${process.env.BASE_URL}/`,
+    language: "es",
+    image: `${process.env.BASE_URL}/favicon.png`,
+    favicon: `${process.env.BASE_URL}/favicon.png`,
+    copyright: "Basura Cero"
+  });
+
+  const sql = `
+    SELECT r.id as reporte_id, r.fecha as fecha_reporte,
+           i.id as incidencia_id, i.descripcion, i.direccion
+    FROM reportes_inadecuado r
+    JOIN incidencias i ON r.incidencia_id = i.id
+    ORDER BY r.fecha DESC
+    LIMIT 50
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      console.error('Error al obtener reportes de spam para RSS:', err);
+      res.status(500).send('Error interno del servidor');
+      return;
+    }
+
+    rows.forEach(reporte => {
+      feed.addItem({
+        title: `Reporte de contenido inadecuado para incidencia ${reporte.incidencia_id}`,
+        id: `${process.env.BASE_URL}/incidencia/${reporte.incidencia_id}`,
+        link: `${process.env.BASE_URL}/incidencia/${reporte.incidencia_id}`,
+        description: `Reporte de contenido inadecuado para: ${reporte.incidencia_id}`,
+        content: `
+            <p>🕒 ${new Date(reporte.fecha_reporte).toLocaleString('es-ES')}</p>
+            <p><a href="${process.env.BASE_URL}/incidencia/${reporte.incidencia_id}">Ver incidencia completa</a></p>
+            <p><strong>Importante:</strong> El contenido de esta incidencia puede mostrar contenido inadecuado u ofensivo.</p>
+        `,
+        date: new Date(reporte.fecha_reporte)
+      });
+    });
+
+    res.set('Content-Type', 'application/rss+xml');
+    res.send(feed.rss2());
   });
 });
 
