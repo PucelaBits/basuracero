@@ -37,7 +37,7 @@ Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a 
 
 **Antes de empezar**
 
-Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env` y rellenar los datos del API de [friendly captcha](https://friendlycaptcha.com), así como el área en el que se pueden crear incidencias.
+Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env` y rellenar los datos del API de [friendly captcha](https://friendlycaptcha.com), así como el área en el que se pueden crear incidencias, puedes definir también la URL base de la aplicación.
 
 ```bash
 cp .env.sample .env
@@ -72,6 +72,18 @@ Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos
 
 - `docker-compose exec basuracero-app npm run borrar-incidencia ID`: Borra una incidencia por su ID.
 - `docker-compose exec basuracero-app npm run tipos`: Gestiona los tipos de incidencias.
+- `docker-compose exec basuracero-app npm run rellenar-direcciones`: Actualiza las direcciones de las incidencias que no tienen una dirección asignada.
+- `docker-compose exec basuracero-app npm run rellenar-barrios`: Actualiza los barrios de las incidencias que no tienen un barrio asignado.
+- `docker-compose exec basuracero-app npm run asignar-imagen ID RUTA_IMAGEN`: Asigna una imagen a una incidencia específica.
+
+### Feeds RSS
+
+La app expone los siguientes feeds RSS:
+
+- `/api/rss`: Últimas incidencias añadidas a la app.
+- `/api/rss/spam`: Últimos reportes de contenido inadecuado.
+
+Puedes usar esos feeds para integraciones con otras aplicaciones, como un bot de avisos en telegram o importación en redes sociales.
 
 ### Dominio personalizado
 
@@ -233,7 +245,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
    npm run dev:client
    ```
 
-6. La aplicación estará disponible en `http://localhost:5050`.
+6. La aplicación estará disponible en `http://localhost:5173`.
 
 ## Scripts disponibles
 
@@ -246,7 +258,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 
 ## Notas adicionales
 
-- Asegúrate de que el puerto 5050 esté disponible en tu sistema.
+- Asegúrate de que el puerto 5173 esté disponible en tu sistema.
 - La base de datos SQLite se creará automáticamente en la carpeta `data` al iniciar la aplicación.
 - Las imágenes subidas se almacenarán en la carpeta `uploads`.
 - En desarrollo, el servidor proxy de Vite redirigirá las peticiones API al servidor backend.
