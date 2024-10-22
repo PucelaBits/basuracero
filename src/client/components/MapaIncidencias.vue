@@ -292,7 +292,7 @@ export default {
                 </div>
                 <div class="popup-chips">
                   <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
-                  <span class="estado-pastilla ${incidencia.estado}">${incidencia.estado === 'activa' ? 'Activa' : 'Solucionada'}</span>
+                  ${incidencia.estado === 'solucionada' ? `<span class="estado-pastilla solucionada">Solucionada</span>` : ''}
                 </div>
               </div>
               <div class="popup-content">
@@ -806,13 +806,13 @@ export default {
 }
 
 .estado-pastilla.activa {
-  background-color: #e74c3c;
-  color: white;
+  background-color: hsl(5.6, 57.1%, 61.1%);
+  color: hsl(5.6, 57.1%, 15.1%);
 }
 
 .estado-pastilla.solucionada {
-  background-color: #2ecc71;
-  color: white;
+  background-color: hsl(145.4, 39.2%, 69%);
+  color: hsl(145.4, 42.2%, 22%);
 }
 
 .popup-content {

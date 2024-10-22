@@ -43,8 +43,8 @@
             </v-icon>
           </v-btn>
           <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
-          <span :class="['estado-pastilla', incidencia.estado]">
-            {{ incidencia.estado === 'activa' ? 'Activa' : 'Solucionada' }}
+          <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
+            Solucionada
           </span>
         </div>
         
@@ -96,18 +96,6 @@
           </v-row>
 
           <!-- Estado -->
-          <v-row align="center" class="mt-2" v-if="incidencia.estado === 'solucionada' && incidencia.estado !== 'spam'">
-            <v-col cols="auto">
-              <div class="d-flex align-center text-caption">
-                <v-icon color="success" small class="mr-2">
-                  mdi-check-circle
-                </v-icon>
-                <span class="success--text">
-                  Solucionada
-                </span>
-              </div>
-            </v-col>
-          </v-row>
           <v-row v-if="incidencia.estado === 'solucionada'" align="center" class="mt-1">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">

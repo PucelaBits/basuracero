@@ -239,10 +239,5 @@ export default {
   max-width: 200px !important;
 }
 
-.estado-pastilla.solucionada {
-  background-color: #4caf4fdc;
-  color: white;
-}
-
 /* Resto de los estilos */
 </style>
