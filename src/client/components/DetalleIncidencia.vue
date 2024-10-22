@@ -7,7 +7,7 @@
           :show-arrows="incidencia.imagenes.length > 1"
           hide-delimiter-background
           height="270"
-          class="imagen-detalle"
+          class="imagen-detalle custom-carousel"
           :hide-delimiters="incidencia.imagenes.length <= 1"
         >
           <v-carousel-item
@@ -31,7 +31,11 @@
         
         <!-- Pastillas de tipo y estado -->
         <div class="pastillas-container">
-          <!-- Nuevo botón de favoritos -->
+          <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
+          <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
+            Solucionada
+          </span>
+          <!-- Botón de favoritos -->
           <v-btn
             icon
             x-small
@@ -42,14 +46,10 @@
               {{ isFavorite ? 'mdi-star' : 'mdi-star-outline' }}
             </v-icon>
           </v-btn>
-          <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
-          <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
-            Solucionada
-          </span>
         </div>
         
-        <v-btn icon dark class="close-btn" @click="cerrar">
-          <v-icon>mdi-close</v-icon>
+        <v-btn icon dark size="x-small" class="close-btn" @click="cerrar">
+          <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
       </div>
 
@@ -888,15 +888,16 @@ a {
 
 .close-btn {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  background-color: rgba(255, 255, 255, 0.5) !important;
+  top: 7px;
+  left: 6px;
+  background-color: hsla(0, 0%, 100%, 0.8) !important;
+  z-index: 1;
 }
 
 .pastillas-container {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   display: flex;
   gap: 5px;
   align-items: center;
@@ -998,13 +999,6 @@ a {
   position: relative;
 }
 
-.pastillas-container {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1;
-}
-
 .popup-chip {
   background-color: rgba(255, 255, 255, 0.8);
   color: #333;
@@ -1019,13 +1013,6 @@ a {
   border-radius: 16px;
   font-size: 12px;
   color: white;
-}
-
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
 }
 
 .close-fullscreen-btn {
@@ -1045,4 +1032,24 @@ a {
 .favorite-btn .v-icon {
   font-size: 16px;
 }
+
+/** Estilos botones carrusel **/
+
+.custom-carousel :deep(.v-carousel__controls) {
+  opacity: 0.8; /* Ajusta este valor según la opacidad deseada */
+}
+
+.custom-carousel :deep(.v-btn--icon) {
+  opacity: 0.8 !important; /* Ajusta este valor según la opacidad deseada */
+  background-color: hsla(0, 0%, 0%, 0.5); /* Fondo semi-transparente para los botones */
+}
+
+.custom-carousel :deep(.v-btn--icon:hover) {
+  opacity: 0.8 !important; /* Aumenta la opacidad al pasar el mouse */
+}
+
+.custom-carousel :deep(.v-btn__content) {
+  color: white; /* Color del icono de la flecha */
+}
+
 </style>
