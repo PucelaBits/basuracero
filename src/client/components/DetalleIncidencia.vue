@@ -115,8 +115,8 @@
           </v-row>
           <v-row v-if="incidencia.estado !== 'spam'" align="center" class="mt-1">
             <v-col cols="auto">
-              <div class="d-flex align-center text-caption cursor-pointer" @click="mostrarDialogoReporteInadecuado = true">
-                <v-icon small class="mr-2">mdi-alert-circle</v-icon>
+              <div class="d-flex align-center text-caption cursor-pointer report-spam-btn" @click="mostrarDialogoReporteInadecuado = true">
+                <v-icon small class="mr-2" color="grey">mdi-alert-circle</v-icon>
                 <span>Avisar de contenido inadecuado o spam</span>
               </div>
             </v-col>
@@ -993,6 +993,11 @@ a {
 
 #botones-detalle {
   gap: 0px !important;
+}
+
+.report-spam-btn span{
+  text-decoration: underline;
+  color: grey;
 }
 
 .imagen-container {
