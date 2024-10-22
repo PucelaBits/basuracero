@@ -13,13 +13,13 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="pb-0">
-          <v-alert color="grey" elevation="2" class="aviso-formulario">
+          <v-alert color="grey" elevation="1" class="aviso-formulario">
             <v-row align="center" no-gutters>
               <v-col cols="2" class="text-center">
                 <v-icon>mdi-information</v-icon>
               </v-col>
               <v-col cols="10" class="pl-2">
-                <span class="text-caption">Procura informar sólo si lleva <br /> <u class="font-weight-bold">más de 24h</u> sin solución</span>
+                <span class="text-caption">Informa sólo si lleva <strong>más de 24h</strong> sin solución</span>
               </v-col>
             </v-row>
           </v-alert>
@@ -108,7 +108,7 @@
 
             <v-row justify="center" class="mb-4">
               <v-col cols="6" class="text-center">
-                <v-btn @click="obtenerUbicacion" color="primary" :loading="obteniendoUbicacion" size="small">
+                <v-btn @click="obtenerUbicacion" color="secondary" :loading="obteniendoUbicacion" size="small">
                   <v-icon left size="small">mdi-map-marker</v-icon>
                   &nbsp;Tu ubicación
                 </v-btn>
@@ -131,13 +131,13 @@
             <v-divider class="my-4"><span style="color: grey;">Fotos</span></v-divider>
             <v-row class="mt-4">
               <v-col cols="6 px-1">
-                <v-btn block color="success" @click="tomarFoto" :disabled="incidencia.imagenes.length >= 2">
+                <v-btn block color="secondary" @click="tomarFoto" :disabled="incidencia.imagenes.length >= 2">
                   <v-icon start>mdi-camera</v-icon>
                   Hacer foto
                 </v-btn>
               </v-col>
               <v-col cols="6 px-1">
-                <v-btn block color="info" @click="abrirSelectorArchivos" :disabled="incidencia.imagenes.length >= 2">
+                <v-btn block color="secondary" @click="abrirSelectorArchivos" :disabled="incidencia.imagenes.length >= 2">
                   <v-icon start>mdi-upload</v-icon>
                   Subir fotos
                 </v-btn>
@@ -227,7 +227,7 @@
               required
             >
               <template v-slot:label>
-                <div class="subtitle-text">
+                <div class="subtitle-text licencia-text">
                   Acepto que el texto y las fotos subidas serán publicados bajo licencia 
                   <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">CC BY-SA 4.0</a>
                 </div>
@@ -780,6 +780,10 @@ export default {
   color: grey;
   font-size: smaller;
   margin-bottom: 1.5em;
+}
+
+.licencia-text {
+  margin-bottom: 0;
 }
 
 .aviso-formulario {

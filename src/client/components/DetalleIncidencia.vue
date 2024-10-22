@@ -1038,6 +1038,10 @@ a {
   font-size: 16px;
 }
 
+.text-caption {
+  color: hsl(0, 0%, 30%);
+}
+
 /** Estilos botones carrusel **/
 
 .custom-carousel :deep(.v-carousel__controls) {

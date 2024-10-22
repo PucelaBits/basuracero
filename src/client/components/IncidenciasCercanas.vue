@@ -29,7 +29,7 @@
           <v-row>
             <v-col cols="12">
               <v-alert
-                color="#7361a0"
+                color="secondary"
                 icon="mdi-check-circle"
                 elevation="2"
                 class="info-banner mb-4"
