@@ -255,7 +255,8 @@ export default {
 
       tempMarker.bindPopup(popupContent, {
         closeButton: false,
-        className: 'custom-popup-class'
+        className: 'custom-popup-class',
+        offset: L.point(0, -20)
       });
 
       setTimeout(() => {
