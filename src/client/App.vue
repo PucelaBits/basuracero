@@ -146,21 +146,21 @@
                 <img src="/logo.png" alt="Logo Basura Cero" style="width: 70px; height: 70px;">
               </v-avatar>
               
-              <h1 class="text-h5 font-weight-bold mb-4">Bienvenido a Basura Cero</h1>
+              <h1 class="text-h5 font-weight-bold mb-4">Basura Cero</h1>
               
               <p class="text-body-2 mb-6">
-                Proyecto colaborativo para visibilizar incidencias no solucionadas en nuestra ciudad
+                Proyecto vecinal colaborativo para visibilizar incidencias no solucionadas en nuestra ciudad
               </p>
               
               <h2 class="text-subtitle-1 font-weight-medium mb-4">¿Cómo ayudar?</h2>
               
               <v-row justify="center" class="mb-6">
                 <v-col cols="4" class="text-center">
-                  <v-icon size="large" color="primary" class="mb-2">mdi-eye</v-icon>
+                  <v-icon size="large" color="primary" class="mb-2">mdi-camera</v-icon>
                   <div class="text-caption">Detecta el problema</div>
                 </v-col>
                 <v-col cols="4" class="text-center">
-                  <v-icon size="large" color="primary" class="mb-2">mdi-camera</v-icon>
+                  <v-icon size="large" color="primary" class="mb-2">mdi-plus-circle</v-icon>
                   <div class="text-caption">Crea una incidencia</div>
                 </v-col>
                 <v-col cols="4" class="text-center">
@@ -186,7 +186,7 @@
                   text
                   @click="instalarPWA"
                 >
-                  <v-icon class="mr-2">mdi-cellphone</v-icon> Añademe a tu pantalla principal
+                  <v-icon class="mr-2">mdi-cellphone</v-icon> Añádeme a tu pantalla principal
                 </v-btn>
                 <v-btn
                   color="primary"
@@ -305,7 +305,7 @@
       elevation="8"
       style="margin-bottom: 15px;"
     >
-      <v-icon>mdi-plus</v-icon>
+      <v-icon size="x-large">mdi-plus</v-icon>
     </v-btn>
 
     <v-dialog v-model="mostrarFormulario" max-width="600px" class="dialog-sobre-boton">
