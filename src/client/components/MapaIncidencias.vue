@@ -140,7 +140,7 @@ export default {
     const router = useRouter();
     const mapContainer = ref(null)
     let map = null
-    let markerClusterGroup = null // Nueva variable para el grupo de clusters
+    let markerClusterGroup = null // Para el grupo de clusters
     let tempMarker = null
     let userMarker = null
     let userCircle = null
@@ -149,6 +149,7 @@ export default {
     const searchResults = ref([])
     
     const incidenciaSeleccionada = ref(null);
+    const firstCentering = ref(true); // Para controlar el centrado inicial
 
     const abrirDetalle = (incidencia) => {
       emit('incidencia-seleccionada', incidencia);
@@ -546,20 +547,18 @@ export default {
             radius: 50
           }).addTo(map)
 
-          map.setView(newLatLng, 16, { 
-            animate: true, 
-            duration: 1, 
-            closePopupOnMove: false
-          });
+          // Centrar el mapa solo la primera vez
+          if (firstCentering.value) {
+            map.setView(newLatLng, 16, { 
+              animate: true, 
+              duration: 1, 
+              closePopupOnMove: false
+            });
+            firstCentering.value = false; // Cambiar el estado después de centrar
+          }
         } else {
           userMarker.slideTo(newLatLng, { duration: 1000 });
           userCircle.slideTo(newLatLng, { duration: 1000 });
-          
-          map.panTo(newLatLng, { 
-            animate: true, 
-            duration: 1, 
-            easeLinearity: 0.25
-          });
         }
         
         // Restaurar los popups abiertos
