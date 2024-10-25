@@ -463,10 +463,10 @@ export default {
             const newPosition = { latitud: latitude, longitud: longitude }
             const currentTime = Date.now()
             
-            // Verificar si la posición ha cambiado significativamente o si han pasado 10 segundos
+            // Reducimos los umbrales para una mejor respuesta
             if (!lastPosition.value || 
-                calculateDistance(lastPosition.value, newPosition) > 10 ||
-                currentTime - lastUpdateTime.value >= 10000) {
+                calculateDistance(lastPosition.value, newPosition) > 10 || // 10 metros
+                currentTime - lastUpdateTime.value >= 5000) { // 5 segundos
               lastPosition.value = newPosition
               lastUpdateTime.value = currentTime
               emit('solicitar-actualizacion-ubicacion', newPosition)
@@ -477,22 +477,21 @@ export default {
             console.error("Error al obtener la ubicación:", error.message)
           },
           { 
-            enableHighAccuracy: true, 
-            timeout: 5000, 
-            maximumAge: 0
+            enableHighAccuracy: true, // Volvemos a activar la precisión alta
+            timeout: 5000,
+            maximumAge: 2000 // 2 segundos de caché máximo
           }
         )
 
-        // Forzar actualización cada 10 segundos
+        // Actualizamos cada 5 segundos como máximo
         const forceUpdateInterval = setInterval(() => {
-          if (lastPosition.value && Date.now() - lastUpdateTime.value >= 10000) {
+          if (lastPosition.value && Date.now() - lastUpdateTime.value >= 5000) {
             emit('solicitar-actualizacion-ubicacion', lastPosition.value)
             updateUserLocation(lastPosition.value)
             lastUpdateTime.value = Date.now()
           }
-        }, 10000)
+        }, 5000)
 
-        // Limpiar el intervalo cuando se desmonte el componente
         onUnmounted(() => {
           clearInterval(forceUpdateInterval)
         })
@@ -521,13 +520,14 @@ export default {
         const { latitud, longitud } = newPosition
         const newLatLng = L.latLng(latitud, longitud)
         
-        // Guardar el estado de los popups abiertos
+        // Guardamos los popups abiertos antes de actualizar la posición
         const openPopups = [];
         map.eachLayer((layer) => {
           if (layer instanceof L.Popup && map.hasLayer(layer)) {
             openPopups.push({
               latlng: layer.getLatLng(),
-              content: layer.getContent()
+              content: layer.getContent(),
+              options: layer.options
             });
           }
         });
@@ -547,35 +547,39 @@ export default {
             radius: 50
           }).addTo(map)
 
-          // Centrar el mapa solo la primera vez
           if (firstCentering.value) {
             map.setView(newLatLng, 16, { 
               animate: true, 
-              duration: 1, 
-              closePopupOnMove: false
+              duration: 1
             });
-            firstCentering.value = false; // Cambiar el estado después de centrar
+            firstCentering.value = false;
           }
         } else {
-          userMarker.slideTo(newLatLng, { duration: 1000 });
-          userCircle.slideTo(newLatLng, { duration: 1000 });
+          // Actualizamos la posición del marcador y círculo
+          userMarker.setLatLng(newLatLng);
+          userCircle.setLatLng(newLatLng);
+          
+          // Animamos el movimiento usando CSS transitions en lugar de slideTo
+          const userMarkerElement = userMarker.getElement();
+          const userCircleElement = userCircle.getElement();
+          
+          if (userMarkerElement) {
+            userMarkerElement.style.transition = 'transform 1s';
+          }
+          if (userCircleElement) {
+            userCircleElement.style.transition = 'transform 1s';
+          }
         }
-        
-        // Restaurar los popups abiertos
+
+        // Restauramos los popups después de la actualización
         setTimeout(() => {
-          openPopups.forEach((popupInfo) => {
-            L.popup({
-              maxWidth: 250,
-              minWidth: 250,
-              className: 'custom-popup-class',
-              closeButton: true,
-              closeOnClick: false
-            })
-              .setLatLng(popupInfo.latlng)
-              .setContent(popupInfo.content)
+          openPopups.forEach(popup => {
+            L.popup(popup.options)
+              .setLatLng(popup.latlng)
+              .setContent(popup.content)
               .openOn(map);
           });
-        }, 50);
+        }, 100);
       }
     }
 
@@ -1080,4 +1084,19 @@ export default {
 .leaflet-popup-close-button:hover {
   background-color: rgba(0, 0, 0, 0.7) !important;
 }
+
+.user-location-marker,
+.user-location-dot {
+  transition: transform 1s ease-out;
+}
+
+/* Aseguramos que los popups permanezcan por encima durante las transiciones */
+.leaflet-popup {
+  z-index: 1000 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  z-index: 1001 !important;
+}
 </style>
+
