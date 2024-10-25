@@ -280,23 +280,22 @@ export default {
     }
 
     const updateMarkers = () => {
-      if (map && props.incidencias) {
-        // Guardamos los popups abiertos
-        const openPopups = [];
+      if (map) {
+        // Guardar referencia a los popups abiertos
+        const openPopups = new Map();
         map.eachLayer((layer) => {
           if (layer instanceof L.Popup && map.hasLayer(layer)) {
-            openPopups.push({
+            // Usar el contenido del popup como clave para mantener la referencia
+            openPopups.set(layer._content, {
               latlng: layer.getLatLng(),
-              content: layer.getContent(),
+              content: layer._content,
               options: layer.options
             });
           }
         });
 
-        // Limpiar solo los marcadores de incidencias, no el marcador de usuario
-        if (markerClusterGroup) {
-          markerClusterGroup.clearLayers();
-        }
+        // Limpiar marcadores existentes
+        markerClusterGroup.clearLayers();
 
         // Filtrar incidencias según el tipo seleccionado
         const incidenciasFiltradas = props.tipoSeleccionado === 'Todas'
@@ -402,18 +401,14 @@ export default {
                 })
               })
             }
+
+            // Si había un popup abierto para esta incidencia, restaurarlo
+            const popupInfo = openPopups.get(marker.getPopup()._content);
+            if (popupInfo) {
+              marker.openPopup();
+            }
           }
         })
-
-        // Restaurar los popups después de actualizar los marcadores
-        setTimeout(() => {
-          openPopups.forEach(popup => {
-            L.popup(popup.options)
-              .setLatLng(popup.latlng)
-              .setContent(popup.content)
-              .openOn(map);
-          });
-        }, 100);
       }
     }
 
@@ -514,7 +509,7 @@ export default {
             console.error("Error al obtener la ubicación:", error.message);
           },
           { 
-            enableHighAccuracy: false,
+            enableHighAccuracy: true,
             timeout: 10000,
             maximumAge: 5000
           }
@@ -647,20 +642,19 @@ export default {
     })
     watch(() => props.ubicacionUsuario, (newValue, oldValue) => {
       if (newValue && props.seguirUsuario) {
-        // Solo actualizar si:
-        // 1. No hay valor anterior (primera vez)
-        // 2. La distancia es mayor a 10m
-        if (!oldValue || calculateDistance(oldValue, newValue) > 10) {
-          updateUserLocation(newValue);
-
-          // Solo recalculamos las incidencias si la distancia es significativa
+        const distance = oldValue ? calculateDistance(oldValue, newValue) : Infinity;
+        
+        // Actualizar la posición del usuario siempre
+        updateUserLocation(newValue);
+        
+        // Pero solo recalcular marcadores si:
+        // 1. No hay posición anterior
+        // 2. La distancia es significativa (> 15m)
+        // 3. No hay popups abiertos
+        if ((!oldValue || distance > 15) && !hasOpenPopups()) {
           if (props.esCercanas) {
             updateMarkers();
           }
-        } else {
-          // Si el movimiento es pequeño, solo actualizamos la posición del usuario
-          // sin recalcular las incidencias
-          updateUserLocation(newValue);
         }
       }
     }, { deep: true });
@@ -681,6 +675,17 @@ export default {
         map.setZoom(newZoom)
       }
     })
+
+    // Función auxiliar para verificar si hay popups abiertos
+    const hasOpenPopups = () => {
+      let hasPopups = false;
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Popup && map.hasLayer(layer)) {
+          hasPopups = true;
+        }
+      });
+      return hasPopups;
+    };
 
     return {
       mapContainer,
@@ -1125,6 +1130,7 @@ export default {
   z-index: 1001 !important;
 }
 </style>
+
 
 
 
