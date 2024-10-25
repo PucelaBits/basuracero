@@ -563,12 +563,13 @@ export default {
             radius: 50
           }).addTo(map);
 
+          // Solo centramos la primera vez
           if (firstCentering.value) {
             map.setView(newLatLng, 16);
             firstCentering.value = false;
           }
         } else {
-          // Si hay popups abiertos, solo mover el marcador del usuario
+          // Actualizamos solo la posición del marcador y el círculo
           if (hayPopupsAbiertos()) {
             userMarker.slideTo(newLatLng, {
               duration: 1000,
@@ -578,12 +579,9 @@ export default {
               duration: 1000
             });
           } else {
-            // Si no hay popups, actualizar normalmente
             userMarker.setLatLng(newLatLng);
             userCircle.setLatLng(newLatLng);
-            if (props.seguirUsuario) {
-              map.setView(newLatLng, map.getZoom());
-            }
+            // Eliminamos el setView automático
           }
         }
       }
@@ -1116,6 +1114,7 @@ export default {
   z-index: 1001 !important;
 }
 </style>
+
 
 
 
