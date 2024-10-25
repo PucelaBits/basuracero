@@ -491,39 +491,36 @@ export default {
       if (props.seguirUsuario && "geolocation" in navigator) {
         watchId.value = navigator.geolocation.watchPosition(
           (position) => {
-            const { latitude, longitude } = position.coords
-            const newPosition = { latitud: latitude, longitud: longitude }
-            const currentTime = Date.now()
-            
+            const { latitude, longitude } = position.coords;
+            const newPosition = { latitud: latitude, longitud: longitude };
+            const currentTime = Date.now();
+
             // Solo actualizamos si:
             // 1. No hay posición previa
-            // 2. La distancia es mayor a 10m
-            // 3. Han pasado más de 5 segundos Y la posición ha cambiado al menos 10m
+            // 2. La distancia es mayor a 15m (aumentamos el umbral)
+            // 3. Han pasado más de 10 segundos Y la posición ha cambiado al menos 15m
             if (!lastPosition.value || 
-                calculateDistance(lastPosition.value, newPosition) > 10 || 
-                (currentTime - lastUpdateTime.value >= 5000 && 
-                 calculateDistance(lastPosition.value, newPosition) > 10)) {
+                calculateDistance(lastPosition.value, newPosition) > 15 || 
+                (currentTime - lastUpdateTime.value >= 10000 && 
+                 calculateDistance(lastPosition.value, newPosition) > 15)) {
               
-              lastPosition.value = newPosition
-              lastUpdateTime.value = currentTime
-              emit('solicitar-actualizacion-ubicacion', newPosition)
-              updateUserLocation(newPosition)
+              lastPosition.value = newPosition;
+              lastUpdateTime.value = currentTime;
+              emit('solicitar-actualizacion-ubicacion', newPosition);
+              updateUserLocation(newPosition);
             }
           },
           (error) => {
-            console.error("Error al obtener la ubicación:", error.message)
+            console.error("Error al obtener la ubicación:", error.message);
           },
           { 
             enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 2000
+            timeout: 10000, // Aumentamos el tiempo de espera
+            maximumAge: 5000 // Aumentamos la edad máxima de la posición
           }
-        )
-
-        // Eliminamos el intervalo forzado ya que no es necesario
-        // si la posición no ha cambiado
+        );
       }
-    }
+    };
 
     const calculateDistance = (pos1, pos2) => {
       // Implementar cálculo de distancia entre dos puntos
@@ -1128,6 +1125,7 @@ export default {
   z-index: 1001 !important;
 }
 </style>
+
 
 
 
