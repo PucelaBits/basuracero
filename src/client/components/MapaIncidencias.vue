@@ -507,7 +507,7 @@ export default {
             console.error("Error al obtener la ubicación:", error.message);
           },
           { 
-            enableHighAccuracy: true,
+            enableHighAccuracy: false,
             timeout: 10000,
             maximumAge: 5000
           }

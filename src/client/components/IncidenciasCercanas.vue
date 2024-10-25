@@ -330,7 +330,7 @@ export default {
             console.error("Error al obtener la ubicación:", error.message)
             cargandoUbicacion.value = false
           },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
         )
       } else {
         cargandoUbicacion.value = false
