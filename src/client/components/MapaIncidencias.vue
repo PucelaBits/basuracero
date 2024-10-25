@@ -495,10 +495,15 @@ export default {
             const newPosition = { latitud: latitude, longitud: longitude }
             const currentTime = Date.now()
             
-            // Reducimos los umbrales para una mejor respuesta
+            // Solo actualizamos si:
+            // 1. No hay posición previa
+            // 2. La distancia es mayor a 10m
+            // 3. Han pasado más de 5 segundos Y la posición ha cambiado al menos 10m
             if (!lastPosition.value || 
-                calculateDistance(lastPosition.value, newPosition) > 10 || // 10 metros
-                currentTime - lastUpdateTime.value >= 5000) { // 5 segundos
+                calculateDistance(lastPosition.value, newPosition) > 10 || 
+                (currentTime - lastUpdateTime.value >= 5000 && 
+                 calculateDistance(lastPosition.value, newPosition) > 10)) {
+              
               lastPosition.value = newPosition
               lastUpdateTime.value = currentTime
               emit('solicitar-actualizacion-ubicacion', newPosition)
@@ -509,24 +514,14 @@ export default {
             console.error("Error al obtener la ubicación:", error.message)
           },
           { 
-            enableHighAccuracy: true, // Volvemos a activar la precisión alta
+            enableHighAccuracy: true,
             timeout: 5000,
-            maximumAge: 2000 // 2 segundos de caché máximo
+            maximumAge: 2000
           }
         )
 
-        // Actualizamos cada 5 segundos como máximo
-        const forceUpdateInterval = setInterval(() => {
-          if (lastPosition.value && Date.now() - lastUpdateTime.value >= 5000) {
-            emit('solicitar-actualizacion-ubicacion', lastPosition.value)
-            updateUserLocation(lastPosition.value)
-            lastUpdateTime.value = Date.now()
-          }
-        }, 5000)
-
-        onUnmounted(() => {
-          clearInterval(forceUpdateInterval)
-        })
+        // Eliminamos el intervalo forzado ya que no es necesario
+        // si la posición no ha cambiado
       }
     }
 
@@ -1121,6 +1116,7 @@ export default {
   z-index: 1001 !important;
 }
 </style>
+
 
 
 
