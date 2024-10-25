@@ -648,9 +648,23 @@ export default {
         updateUbicacion(newUbicacion.latitud, newUbicacion.longitud)
       }
     })
-    watch(() => props.ubicacionUsuario, (newValue) => {
+    watch(() => props.ubicacionUsuario, (newValue, oldValue) => {
       if (newValue && props.seguirUsuario) {
-        updateUserLocation(newValue);
+        // Solo actualizar si:
+        // 1. No hay valor anterior (primera vez)
+        // 2. La distancia es mayor a 10m
+        if (!oldValue || calculateDistance(oldValue, newValue) > 10) {
+          updateUserLocation(newValue);
+
+          // Solo recalculamos las incidencias si la distancia es significativa
+          if (props.esCercanas) {
+            updateMarkers();
+          }
+        } else {
+          // Si el movimiento es pequeño, solo actualizamos la posición del usuario
+          // sin recalcular las incidencias
+          updateUserLocation(newValue);
+        }
       }
     }, { deep: true });
     watch(() => props.seguirUsuario, (newValue) => {
@@ -1114,6 +1128,7 @@ export default {
   z-index: 1001 !important;
 }
 </style>
+
 
 
 
