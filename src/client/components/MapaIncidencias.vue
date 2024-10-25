@@ -497,7 +497,7 @@ export default {
 
             // Solo actualizamos si:
             // 1. No hay posición previa
-            // 2. La distancia es mayor a 15m (aumentamos el umbral)
+            // 2. La distancia es mayor a 15m
             // 3. Han pasado más de 10 segundos Y la posición ha cambiado al menos 15m
             if (!lastPosition.value || 
                 calculateDistance(lastPosition.value, newPosition) > 15 || 
@@ -514,9 +514,9 @@ export default {
             console.error("Error al obtener la ubicación:", error.message);
           },
           { 
-            enableHighAccuracy: true,
-            timeout: 10000, // Aumentamos el tiempo de espera
-            maximumAge: 5000 // Aumentamos la edad máxima de la posición
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 5000
           }
         );
       }
