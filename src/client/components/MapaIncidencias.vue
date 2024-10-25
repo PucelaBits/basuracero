@@ -30,40 +30,54 @@ import { enviarEventoMatomo } from '../utils/analytics'
 // Extensión para animación suave de marcadores
 L.Marker.include({
   slideTo: function (latlng, options) {
-    const duration = options.duration || 1000
-    const keepAtCenter = options.keepAtCenter || false
+    const duration = options.duration || 1000;
+    const keepAtCenter = options.keepAtCenter || false;
 
-    const start = this.getLatLng()
-    const end = L.latLng(latlng)
+    const start = this.getLatLng();
+    const end = L.latLng(latlng);
+    
+    // Guardar referencia al popup si está abierto
+    const popup = this.getPopup();
+    const wasPopupOpen = popup && this.isPopupOpen();
+    let popupPos = wasPopupOpen ? popup.getLatLng() : null;
 
-    const startTime = performance.now()
+    const startTime = performance.now();
 
     const animate = (currentTime) => {
-      const elapsedTime = currentTime - startTime
+      const elapsedTime = currentTime - startTime;
       if (elapsedTime < duration) {
-        const t = elapsedTime / duration
-        const lat = start.lat + (end.lat - start.lat) * t
-        const lng = start.lng + (end.lng - start.lng) * t
-        const newLatLng = L.latLng(lat, lng)
+        const t = elapsedTime / duration;
+        const lat = start.lat + (end.lat - start.lat) * t;
+        const lng = start.lng + (end.lng - start.lng) * t;
+        const newLatLng = L.latLng(lat, lng);
 
-        this.setLatLng(newLatLng)
-
-        if (keepAtCenter) {
-          this._map.setView(newLatLng, this._map.getZoom(), { animate: false })
+        this.setLatLng(newLatLng);
+        
+        // Si había un popup abierto, mantenerlo en su posición original
+        if (wasPopupOpen && popup) {
+          popup.setLatLng(popupPos);
         }
 
-        requestAnimationFrame(animate)
-      } else {
-        this.setLatLng(end)
         if (keepAtCenter) {
-          this._map.setView(end, this._map.getZoom(), { animate: false })
+          this._map.setView(newLatLng, this._map.getZoom(), { animate: false });
+        }
+
+        requestAnimationFrame(animate);
+      } else {
+        this.setLatLng(end);
+        // Mantener el popup en su posición original al final de la animación
+        if (wasPopupOpen && popup) {
+          popup.setLatLng(popupPos);
+        }
+        if (keepAtCenter) {
+          this._map.setView(end, this._map.getZoom(), { animate: false });
         }
       }
-    }
+    };
 
-    requestAnimationFrame(animate)
+    requestAnimationFrame(animate);
   }
-})
+});
 
 // Extensión para animación suave de círculos
 L.Circle.include({
@@ -267,8 +281,22 @@ export default {
 
     const updateMarkers = () => {
       if (map && props.incidencias) {
-        // Limpiar marcadores existentes
-        markerClusterGroup.clearLayers()
+        // Guardamos los popups abiertos
+        const openPopups = [];
+        map.eachLayer((layer) => {
+          if (layer instanceof L.Popup && map.hasLayer(layer)) {
+            openPopups.push({
+              latlng: layer.getLatLng(),
+              content: layer.getContent(),
+              options: layer.options
+            });
+          }
+        });
+
+        // Limpiar solo los marcadores de incidencias, no el marcador de usuario
+        if (markerClusterGroup) {
+          markerClusterGroup.clearLayers();
+        }
 
         // Filtrar incidencias según el tipo seleccionado
         const incidenciasFiltradas = props.tipoSeleccionado === 'Todas'
@@ -377,11 +405,15 @@ export default {
           }
         })
 
-        // Ajustar la vista si es necesario
-        if (markerClusterGroup.getLayers().length > 0 && (!map.getZoom() || map.getZoom() === 13)) {
-          const bounds = markerClusterGroup.getBounds()
-          map.fitBounds(bounds)
-        }
+        // Restaurar los popups después de actualizar los marcadores
+        setTimeout(() => {
+          openPopups.forEach(popup => {
+            L.popup(popup.options)
+              .setLatLng(popup.latlng)
+              .setContent(popup.content)
+              .openOn(map);
+          });
+        }, 100);
       }
     }
 
@@ -517,71 +549,50 @@ export default {
 
     const updateUserLocation = (newPosition) => {
       if (map && newPosition && props.seguirUsuario) {
-        const { latitud, longitud } = newPosition
-        const newLatLng = L.latLng(latitud, longitud)
-        
-        // Guardamos los popups abiertos antes de actualizar la posición
-        const openPopups = [];
-        map.eachLayer((layer) => {
-          if (layer instanceof L.Popup && map.hasLayer(layer)) {
-            openPopups.push({
-              latlng: layer.getLatLng(),
-              content: layer.getContent(),
-              options: layer.options
-            });
-          }
-        });
-        
+        const { latitud, longitud } = newPosition;
+        const newLatLng = L.latLng(latitud, longitud);
+
         if (!userMarker) {
+          // Primera vez: crear el marcador y círculo del usuario
           userMarker = L.marker(newLatLng, {
             icon: L.divIcon({
               className: 'user-location-marker',
               html: '<div class="user-location-dot"></div>'
             })
-          }).addTo(map)
-          
+          }).addTo(map);
+
           userCircle = L.circle(newLatLng, {
             color: '#3388ff',
             fillColor: '#3388ff',
             fillOpacity: 0.2,
             radius: 50
-          }).addTo(map)
+          }).addTo(map);
 
           if (firstCentering.value) {
-            map.setView(newLatLng, 16, { 
-              animate: true, 
-              duration: 1
-            });
+            map.setView(newLatLng, 16);
             firstCentering.value = false;
           }
         } else {
-          // Actualizamos la posición del marcador y círculo
-          userMarker.setLatLng(newLatLng);
-          userCircle.setLatLng(newLatLng);
-          
-          // Animamos el movimiento usando CSS transitions en lugar de slideTo
-          const userMarkerElement = userMarker.getElement();
-          const userCircleElement = userCircle.getElement();
-          
-          if (userMarkerElement) {
-            userMarkerElement.style.transition = 'transform 1s';
-          }
-          if (userCircleElement) {
-            userCircleElement.style.transition = 'transform 1s';
+          // Si hay popups abiertos, solo mover el marcador del usuario
+          if (hayPopupsAbiertos()) {
+            userMarker.slideTo(newLatLng, {
+              duration: 1000,
+              keepAtCenter: false
+            });
+            userCircle.slideTo(newLatLng, {
+              duration: 1000
+            });
+          } else {
+            // Si no hay popups, actualizar normalmente
+            userMarker.setLatLng(newLatLng);
+            userCircle.setLatLng(newLatLng);
+            if (props.seguirUsuario) {
+              map.setView(newLatLng, map.getZoom());
+            }
           }
         }
-
-        // Restauramos los popups después de la actualización
-        setTimeout(() => {
-          openPopups.forEach(popup => {
-            L.popup(popup.options)
-              .setLatLng(popup.latlng)
-              .setContent(popup.content)
-              .openOn(map);
-          });
-        }, 100);
       }
-    }
+    };
 
     const removeUserMarker = () => {
       if (userMarker) {
@@ -600,6 +611,17 @@ export default {
         watchId.value = null
       }
     }
+
+    // Mantener una sola implementación de hayPopupsAbiertos
+    const hayPopupsAbiertos = () => {
+      let hayPopups = false;
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Popup) {
+          hayPopups = true;
+        }
+      });
+      return hayPopups;
+    };
 
     onMounted(() => {
       initMap()
@@ -635,9 +657,9 @@ export default {
     })
     watch(() => props.ubicacionUsuario, (newValue) => {
       if (newValue && props.seguirUsuario) {
-        updateUserLocation(newValue)
+        updateUserLocation(newValue);
       }
-    })
+    }, { deep: true });
     watch(() => props.seguirUsuario, (newValue) => {
       if (newValue) {
         startWatchingUserLocation()
@@ -1099,4 +1121,10 @@ export default {
   z-index: 1001 !important;
 }
 </style>
+
+
+
+
+
+
 
