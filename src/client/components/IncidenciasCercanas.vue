@@ -371,9 +371,13 @@ export default {
 
         const incidenciasCercanas = todasLasIncidencias.filter(inc => inc.distancia <= 1000);
         
-        incidenciasCalculadas.value = incidenciasCercanas.length >= 10 
+        const nuevasIncidencias = incidenciasCercanas.length >= 10 
           ? incidenciasCercanas 
           : todasLasIncidencias.slice(0, 10);
+
+        if (!sonIncidenciasIguales(incidenciasCalculadas.value, nuevasIncidencias)) {
+          incidenciasCalculadas.value = nuevasIncidencias;
+        }
 
         cargandoIncidencias.value = false;
       }
@@ -603,6 +607,16 @@ export default {
       }
     })
 
+    const sonIncidenciasIguales = (incidenciasActuales, nuevasIncidencias) => {
+      if (incidenciasActuales.length !== nuevasIncidencias.length) return false;
+      return incidenciasActuales.every((incActual, index) => {
+        const incNueva = nuevasIncidencias[index];
+        return incActual.id === incNueva.id && 
+               incActual.distancia === incNueva.distancia &&
+               incActual.faldonOculto === incNueva.faldonOculto;
+      });
+    };
+
     return {
       dialogVisible,
       cargandoUbicacion,
@@ -782,3 +796,4 @@ export default {
   padding-top: 5px;
 }
 </style>
+
