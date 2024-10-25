@@ -490,19 +490,17 @@ export default {
             const newPosition = { latitud: latitude, longitud: longitude };
             const currentTime = Date.now();
 
-            // Solo actualizamos si:
-            // 1. No hay posición previa
-            // 2. La distancia es mayor a 15m
-            // 3. Han pasado más de 10 segundos Y la posición ha cambiado al menos 15m
-            if (!lastPosition.value || 
-                calculateDistance(lastPosition.value, newPosition) > 15 || 
-                (currentTime - lastUpdateTime.value >= 10000 && 
-                 calculateDistance(lastPosition.value, newPosition) > 15)) {
-              
+            const significantMovement = calculateDistance(lastPosition.value, newPosition) > 15;
+            const timeThresholdMet = currentTime - lastUpdateTime.value >= 10000;
+
+            if (!lastPosition.value || significantMovement || (timeThresholdMet && significantMovement)) {
               lastPosition.value = newPosition;
               lastUpdateTime.value = currentTime;
-              emit('solicitar-actualizacion-ubicacion', newPosition);
               updateUserLocation(newPosition);
+              
+              if (significantMovement) {
+                emit('solicitar-actualizacion-ubicacion', newPosition);
+              }
             }
           },
           (error) => {
@@ -1130,6 +1128,7 @@ export default {
   z-index: 1001 !important;
 }
 </style>
+
 
 
 
