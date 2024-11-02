@@ -110,7 +110,7 @@
         <!-- Banner de notificación -->
         <v-alert
           v-if="incidenciasAntiguasUsuario > 0 || incidenciasConReportesSolucion > 0"
-          color="#7361a0"
+          :color="theme.colors.secondary"
           class="banner-incidencias mx-auto pt-2 pb-4 text-center text-caption"
           density="compact"
           text-align="center"
@@ -255,7 +255,7 @@
         </v-card>
 
         <!-- Aviso de incidencias antiguas -->
-        <v-card v-if="incidenciasAntiguas > 0 && mostrarAvisoIncidenciasAntiguas" class="ma-4 custom-banner" color="#7361a0">
+        <v-card v-if="incidenciasAntiguas > 0 && mostrarAvisoIncidenciasAntiguas" class="ma-4 custom-banner" :color="theme.colors.secondary">
           <v-card-text>
             <v-row>
               <v-col cols="9" class="text-center mx-auto">
@@ -1135,7 +1135,7 @@ export default {
   font-size: 0.7em !important;
   opacity: 0.8;
   text-transform: uppercase !important;
-  background-color: #7361a0;
+  background-color: rgb(var(--v-theme-secondary)) !important;
   border-radius: 5px;
   margin: auto;
   padding: 0px 6px;
@@ -1227,7 +1227,7 @@ export default {
 }
 
 .custom-banner {
-  background-color: #7361a0;
+  background-color: rgb(var(--v-theme-secondary)) !important;
   color: #fff !important;
   font-size: 0.75em;
   font-weight: bold;
@@ -1322,7 +1322,7 @@ export default {
 }
 
 .welcome-banner h1, .welcome-banner h2 {
-  color: #7361a0;
+  color: rgb(var(--v-theme-secondary)) !important;
 }
 
 .welcome-banner .v-icon {
@@ -1342,7 +1342,7 @@ export default {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  color: #7361a0;
+  color: rgb(var(--v-theme-secondary)) !important;
   background-color: white;
 }
 </style>
