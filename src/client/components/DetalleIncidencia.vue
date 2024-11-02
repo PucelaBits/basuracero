@@ -365,6 +365,7 @@ export default {
   },
   emits: ['update:modelValue', 'cerrar'],
   setup(props, { emit }) {
+    const appName = import.meta.env.VITE_APP_NAME || 'Basura Cero';
     const router = useRouter();
     const route = useRoute();
     const dialog = ref(props.modelValue);
@@ -756,7 +757,7 @@ export default {
           console.error('Error al compartir:', error);
         });
       } else {
-        alert('La funcionalidad de compartir no está soportada en este navegador.');
+        alert('La funcionalidad de compartir no est�� soportada en este navegador.');
       }
     };
 
@@ -858,6 +859,7 @@ export default {
       añadirAFavoritas,
       enviarWhatsAppYFavoritos,
       nombreUsuario,
+      appName,
     };
   }
 };
