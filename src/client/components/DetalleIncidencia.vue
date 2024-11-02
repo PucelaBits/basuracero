@@ -169,12 +169,12 @@
         </v-row>
         <v-btn
           @click="mostrarDialogoWhatsApp = true"
-          v-if="incidencia.estado == 'activa'"
+          v-if="showWhatsAppButton"
           color="primary"
           class="w-100"
         >
           <v-icon left>mdi-whatsapp</v-icon>
-          <span style="margin-left: 5px;">Informar al ayuntamiento</span>
+          <span style="margin-left: 5px;">{{ whatsAppShare.buttonText }}</span>
         </v-btn>
       </v-card-actions>
 
@@ -269,16 +269,20 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="mostrarDialogoWhatsApp" max-width="500px">
+    <v-dialog 
+      v-if="whatsAppShare.isEnabled.value"
+      v-model="mostrarDialogoWhatsApp" 
+      max-width="500px"
+    >
       <v-card>
         <v-card-title class="headline">
           <v-icon left>mdi-whatsapp</v-icon>
-          Informar por WhatsApp
+          {{ whatsAppShare.dialogTitle }}
         </v-card-title>
         <v-card-text>
-          Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando y copiando al portapapeles la descripción y la dirección
+          {{ whatsAppShare.dialogText }}
           <br>
-          <br><span class="subtitle-text"><strong>Nota:</strong> Es posible que necesites mandarle primero "Hola" para activarle.</span>
+          <br><span class="subtitle-text"><strong>Nota:</strong> {{ whatsAppShare.dialogNote }}</span>
           <v-checkbox
             v-model="añadirAFavoritas"
             label="Añadir a mis favoritas"
@@ -342,7 +346,7 @@
 import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useResolverIncidencia } from '@/composables/useResolverIncidencia';
-import { useInformarAyuntamiento } from '@/composables/useInformarAyuntamiento';
+
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -350,6 +354,7 @@ import { WidgetInstance } from 'friendly-challenge';
 import { enviarEventoMatomo } from '../utils/analytics';
 import { useFavoritosStore } from '../store/favoritosStore'; // Añade esta línea
 import { useHead } from '@unhead/vue';
+import { useWhatsAppShare } from '../composables/useWhatsAppShare';
 
 export default {
   name: 'DetalleIncidencia',
@@ -459,7 +464,6 @@ export default {
     };
 
     const { reportando, mensajeError, resolverIncidencia } = useResolverIncidencia();
-    const { enviarWhatsApp } = useInformarAyuntamiento();
 
     const nombreUsuario = ref('');
 
@@ -757,12 +761,26 @@ export default {
           console.error('Error al compartir:', error);
         });
       } else {
-        alert('La funcionalidad de compartir no est�� soportada en este navegador.');
+        alert('La funcionalidad de compartir no está soportada en este navegador.');
       }
     };
 
+    const whatsAppShare = useWhatsAppShare();
+
+    // Crear un computed para la visibilidad del botón
+    const showWhatsAppButton = computed(() => {
+      const shouldShow = whatsAppShare.isEnabled.value && props.incidencia.estado === 'activa';
+      console.log('WhatsApp button visibility:', {
+        isEnabled: whatsAppShare.isEnabled.value,
+        incidenciaEstado: props.incidencia.estado,
+        shouldShow
+      });
+      return shouldShow;
+    });
+
     const handleEnviarWhatsApp = () => {
-      enviarWhatsApp(props.incidencia);
+      console.log('handleEnviarWhatsApp called');
+      whatsAppShare.enviarWhatsApp(props.incidencia);
       mostrarDialogoWhatsApp.value = false;
     };
 
@@ -840,7 +858,7 @@ export default {
       canShare,
       compartir,
       mostrarDialogoWhatsApp,
-      enviarWhatsApp: handleEnviarWhatsApp,
+      whatsAppShare,
       mostrarDialogoError,
       mensajeError,
       mostrarDialogoReporteInadecuado,
@@ -860,6 +878,7 @@ export default {
       enviarWhatsAppYFavoritos,
       nombreUsuario,
       appName,
+      showWhatsAppButton
     };
   }
 };

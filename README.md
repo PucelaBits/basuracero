@@ -115,6 +115,14 @@ Crea las carpetas necesarias para el funcionamiento:
 mkdir uploads data
 ```
 
+### Configuración del plugin de WhatsApp
+- `VITE_WHATSAPP_SHARE_ENABLED`: Activa o desactiva la funcionalidad de compartir por WhatsApp (true/false)
+- `VITE_WHATSAPP_SHARE_PHONE`: Número de teléfono al que se enviará el mensaje (formato: 34666666666)
+- `VITE_WHATSAPP_SHARE_BUTTON_TEXT`: Texto del botón de compartir
+- `VITE_WHATSAPP_SHARE_DIALOG_TITLE`: Título del diálogo de confirmación
+- `VITE_WHATSAPP_SHARE_DIALOG_TEXT`: Texto principal del diálogo
+- `VITE_WHATSAPP_SHARE_DIALOG_NOTE`: Texto de la nota adicional en el diálogo
+
 ## Ejecución en producción con Docker
 
 Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos:
