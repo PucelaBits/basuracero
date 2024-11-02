@@ -19,7 +19,9 @@ export function useGestionDatos() {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'basura_cero_datos.json';
+    const nombreApp = import.meta.env.VITE_APP_NAME || 'basura_cero';
+    const nombreArchivo = `${nombreApp.toLowerCase().replace(/\s+/g, '_')}_datos.json`;
+    a.download = nombreArchivo;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
