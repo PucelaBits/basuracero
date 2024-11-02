@@ -378,7 +378,7 @@ export default {
       if (isNaN(lat) || isNaN(lon) || 
           lat < CIUDAD_LAT_MIN || lat > CIUDAD_LAT_MAX ||
           lon < CIUDAD_LON_MIN || lon > CIUDAD_LON_MAX) {
-        return 'Ubicación fuera de los límites de la ciudad';
+        return 'Ubicación fuera de la zona habilitada';
       }
       return true;
     };

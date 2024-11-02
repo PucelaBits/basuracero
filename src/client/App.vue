@@ -43,7 +43,7 @@
           <template v-slot:prepend>
             <v-icon>mdi-home-group</v-icon>
           </template>
-          <v-list-item-title>Ranking de barrios</v-list-item-title>
+          <v-list-item-title>Ranking de zonas</v-list-item-title>
         </v-list-item>
         <v-list-item to="/organizar-evento" active-class="primary--text">
           <template v-slot:prepend>

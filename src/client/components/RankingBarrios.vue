@@ -7,7 +7,7 @@
           </v-btn>
           <v-toolbar-title class="d-flex align-center">
             <v-icon left class="mr-2">mdi-home-group</v-icon>
-            Ranking de barrios
+            Ranking de zonas
           </v-toolbar-title>
         </v-toolbar>
   
@@ -17,7 +17,7 @@
             <v-icon>mdi-home-city</v-icon>
           </v-col>
             <v-col cols="10">
-              Estos son los barrios con más actividad en nuestra comunidad
+              Estos son las zonas con más actividad en nuestra comunidad
             </v-col>
           </v-row>
   
