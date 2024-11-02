@@ -1,8 +1,8 @@
 ## **Basura Cero: La app para mejorar tu ciudad**
 
-**[Basura Cero](https://basuracero.pucelabits.org)** es una aplicación sencilla y colaborativa que te permite reportar problemas sin solucionar en la ciudad, como basura, baches o áreas verdes descuidadas. Con solo unos clics, ayudas a reclamar que tu ciudad esté más limpia y en mejores condiciones. **Juntos, podemos exigir que nuestra ciudad sea un lugar más agradable para todos.**
+**[Basura Cero](https://basuracero.pucelabits.org)** es una aplicación sencilla y colaborativa que te permite reportar incidencias o problemas sin solucionar en un área concreta, como basura, baches, áreas verdes descuidadas, etc. Con solo unos clics, ayudas a reclamar que tu zona esté más limpia y en mejores condiciones. **Juntos, podemos exigir que nuestra zona sea un lugar más agradable para todos.**
 
-Actualmente está configurada para aceptar sólo incidencias en la ciudad de Valladolid, pero puedes modificar la configuración para que acepte incidencias en tu ciudad.
+La configuración por defecto acepta sólo incidencias en la ciudad de Valladolid, pero puedes modificar la configuración para que acepte incidencias de otra zona o con otras categorias.
 
 ### **¿Cómo funciona?**
 
@@ -18,8 +18,8 @@ Actualmente está configurada para aceptar sólo incidencias en la ciudad de Val
 4. **Geolocalización automática**:
    - La app detecta automáticamente tu ubicación para hacer el reporte más rápido. O elige la ubicación manualmente si lo prefieres.
 
-5. **Informar al ayuntamiento**:
-   - Puedes registrar una incidencia oficialmente con el ayuntamiento, solo con un clic te mandamos a su bot de WhatsApp con los datos ya rellenados.
+5. **Informar a un número de WhatsApp oficial**:
+   - Puedes registrar una incidencia oficialmente con el WhatsApp del organismo responsable, solo con un clic te mandamos a su WhatsApp con los datos ya rellenados.
 
 6. **Diseño adaptable**:
    - Usa **Basura Cero** desde tu móvil, tablet u ordenador, ¡cuándo y dónde quieras!
@@ -33,7 +33,7 @@ Actualmente está configurada para aceptar sólo incidencias en la ciudad de Val
 
 Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a visibilizarlos y a asegurar que se solucionen. Además, puedes enviar tus reportes directamente al sistema oficial del ayuntamiento. **Cuantos más participemos, más limpia y ordenada estará nuestra ciudad.**
 
-## Desarrollo
+## Configuración
 
 **Antes de empezar**
 
@@ -67,7 +67,7 @@ Define el área en la que se pueden reportar incidencias:
 - `APP_FAVICON_PATH`: Ruta al favicon (por defecto "/img/default/favicon.png")
 - `APP_LOGO_PATH`: Ruta al logo (por defecto "/img/default/logo.png")
 
-Puedes colocar tus propias imágenes en la carpeta `public/img/custom/`
+Puedes colocar tus propias imágenes en la carpeta `public/img/custom/` (no incluyas `/public/` en la ruta del config).
 
 ### Colores de la aplicación
 - `APP_PRIMARY_COLOR`: Color principal
@@ -103,13 +103,13 @@ npm run tipos remove ID
 ```
 
 ### Captcha
-Configura [Friendly Captcha](https://friendlycaptcha.com/) para proteger el formulario:
+Configura [Friendly Captcha](https://friendlycaptcha.com/) para proteger los formularios:
 - `friendlycaptcha_enabled`: Activa/desactiva el captcha
 - `VITE_FRIENDLYCAPTCHA_SITEKEY`: Clave pública
 - `friendlycaptcha_secret`: Clave secreta de la API
 
 ### Analytics
-Configura el seguimiento de analytics para la aplicación:
+Configura el analytics de la aplicación:
 
 - `VITE_ANALYTICS_PROVIDER`: Define qué proveedores de analytics usar. Opciones:
   - `none`: Sin analytics
@@ -153,13 +153,14 @@ Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos
    git clone https://github.com/pucelabits/basura-cero.git
    cd basura-cero-pucela
    ```
+3. Copia el archivo `.env.sample` a `.env` y configura las variables de entorno.
 
-3. Construye y ejecuta el contenedor Docker:
+4. Construye y ejecuta el contenedor Docker:
    ```
    docker compose up --build
    ```
 
-4. La aplicación estará disponible en `http://localhost:5050`.
+La aplicación estará disponible en `http://localhost:5050`.
 
 ### Scripts de mantenimiento
 
@@ -340,7 +341,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 
 6. La aplicación estará disponible en `http://localhost:5173`.
 
-## Scripts disponibles
+### Scripts disponibles
 
 - `npm run start`: Inicia el servidor en modo producción.
 - `npm run dev:server`: Inicia el servidor en modo desarrollo con hot-reload.
@@ -349,7 +350,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 - `npm run borrar-incidencia ID`: Borra una incidencia por su ID.
 - `npm run tipos`: Gestiona los tipos de incidencias (listar, añadir, editar, eliminar y reasignar).
 
-## Notas adicionales
+### Notas adicionales
 
 - Asegúrate de que el puerto 5173 esté disponible en tu sistema.
 - La base de datos SQLite se creará automáticamente en la carpeta `data` al iniciar la aplicación.
@@ -358,7 +359,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 
 Para más detalles sobre la configuración y el desarrollo, consulta los archivos `package.json`, `docker-compose.yml`, `Dockerfile` y `vite.config.js`.
 
-## Estructura del proyecto
+### Estructura del proyecto
 
 - `src/client`: Contiene el código fuente del cliente Vue.js.
 - `src/server`: Contiene el código fuente del servidor Express.js.
