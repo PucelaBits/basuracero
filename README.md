@@ -37,13 +37,79 @@ Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a 
 
 **Antes de empezar**
 
-Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env` y rellenar los datos del API de [friendly captcha](https://friendlycaptcha.com), así como el área en el que se pueden crear incidencias, puedes definir también la URL base de la aplicación.
+Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env`:
 
 ```bash
 cp .env.sample .env
 ```
 
-Debes crear también las carpetas `uploads` y `data` en la raíz del proyecto.
+En el archivo `.env` podrás configurar:
+
+### Información básica
+- `APP_NAME`: Nombre de la aplicación
+- `APP_SUBTITLE`: Subtítulo de la aplicación
+- `APP_DESCRIPTION`: Descripción del proyecto
+- `BASE_URL`: URL base de la aplicación (varía según el entorno)
+
+### Límites geográficos
+Define el área en la que se pueden reportar incidencias:
+- `CIUDAD_LAT_MIN`: Latitud mínima
+- `CIUDAD_LAT_MAX`: Latitud máxima
+- `CIUDAD_LON_MIN`: Longitud mínima
+- `CIUDAD_LON_MAX`: Longitud máxima
+
+### Configuración de reportes
+- `REPORTES_PARA_SOLUCIONAR`: Número de reportes necesarios para marcar una incidencia como solucionada
+- `DIAS_PARA_CONSIDERAR_ANTIGUA`: Días tras los cuales una incidencia se considera antigua
+- `REPORTES_PARA_SOLUCIONAR_ANTIGUA`: Número de reportes necesarios para solucionar una incidencia antigua
+
+### Personalización visual
+- `APP_FAVICON_PATH`: Ruta al favicon (por defecto "/img/default/favicon.png")
+- `APP_LOGO_PATH`: Ruta al logo (por defecto "/img/default/logo.png")
+
+Puedes colocar tus propias imágenes en la carpeta `public/img/custom/`
+
+### Colores de la aplicación
+- `APP_PRIMARY_COLOR`: Color principal
+- `APP_SECONDARY_COLOR`: Color secundario
+- `APP_SUCCESS_COLOR`: Color para éxitos
+- `APP_ERROR_COLOR`: Color para errores
+- `APP_WARNING_COLOR`: Color para advertencias
+- `APP_INFO_COLOR`: Color para información
+- `APP_BACKGROUND_COLOR`: Color de fondo
+
+### Enlaces sociales
+Configura los enlaces a redes sociales y otros recursos mediante `APP_SOCIAL_LINKS`. Debe ser un array JSON con objetos que contengan:
+- `name`: Nombre del enlace
+- `url`: URL del enlace
+- `icon`: Icono de Material Design Icons a mostrar
+
+### Tipos de incidencias
+Define los tipos de incidencias iniciales mediante `TIPOS_INCIDENCIAS_INICIALES`. Debe ser un array JSON con los nombres de los tipos.
+
+Una vez iniciada la aplicación, puedes gestionar los tipos usando:
+```bash
+# Listar tipos existentes
+npm run tipos ls
+
+# Añadir nuevo tipo
+npm run tipos add "Nuevo tipo de incidencia"
+
+# Editar tipo existente
+npm run tipos edit ID "Nuevo nombre"
+
+# Eliminar tipo
+npm run tipos remove ID
+```
+
+### Captcha
+Configura [Friendly Captcha](https://friendlycaptcha.com/) para proteger el formulario:
+- `friendlycaptcha_enabled`: Activa/desactiva el captcha
+- `VITE_FRIENDLYCAPTCHA_SITEKEY`: Clave pública
+- `friendlycaptcha_secret`: Clave secreta de la API
+
+### Directorios necesarios
+Crea las carpetas necesarias para el funcionamiento:
 
 ```bash
 mkdir uploads data
