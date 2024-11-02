@@ -16,11 +16,24 @@ export default defineConfig({
         const publicDir = path.resolve(__dirname, 'public')
         const outDir = path.resolve(__dirname, 'dist')
         
-        const filesToCopy = ['manifest.json', 'sw.js', 'favicon.png']
-        
-        filesToCopy.forEach(file => {
-          copyFileSync(path.join(publicDir, file), path.join(outDir, file))
+        // Copiar manifest.json y sw.js
+        const baseFiles = ['manifest.json', 'sw.js']
+        baseFiles.forEach(file => {
+          if (fs.existsSync(path.join(publicDir, file))) {
+            copyFileSync(path.join(publicDir, file), path.join(outDir, file))
+          }
         })
+
+        // Copiar favicon usando la ruta del .env
+        const faviconPath = process.env.APP_FAVICON_PATH || '/img/default/favicon.png'
+        const sourcePath = path.join(publicDir, faviconPath.replace(/^\//, ''))
+        const targetPath = path.join(outDir, 'favicon.png')
+        
+        if (fs.existsSync(sourcePath)) {
+          copyFileSync(sourcePath, targetPath)
+        } else {
+          console.warn(`Advertencia: No se encontró el favicon en ${sourcePath}`)
+        }
       }
     }
   ],
