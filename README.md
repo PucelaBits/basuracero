@@ -108,6 +108,22 @@ Configura [Friendly Captcha](https://friendlycaptcha.com/) para proteger el form
 - `VITE_FRIENDLYCAPTCHA_SITEKEY`: Clave pública
 - `friendlycaptcha_secret`: Clave secreta de la API
 
+### Analytics
+Configura el seguimiento de analytics para la aplicación:
+
+- `VITE_ANALYTICS_PROVIDER`: Define qué proveedores de analytics usar. Opciones:
+  - `none`: Sin analytics
+  - `matomo`: Solo Matomo
+  - `google`: Solo Google Analytics
+  - `matomo,google`: Ambos proveedores
+
+Configuración para Matomo:
+- `VITE_MATOMO_URL`: URL de tu instalación de Matomo
+- `VITE_MATOMO_SITE_ID`: ID del sitio en Matomo
+
+Configuración para Google Analytics:
+- `VITE_GA_ID`: ID de Google Analytics (formato: G-XXXXXXXXXX)
+
 ### Directorios necesarios
 Crea las carpetas necesarias para el funcionamiento:
 
@@ -116,6 +132,9 @@ mkdir uploads data
 ```
 
 ### Configuración del plugin de WhatsApp
+
+Permite tener un botón en las incidencias para enviar la descripción y ubicación a un número de WhatsApp.
+
 - `VITE_WHATSAPP_SHARE_ENABLED`: Activa o desactiva la funcionalidad de compartir por WhatsApp (true/false)
 - `VITE_WHATSAPP_SHARE_PHONE`: Número de teléfono al que se enviará el mensaje (formato: 34666666666)
 - `VITE_WHATSAPP_SHARE_BUTTON_TEXT`: Texto del botón de compartir
