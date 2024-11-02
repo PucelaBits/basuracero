@@ -634,8 +634,8 @@ export default {
     };
 
     const updateMetaTags = () => {
-      const title = `Basura Cero - Incidencia ${props.incidencia.id}`;
-      const description = `${props.incidencia.tipo} en ${props.incidencia.direccion.split(',')[0]}, ${props.incidencia.direccion.split(',')[1]}` || 'Detalles de la incidencia en Basura Cero';
+      const title = `${appName} - Incidencia ${props.incidencia.id}`;
+      const description = `${props.incidencia.tipo} en ${props.incidencia.direccion.split(',')[0]}, ${props.incidencia.direccion.split(',')[1]}` || `Detalles de la incidencia en ${appName}`;
       const imageUrl = props.incidencia.imagenes && props.incidencia.imagenes.length > 0
         ? new URL(props.incidencia.imagenes[0].ruta_imagen, window.location.origin).href
         : '';
@@ -652,7 +652,7 @@ export default {
           { property: 'og:description', content: description },
           { property: 'og:image', content: imageUrl },
           { property: 'og:image:alt', content: `Imagen de la incidencia ${props.incidencia.id}` },
-          { property: 'og:site_name', content: 'Basura Cero' },
+          { property: 'og:site_name', content: appName },
           // Twitter
           { name: 'twitter:card', content: 'summary_large_image' },
           { name: 'twitter:url', content: url },

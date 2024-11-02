@@ -3,11 +3,11 @@
     <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact" @click="scrollToTop" class="clickable-header">
       <v-container class="d-flex align-center pa-0">
         <v-avatar size="26" rounded="circle" class="avatar-logo">
-          <img src="/logo.png" alt="Favicon" class="favicon">
+          <img :src="appLogoPath" alt="Favicon" class="favicon">
         </v-avatar>
         <div class="flex-grow-1 text-center">
-          <v-toolbar-title class="text-h6 font-weight-bold titulo">Basura Cero</v-toolbar-title>
-          <span class="subtitulo text-caption d-block">Pucela</span>
+          <v-toolbar-title class="text-h6 font-weight-bold titulo">{{ appName }}</v-toolbar-title>
+          <span class="subtitulo text-caption d-block">{{ appSubtitle }}</span>
         </div>
         <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       </v-container>
@@ -51,11 +51,15 @@
           </template>
           <v-list-item-title>Organiza un evento</v-list-item-title>
         </v-list-item>
-        <v-list-item href="https://t.me/basuraceroapp" target="_blank">
+        <v-list-item 
+          v-if="comunidadLink"
+          :href="comunidadLink.url" 
+          target="_blank"
+        >
           <template v-slot:prepend>
-            <v-icon>mdi-account-group</v-icon>
+            <v-icon>{{ comunidadLink.icon }}</v-icon>
           </template>
-          <v-list-item-title>Comunidad</v-list-item-title>
+          <v-list-item-title>{{ comunidadLink.name }}</v-list-item-title>
         </v-list-item>
         <v-list-item @click="compartir">
           <template v-slot:prepend>
@@ -143,13 +147,13 @@
           <v-card class="welcome-banner pa-0">
             <v-card-text class="text-center">
               <v-avatar size="80" class="mb-4" color="primary">
-                <img src="/logo.png" alt="Logo Basura Cero" style="width: 70px; height: 70px;">
+                <img :src="appLogoPath" alt="Logo {{ appName }}" style="width: 70px; height: 70px;">
               </v-avatar>
               
-              <h1 class="text-h5 font-weight-bold mb-4">Basura Cero</h1>
+              <h1 class="text-h5 font-weight-bold mb-4">{{ appName }}</h1>
               
               <p class="text-body-2 mb-6">
-                Proyecto vecinal colaborativo para visibilizar incidencias no solucionadas en nuestra ciudad
+                {{ appDescription }}
               </p>
               
               <h2 class="text-subtitle-1 font-weight-medium mb-4">¿Cómo ayudar?</h2>
@@ -349,20 +353,21 @@
             <span class="text-caption">Servicio creado por vecinos voluntarios, independiente de cualquier organismo</span>
           </v-col>
         </v-row>
-        <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://t.me/basuraceroapp" target="_blank" rel="noopener noreferrer">Comunidad</a>
-        </v-col>
-        <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://x.com/basuraceroapp" target="_blank" rel="noopener noreferrer">Twitter</a>
-        </v-col>
-        <v-col class="text-center" cols="4" sm="auto">
-          <a href="mailto:basuracero@pucelabits.org" target="_blank" rel="noopener noreferrer">Contacto</a>
-        </v-col>
-        <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">Licencia</a>
-        </v-col>
-        <v-col class="text-center" cols="4" sm="auto">
-          <a href="https://github.com/PucelaBits/basuracero" target="_blank" rel="noopener noreferrer">Código</a>
+        <v-col 
+          v-for="link in socialLinks" 
+          :key="link.name"
+          class="text-center" 
+          cols="4" 
+          sm="auto"
+        >
+          <a 
+            :href="link.url" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="d-flex align-center justify-center"
+          >
+            {{ link.name }}
+          </a>
         </v-col>
       </v-row>
     </v-footer>
@@ -638,20 +643,54 @@ export default {
 
     const drawer = ref(false);
 
-    const compartir = () => {
-      if (navigator.share) {
-        navigator.share({
-          title: 'Basura Cero Pucela',
-          text: 'Ayuda a mantener limpia tu ciudad con Basura Cero Pucela',
-          url: window.location.href,
-        })
-        .then(() => {
+    const compartir = async () => {
+      const contenido = {
+        title: import.meta.env.VITE_APP_NAME,
+        text: import.meta.env.VITE_APP_DESCRIPTION,
+        url: window.location.href
+      };
+
+      try {
+        if (navigator.share) {
+          // Usar Web Share API si está disponible
+          await navigator.share(contenido);
           console.log('Contenido compartido exitosamente');
-          enviarEventoMatomo('Incidencia', 'Compartir', 'Éxito');
-        })
-        .catch((error) => console.log('Error al compartir:', error));
-      } else {
-        alert('La API de compartir no está disponible en este dispositivo');
+          enviarEventoMatomo('Incidencia', 'Compartir', 'Éxito - Web Share API');
+        } else {
+          // Fallback: Copiar al portapapeles
+          const textoCompartir = `${contenido.title}\n\n${contenido.text}\n\n${contenido.url}`;
+          await navigator.clipboard.writeText(textoCompartir);
+          
+          // Mostrar snackbar de éxito
+          mensajeExito.value = '¡Enlace copiado al portapapeles!';
+          colorSnackbar.value = 'success';
+          mostrarMensajeExito.value = true;
+          
+          enviarEventoMatomo('Incidencia', 'Compartir', 'Éxito - Portapapeles');
+        }
+      } catch (error) {
+        console.error('Error al compartir:', error);
+        
+        // Intentar fallback secundario con execCommand (para navegadores más antiguos)
+        try {
+          const textarea = document.createElement('textarea');
+          const textoCompartir = `${contenido.title}\n\n${contenido.text}\n\n${contenido.url}`;
+          textarea.value = textoCompartir;
+          textarea.style.position = 'fixed';  // Fuera de la vista
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          
+          // Mostrar snackbar de éxito
+          mensajeExito.value = '¡Enlace copiado al portapapeles!';
+          colorSnackbar.value = 'success';
+          mostrarMensajeExito.value = true;
+          
+          enviarEventoMatomo('Incidencia', 'Compartir', 'Éxito - Portapapeles');
+        } catch (error) {
+          console.error('Error al copiar al portapapeles:', error);
+        }
       }
     };
 
@@ -978,6 +1017,20 @@ export default {
       mostrarMensajeExito.value = true;
     };
 
+    // Definir las variables de entorno como refs o computed
+    const appName = ref(import.meta.env.VITE_APP_NAME || 'Basura Cero')
+    const appSubtitle = ref(import.meta.env.VITE_APP_SUBTITLE || 'Pucela')
+    const appDescription = ref(import.meta.env.VITE_APP_DESCRIPTION || 'Sistema colaborativo de incidencias urbanas en Valladolid')
+
+    const socialLinks = ref(JSON.parse(import.meta.env.VITE_APP_SOCIAL_LINKS || '[]'))
+
+    // Encontrar el enlace de comunidad si existe
+    const comunidadLink = computed(() => 
+      socialLinks.value.find(link => link.name.toLowerCase() === 'comunidad')
+    )
+
+    const appLogoPath = ref(import.meta.env.VITE_APP_LOGO_PATH || '/img/default/logo.png')
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -1051,7 +1104,13 @@ export default {
       timeoutSnackbar,
       colorSnackbar,
       posicionSnackbar,
-      mostrarSnackbar
+      mostrarSnackbar,
+      appName,
+      appSubtitle,
+      appDescription,
+      socialLinks,
+      comunidadLink,
+      appLogoPath,
     }
   }
 }

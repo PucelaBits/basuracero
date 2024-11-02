@@ -56,9 +56,23 @@ export default defineConfig({
     include: ['vue']
   },
   define: {
+    'import.meta.env.VITE_BASE_URL': JSON.stringify(process.env.BASE_URL),
     'import.meta.env.VITE_CIUDAD_LAT_MIN': JSON.stringify(process.env.CIUDAD_LAT_MIN),
     'import.meta.env.VITE_CIUDAD_LAT_MAX': JSON.stringify(process.env.CIUDAD_LAT_MAX),
     'import.meta.env.VITE_CIUDAD_LON_MIN': JSON.stringify(process.env.CIUDAD_LON_MIN),
     'import.meta.env.VITE_CIUDAD_LON_MAX': JSON.stringify(process.env.CIUDAD_LON_MAX),
+    'import.meta.env.VITE_APP_NAME': JSON.stringify(process.env.APP_NAME),
+    'import.meta.env.VITE_APP_SUBTITLE': JSON.stringify(process.env.APP_SUBTITLE),
+    'import.meta.env.VITE_APP_DESCRIPTION': JSON.stringify(process.env.APP_DESCRIPTION),
+    'import.meta.env.VITE_APP_PRIMARY_COLOR': JSON.stringify(process.env.APP_PRIMARY_COLOR),
+    'import.meta.env.VITE_APP_SECONDARY_COLOR': JSON.stringify(process.env.APP_SECONDARY_COLOR),
+    'import.meta.env.VITE_APP_SUCCESS_COLOR': JSON.stringify(process.env.APP_SUCCESS_COLOR),
+    'import.meta.env.VITE_APP_ERROR_COLOR': JSON.stringify(process.env.APP_ERROR_COLOR),
+    'import.meta.env.VITE_APP_WARNING_COLOR': JSON.stringify(process.env.APP_WARNING_COLOR),
+    'import.meta.env.VITE_APP_INFO_COLOR': JSON.stringify(process.env.APP_INFO_COLOR),
+    'import.meta.env.VITE_APP_BACKGROUND_COLOR': JSON.stringify(process.env.APP_BACKGROUND_COLOR),
+    'import.meta.env.VITE_APP_SOCIAL_LINKS': JSON.stringify(process.env.APP_SOCIAL_LINKS),
+    'import.meta.env.VITE_APP_FAVICON_PATH': JSON.stringify(process.env.APP_FAVICON_PATH),
+    'import.meta.env.VITE_APP_LOGO_PATH': JSON.stringify(process.env.APP_LOGO_PATH),
   }
 })

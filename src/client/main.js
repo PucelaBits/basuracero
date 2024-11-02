@@ -22,18 +22,17 @@ const vuetify = createVuetify({
       myCustomTheme: {
         dark: false,
         colors: {
-          background: '#F5F5F5',
-          surface: '#FFFFFF',
-          primary: 'hsl(257.92, 42.54%, 35.49%)',
-          'primary-darken-1': 'hsl(257.92, 42.54%, 12%)',
-          'primary-lighten-1': 'hsl(257.92, 42.54%, 55.49%)',
-          secondary: 'hsl(257.14, 24.9%, 50.39%)',
-          'secondary-darken-1': 'hsl(257.14, 24.9%, 30.39%)',
-          'secondary-lighten-1': 'hsl(257.14, 24.9%, 70.39%)',
-        },
-      },
-    },
-  },
+          primary: import.meta.env.VITE_APP_PRIMARY_COLOR,
+          secondary: import.meta.env.VITE_APP_SECONDARY_COLOR,
+          success: import.meta.env.VITE_APP_SUCCESS_COLOR,
+          error: import.meta.env.VITE_APP_ERROR_COLOR,
+          warning: import.meta.env.VITE_APP_WARNING_COLOR,
+          info: import.meta.env.VITE_APP_INFO_COLOR,
+          background: import.meta.env.VITE_APP_BACKGROUND_COLOR,
+        }
+      }
+    }
+  }
 })
 
 const router = createRouter({

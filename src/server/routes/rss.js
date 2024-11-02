@@ -8,14 +8,14 @@ dotenv.config();
 
 router.get('/', (req, res) => {
   const feed = new Feed({
-    title: "Basura Cero - Últimas Incidencias",
-    description: "Las últimas incidencias reportadas en Basura Cero",
+    title: process.env.APP_NAME + " - Últimas Incidencias",
+    description: "Las últimas incidencias reportadas en " + process.env.APP_NAME,
     id: `${process.env.BASE_URL}/`,
     link: `${process.env.BASE_URL}/`,
     language: "es",
-    image: `${process.env.BASE_URL}/favicon.png`,
-    favicon: `${process.env.BASE_URL}/favicon.png`,
-    copyright: "Basura Cero"
+    image: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
+    favicon: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
+    copyright: process.env.APP_NAME
   });
 
   const sql = `
@@ -82,14 +82,14 @@ router.get('/', (req, res) => {
 // Modificar la ruta del feed RSS de spam
 router.get('/spam', (req, res) => {
   const feed = new Feed({
-    title: "Basura Cero - Últimos reportes de contenido inadecuado",
-    description: "Los últimos reportes de contenido inadecuado en Basura Cero",
+    title: `${process.env.APP_NAME} - Últimos reportes de contenido inadecuado`,
+    description: `Los últimos reportes de contenido inadecuado en ${process.env.APP_NAME}`,
     id: `${process.env.BASE_URL}/`,
     link: `${process.env.BASE_URL}/`,
     language: "es",
-    image: `${process.env.BASE_URL}/favicon.png`,
-    favicon: `${process.env.BASE_URL}/favicon.png`,
-    copyright: "Basura Cero"
+    image: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
+    favicon: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
+    copyright: process.env.APP_NAME
   });
 
   const sql = `
