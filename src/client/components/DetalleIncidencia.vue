@@ -770,11 +770,6 @@ export default {
     // Crear un computed para la visibilidad del botón
     const showWhatsAppButton = computed(() => {
       const shouldShow = whatsAppShare.isEnabled.value && props.incidencia.estado === 'activa';
-      console.log('WhatsApp button visibility:', {
-        isEnabled: whatsAppShare.isEnabled.value,
-        incidenciaEstado: props.incidencia.estado,
-        shouldShow
-      });
       return shouldShow;
     });
 

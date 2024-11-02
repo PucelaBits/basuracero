@@ -9,6 +9,7 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import '@mdi/font/css/materialdesignicons.css'
 import 'leaflet/dist/leaflet.css'
+import { initializeAnalytics } from './utils/analytics';
 
 const vuetify = createVuetify({
   components,
@@ -47,5 +48,7 @@ const app = createApp(App)
 app.use(router)
 app.use(vuetify)
 app.use(head)
+
+initializeAnalytics();
 
 app.mount('#app')
