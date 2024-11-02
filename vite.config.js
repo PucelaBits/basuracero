@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import dotenv from 'dotenv'
 import { copyFileSync } from 'fs'
+import * as fs from 'fs'
 
 // Cargar las variables de entorno desde el archivo .env
 dotenv.config()
