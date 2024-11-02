@@ -467,7 +467,10 @@ export default {
     const searchAddress = async () => {
       if (searchQuery.value.length < 3) return
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.value)}+Valladolid+España&limit=5`)
+        const regionLimit = import.meta.env.VITE_SEARCH_REGION_LIMIT_ENABLED === 'true' 
+          ? import.meta.env.VITE_SEARCH_REGION_QUERY 
+          : '';
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.value)}${regionLimit}&limit=5`)
         const data = await response.json()
         if (Array.isArray(data) && data.length > 0) {
           const result = data[0]
