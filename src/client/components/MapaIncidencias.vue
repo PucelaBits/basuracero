@@ -898,7 +898,7 @@ export default {
 }
 
 .add-incidencia-btn {
-  background-color: var(--v-theme-secondary);
+  background-color: rgb(var(--v-theme-secondary));
   color: white;
   border: none;
   padding: 10px 15px;
@@ -912,7 +912,7 @@ export default {
 }
 
 .add-incidencia-btn:hover {
-  background-color: color-mix(in srgb, var(--v-theme-secondary) 85%, black);
+  background-color: color-mix(in srgb, rgb(var(--v-theme-secondary)) 85%, black);
 }
 
 .custom-popup-class {
