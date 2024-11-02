@@ -12,7 +12,10 @@ COPY . .
 
 RUN npm run build
 
-EXPOSE 5050
+# 5050 como valor por defecto
+ARG PORT=5050
+ENV PORT=$PORT
+EXPOSE ${PORT}
 
 ENV TZ=Europe/Madrid
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
