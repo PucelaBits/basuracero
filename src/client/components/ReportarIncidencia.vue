@@ -106,7 +106,7 @@
               </template>
             </v-textarea>
 
-            <v-row justify="center" class="mb-4">
+            <v-row justify="center" class="mb-4 mt-1">
               <v-col cols="6" class="text-center">
                 <v-btn @click="obtenerUbicacion" color="secondary" :loading="obteniendoUbicacion" size="small">
                   <v-icon left size="small">mdi-map-marker</v-icon>
