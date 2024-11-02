@@ -188,7 +188,10 @@ export default {
         map = L.map(mapContainer.value, { 
           closePopupOnClick: false,
           closePopupOnMove: false
-        }).setView([41.652251, -4.724532], props.zoomForzado || 13)
+        }).setView([
+          import.meta.env.VITE_MAPA_CENTRO_LAT,
+          import.meta.env.VITE_MAPA_CENTRO_LON
+        ], props.zoomForzado || import.meta.env.VITE_MAPA_ZOOM_INICIAL)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
