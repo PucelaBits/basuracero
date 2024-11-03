@@ -1077,4 +1077,12 @@ a {
   color: white; /* Color del icono de la flecha */
 }
 
+@media (min-width: 960px) {
+  .v-dialog.v-dialog--fullscreen {
+    max-width: 800px !important;
+    margin: 24px auto !important;
+    height: calc(100vh - 48px) !important;
+    border-radius: 8px !important;
+  }
+}
 </style>

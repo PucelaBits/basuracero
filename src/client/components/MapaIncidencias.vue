@@ -1,5 +1,5 @@
 <template>
-  <div class="mapa-container">
+  <div :class="{ 'mapa-container': true, 'mapa-desktop': !$vuetify.display.mobile }">
     <div ref="mapContainer" class="mapa-incidencias"></div>
     <div class="search-container" :class="{ 'active': isSearchActive }">
       <input 
@@ -1132,6 +1132,10 @@ export default {
 
 .leaflet-popup-content-wrapper {
   z-index: 1001 !important;
+}
+
+.mapa-desktop {
+  height: 60vh;
 }
 </style>
 

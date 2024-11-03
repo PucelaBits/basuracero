@@ -95,17 +95,19 @@
     </v-navigation-drawer>
 
     <v-main class="bg-grey-lighten-4">
-      <v-container fluid class="pa-0">
-        <MapaIncidencias 
-          :incidencias="todasLasIncidencias" 
-          :incluirSolucionadas="incluirSolucionadas"
-          :tipoSeleccionado="tipoSeleccionado"
-          :seguirUsuario="false"
-          @ubicacion-seleccionada="actualizarUbicacion"
-          @abrir-formulario="mostrarFormulario = true"
-          @incidencia-seleccionada="abrirDetalleIncidencia"
-          :ubicacionSeleccionada="ubicacionSeleccionada"
-        />
+      <v-container fluid class="pa-0" :class="{ 'desktop-container': !$vuetify.display.mobile }">
+        <div class="mapa-wrapper">
+          <MapaIncidencias 
+            :incidencias="todasLasIncidencias" 
+            :incluirSolucionadas="incluirSolucionadas"
+            :tipoSeleccionado="tipoSeleccionado"
+            :seguirUsuario="false"
+            @ubicacion-seleccionada="actualizarUbicacion"
+            @abrir-formulario="mostrarFormulario = true"
+            @incidencia-seleccionada="abrirDetalleIncidencia"
+            :ubicacionSeleccionada="ubicacionSeleccionada"
+          />
+        </div>
 
         <!-- Banner de notificación -->
         <v-alert
@@ -1117,8 +1119,24 @@ export default {
 </script>
 
 <style>
+/* Estilos globales para todos los componentes */
+
 .leaflet-control-attribution {
   font-size: 9px !important;
+}
+
+/* Estilos para los diálogos en escritorio */
+@media (min-width: 960px) {
+  .v-dialog.v-dialog--fullscreen {
+    max-width: 900px !important;
+    margin: 48px auto 0 auto !important;
+    height: calc(100vh - 48px) !important;
+    border-radius: 8px !important;
+  }
+
+  .v-toolbar__content {
+    height: 48px !important;
+  }
 }
 </style>
 
@@ -1344,5 +1362,55 @@ export default {
   border-radius: 50%;
   color: rgb(var(--v-theme-secondary)) !important;
   background-color: white;
+}
+
+.desktop-container {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+}
+
+/* Ajustes para escritorio */
+@media (min-width: 960px) {
+  .v-card {
+    max-width: 900px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  
+  .banner-incidencias {
+    max-width: 900px !important;
+  }
+  
+  .custom-banner {
+    max-width: 900px !important;
+  }
+  
+  /* Ajustar el tamaño del mapa en escritorio */
+  .mapa-container {
+    height: 60vh !important;
+  }
+  
+  /* Ajustar el diálogo de detalles */
+  .v-dialog {
+    max-width: 800px !important;
+  }
+  
+  /* Ajustar el banner de bienvenida */
+  .welcome-banner {
+    max-width: 700px !important;
+    margin: 0 auto;
+  }
+
+  .mapa-wrapper {
+    margin: 0 auto;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+.mapa-wrapper {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
 }
 </style>
