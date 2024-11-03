@@ -153,7 +153,7 @@
                               <li>Describe brevemente el problema (puedes dictarlo por voz usando el icono de micrófono)</li>
                               <li>Añade o toma una foto de la incidencia<br /><small>Evita sacar caras, matrículas o datos personales en las fotos</small></li>
                               <li>Envía el reporte</li>
-                              <li v-if="whatsAppShare.isEnabled">Usa el botón "{{ whatsAppShare.buttonText }}"</li>
+                              <li v-if="whatsAppShare.isEnabled.value">Usa el botón "{{ whatsAppShare.buttonText }}"</li>
                               <li>Comparte el enlace en redes y en el grupo de chat de vecinos</li>
                             </ol>
                           </v-expansion-panel-text>
@@ -172,7 +172,7 @@
                               <li>Busca incidencias cercanas en el mapa y desplázate hasta ellas</li>
                               <li>Verifica en persona si realmente está solucionada</li>
                               <li>Confirma en la app si está resuelta pulsando el botón de "Resolver"</li>
-                              <li>Si no está resuelta,<span v-if="whatsAppShare.isEnabled"> haz clic en "{{ whatsAppShare.buttonText }}" y</span> comparte el enlace en el grupo de chat de vecinos</li>
+                              <li>Si no está resuelta,<span v-if="whatsAppShare.isEnabled.value"> haz clic en "{{ whatsAppShare.buttonText }}" y</span> comparte el enlace en el grupo de chat de vecinos</li>
                             </ol>
                             <v-alert class="mt-3 text-body-2" density="compact" :icon="false">
                               Nota: Se necesitan varios reportes de personas diferentes para dar por resuelta una incidencia
