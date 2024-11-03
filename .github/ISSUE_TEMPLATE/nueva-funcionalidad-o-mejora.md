@@ -2,7 +2,7 @@
 name: Nueva funcionalidad o mejora
 about: Sugiere una mejora o idea nueva
 title: ''
-labels: ''
+labels: enhancement
 assignees: ''
 
 ---
