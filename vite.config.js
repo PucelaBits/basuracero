@@ -88,5 +88,6 @@ export default defineConfig({
     'import.meta.env.VITE_APP_SOCIAL_LINKS': JSON.stringify(process.env.APP_SOCIAL_LINKS),
     'import.meta.env.VITE_APP_FAVICON_PATH': JSON.stringify(process.env.APP_FAVICON_PATH),
     'import.meta.env.VITE_APP_LOGO_PATH': JSON.stringify(process.env.APP_LOGO_PATH),
+    'import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES': JSON.stringify(process.env.TIPOS_INCIDENCIAS_INICIALES)
   }
 })

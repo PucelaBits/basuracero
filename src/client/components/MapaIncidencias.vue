@@ -354,14 +354,14 @@ export default {
             `
 
             const marker = L.marker([incidencia.latitud, incidencia.longitud], {
-              icon: createCustomIcon(incidencia.estado)
+              icon: createCustomIcon(incidencia.estado, incidencia.tipo)
             }).bindPopup(popupContent, { 
               maxWidth: 250, 
               minWidth: 250,
               className: 'custom-popup-class',
               closeButton: true,
-              autoClose: true, // Añadir esta línea
-              closeOnClick: true // Cambiar a true
+              autoClose: true,
+              closeOnClick: true
             });
 
             // Añadir el marcador al grupo de clusters en lugar de directamente al mapa
@@ -415,15 +415,25 @@ export default {
       }
     }
 
-    const createCustomIcon = (estado) => {
-      const color = estado === 'activa' ? '#c30b82' : '#27ae60'
+    const tiposIncidencias = ref(JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]'));
+
+    const createCustomIcon = (estado, tipo) => {
+      const color = estado === 'activa' ? '#c30b82' : '#27ae60';
+      const tipoIncidencia = tiposIncidencias.value.find(t => t.tipo === tipo);
+      // Si no hay icono definido, usamos un círculo
+      const icono = tipoIncidencia?.icono || 'mdi-circle';
+      
       return L.divIcon({
         className: 'custom-div-icon',
-        html: `<div style='background-color:${color};' class='marker-pin'></div>`,
+        html: `
+          <div style='background-color:${color};' class='marker-pin'>
+            <i class="mdi ${icono} marker-icon"></i>
+          </div>
+        `,
         iconSize: [30, 42],
         iconAnchor: [15, 42]
-      })
-    }
+      });
+    };
     
     const updateUbicacion = (lat, lng) => {
       if (map) {
@@ -752,22 +762,23 @@ export default {
   width: 20px;
   height: 20px;
   border-radius: 50% 50% 50% 0;
-  background: #c30b82;
   position: absolute;
   transform: rotate(-45deg);
   left: 50%;
   top: 50%;
   margin: -15px 0 0 -15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.marker-pin::after {
-  content: '';
-  width: 14px;
-  height: 14px;
-  margin: 3px 0 0 3px;
-  background: #fff;
+.marker-icon {
   position: absolute;
-  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  color: white;
+  font-size: 14px;
 }
 
 .custom-popup {
