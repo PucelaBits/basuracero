@@ -400,9 +400,15 @@ export default {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     });
 
+    const isDesktop = computed(() => {
+      return !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    });
+
     const geoLink = computed(() => {
       if (props.incidencia.latitud && props.incidencia.longitud) {
-        if (isIOS.value) {
+        if (isDesktop.value) {
+          return `https://geohack.toolforge.org/geohack.php?params=${props.incidencia.latitud}_N_${Math.abs(props.incidencia.longitud)}_${props.incidencia.longitud < 0 ? 'W' : 'E'}_type:landmark`;
+        } else if (isIOS.value) {
           return `https://maps.apple.com/?q=${props.incidencia.latitud},${props.incidencia.longitud}`;
         } else {
           return `geo:${props.incidencia.latitud},${props.incidencia.longitud}?q=${props.incidencia.latitud},${props.incidencia.longitud}`;
@@ -1077,4 +1083,12 @@ a {
   color: white; /* Color del icono de la flecha */
 }
 
+@media (min-width: 960px) {
+  .v-dialog.v-dialog--fullscreen {
+    max-width: 800px !important;
+    margin: 24px auto !important;
+    height: calc(100vh - 48px) !important;
+    border-radius: 8px !important;
+  }
+}
 </style>

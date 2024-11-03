@@ -116,7 +116,6 @@ router.get('/spam', (req, res) => {
         description: `Reporte de contenido inadecuado para: ${reporte.incidencia_id}`,
         content: `
             <p>🕒 ${new Date(reporte.fecha_reporte).toLocaleString('es-ES')}</p>
-            <p><a href="${process.env.BASE_URL}/incidencia/${reporte.incidencia_id}">Ver incidencia completa</a></p>
             <p><strong>Importante:</strong> El contenido de esta incidencia puede mostrar contenido inadecuado u ofensivo.</p>
         `,
         date: new Date(reporte.fecha_reporte)
