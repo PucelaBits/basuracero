@@ -227,14 +227,36 @@
             <v-select
               v-model="tipoSeleccionado"
               :items="tiposIncidencias"
-              item-title="nombre"
               item-value="id"
+              item-title="nombre"
               label="Filtrar por tipo"
               @update:model-value="obtenerIncidencias"
             >
               <template v-slot:prepend-item>
-                <v-list-item title="Todas" value="Todas" @click="tipoSeleccionado = 'Todas'"></v-list-item>
+                <v-list-item title="Todas" value="Todas" @click="tipoSeleccionado = 'Todas'" density="compact">
+                  <template v-slot:prepend>
+                    <v-icon size="small" class="mr-4">mdi-filter-variant</v-icon>
+                  </template>
+                </v-list-item>
                 <v-divider class="mt-2"></v-divider>
+              </template>
+
+              <!-- Personalizar cada item del dropdown -->
+              <template v-slot:item="{ props, item }">
+                <v-list-item v-bind="props" density="compact">
+                  <template v-slot:prepend>
+                    <v-icon size="small" class="mr-0">{{ item.raw.icono }}</v-icon>
+                  </template>
+                  <template v-slot:title class="ml-0">
+                    {{ item.raw.nombre }}
+                  </template>
+                </v-list-item>
+              </template>
+              
+              <!-- Personalizar el valor seleccionado -->
+              <template v-slot:selection="{ item }">
+                <v-icon size="small" class="mr-4">{{ item.raw.icono }}</v-icon>
+                <span class="text-caption">{{ item.raw.nombre }}</span>
               </template>
             </v-select>
             <v-row justify="center" class="mb-0">
@@ -497,10 +519,18 @@ export default {
       }
     })
 
+    const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
+
     const obtenerTipos = async () => {
       try {
         const response = await obtenerTiposIncidencias()
-        tiposIncidencias.value = response.data
+        tiposIncidencias.value = response.data.map(tipo => {
+          const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)
+          return {
+            ...tipo,
+            icono: tipoInicial?.icono || 'mdi-circle'
+          }
+        })
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }
