@@ -30,15 +30,29 @@
             <v-select
               v-model="incidencia.tipo_id"
               :items="tiposIncidencias"
-              item-title="nombre"
               item-value="id"
+              item-title="nombre"
               label="Tipo"
               :rules="[v => !!v || 'El tipo es necesario']"
               required
               class="mt-4"
-            >
-              <template v-slot:prepend>
-                <v-icon size="small">mdi-tag</v-icon>
+            >         
+              <!-- Personalizar cada item del dropdown -->
+              <template v-slot:item="{ props, item }">
+                <v-list-item v-bind="props" density="compact">
+                  <template v-slot:prepend>
+                    <v-icon size="small">{{ item.raw.icono }}</v-icon>
+                  </template>
+                  <template v-slot:title>
+                    {{ item.raw.nombre }}
+                  </template>
+                </v-list-item>
+              </template>
+              
+              <!-- Personalizar el valor seleccionado -->
+              <template v-slot:selection="{ item }">
+                <v-icon size="small" class="mr-3" color="grey-darken-1">{{ item.raw.icono }}</v-icon>
+                <span class="text-caption">{{ item.raw.nombre }}</span>
               </template>
             </v-select>
             
@@ -318,6 +332,8 @@ const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
 const CIUDAD_LON_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LON_MIN);
 const CIUDAD_LON_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LON_MAX);
 
+const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
+
 export default {
   name: 'ReportarIncidencia',
   components: {
@@ -428,7 +444,13 @@ export default {
     const obtenerTiposIncidencias = async () => {
       try {
         const response = await axios.get('/api/incidencias/tipos')
-        tiposIncidencias.value = response.data
+        tiposIncidencias.value = response.data.map(tipo => {
+          const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)
+          return {
+            ...tipo,
+            icono: tipoInicial?.icono || 'mdi-circle'
+          }
+        })
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }
