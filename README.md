@@ -1,8 +1,21 @@
-## **Basura Cero: La app para mejorar tu ciudad**
+## **Basura Cero: La app para mejorar tu ciudad, pueblo o barrio**
 
-**[Basura Cero](https://basuracero.pucelabits.org)** es una aplicación sencilla y colaborativa que te permite reportar incidencias o problemas sin solucionar en un área concreta, como basura, baches, áreas verdes descuidadas, etc. Con solo unos clics, ayudas a reclamar que tu zona esté más limpia y en mejores condiciones. **Juntos, podemos exigir que nuestra zona sea un lugar más agradable para todos.**
+**Basura Cero** es una plataforma sencilla para generar una web app colaborativa que permita reportar incidencias o problemas sin solucionar en un área concreta, como basura, baches, áreas verdes descuidadas, etc. Con solo unos clics, los vecinos pueden ayudar a reclamar que su zona esté más limpia y en mejores condiciones. 
 
-La configuración por defecto acepta sólo incidencias en la ciudad de Valladolid, pero puedes modificar la configuración para que acepte incidencias de otra zona o con otras categorias.
+**Juntos, podemos exigir que nuestra zona sea un lugar más agradable para todos**
+
+La configuración por defecto acepta incidencias en la ciudad de Valladolid, pero puedes modificarla para que acepte incidencias de cualquier otra zona o usando otras categorías.
+
+**Instancias que usan esta plataforma**
+
+<img src="./public/img/screenshots/basuracero.jpg" alt="Basura Cero Valladolid" width="300" align="center"/>
+
+[Basura Cero Valladolid](https://basuracero.pucelabits.org) - Incidencias sin resolver en via pública
+
+<img src="./public/img/screenshots/alertadana.jpg" alt="Alerta DANA" width="300" align="center"/>
+
+[Alerta DANA](https://dana.pucelabits.org) - Documentación de incidencias provocadas por la DANA 2024 en España
+
 
 ### **¿Cómo funciona?**
 
@@ -22,16 +35,16 @@ La configuración por defecto acepta sólo incidencias en la ciudad de Valladoli
    - Puedes registrar una incidencia oficialmente con el WhatsApp del organismo responsable, solo con un clic te mandamos a su WhatsApp con los datos ya rellenados.
 
 6. **Diseño adaptable**:
-   - Usa **Basura Cero** desde tu móvil, tablet u ordenador, ¡cuándo y dónde quieras!
+   - Usala desde tu móvil, tablet u ordenador, ¡cuándo y dónde quieras!
 
-### **¿Por qué usar Basura Cero?**
+### **¿Por qué usar la plataforma Basura Cero?**
 
 - **Rápido y sencillo**: Solo necesitas unos segundos para reportar un problema y contribuir a una ciudad mejor.
 - **Colaborativo**: Todos los ciudadanos participan para que nuestra ciudad esté más limpia y en buen estado.
 - **Transparente**: Consulta fácilmente el estado de los reportes y los solucionados.
 - **Seguro**: No compartimos tus datos personales con nadie.
 
-Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a visibilizarlos y a asegurar que se solucionen. Además, puedes enviar tus reportes directamente al sistema oficial del ayuntamiento. **Cuantos más participemos, más limpia y ordenada estará nuestra ciudad.**
+Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a visibilizarlos y a asegurar que se solucionen. Además, puedes habilitar un botón para enviar tus reportes directamente al sistema oficial del ayuntamiento.
 
 ## Configuración
 
@@ -102,13 +115,13 @@ npm run tipos edit ID "Nuevo nombre"
 npm run tipos remove ID
 ```
 
-### Captcha
+### Captcha (opcional)
 Configura [Friendly Captcha](https://friendlycaptcha.com/) para proteger los formularios:
 - `friendlycaptcha_enabled`: Activa/desactiva el captcha
 - `VITE_FRIENDLYCAPTCHA_SITEKEY`: Clave pública
 - `friendlycaptcha_secret`: Clave secreta de la API
 
-### Analytics
+### Analytics (opcional)
 Configura el analytics de la aplicación:
 
 - `VITE_ANALYTICS_PROVIDER`: Define qué proveedores de analytics usar. Opciones:
@@ -131,7 +144,7 @@ Crea las carpetas necesarias para el funcionamiento:
 mkdir uploads data
 ```
 
-### Configuración del plugin de WhatsApp
+### Configuración del plugin de WhatsApp (opcional)
 
 Permite tener un botón en las incidencias para enviar la descripción y ubicación a un número de WhatsApp.
 
@@ -153,7 +166,7 @@ Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos
    git clone https://github.com/pucelabits/basura-cero.git
    cd basura-cero-pucela
    ```
-3. Copia el archivo `.env.sample` a `.env` y configura las variables de entorno.
+3. Sigue las instrucciones en la sección [Configuración](#configuración).
 
 4. Construye y ejecuta el contenedor Docker:
    ```
@@ -372,8 +385,16 @@ Para más detalles sobre la configuración y el desarrollo, consulta los archivo
 
 ## Contribuciones
 
-Las contribuciones son bienvenidas. Por favor, abre un issue o realiza un pull request para sugerir cambios o mejoras.
+Las contribuciones son bienvenidas. Por favor, [abre un issue](https://github.com/PucelaBits/basuracero/issues) para informar de errores o sugerir cambios y mejoras.
 
 ## Licencia
 
-[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
+El código fuente de esta aplicación está licenciado bajo la [AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html). Si reutilizas o modificas el código, debes:
+
+- Mantener la misma licencia AGPL v3.
+- Proporcionar un enlace al código fuente original.
+- Hacer público el código fuente modificado bajo la misma licencia.
+
+Además, si usas el software modificado en un servidor accesible al público, debes ofrecer el acceso al código fuente a los usuarios de ese servidor.
+
+Puedes definir una licencia para el contenido que suban los usuarios a tu instancia, modificando el enlace a la licencia en el archivo `.env`.
