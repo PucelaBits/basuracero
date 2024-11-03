@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualizando</title>
+    <style>
+        :root {
+            --primary: #6B46C1;
+            --primary-dark: #553C9A;
+            --background: #F7FAFC;
+            --text: #2D3748;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text);
+            padding: 1rem;
+        }
+
+        .error-container {
+            text-align: center;
+            padding: 2.5rem 2rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(107, 70, 193, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0 0 1rem;
+            font-size: 1.75rem;
+            line-height: 1.2;
+        }
+
+        p {
+            line-height: 1.6;
+            margin: 0 0 1.5rem;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+
+        .button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(107, 70, 193, 0.2);
+        }
+
+        @media (max-width: 480px) {
+            .error-container {
+                padding: 2rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+
+            .icon {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <h1>¡Estamos actualizando!</h1>
+        <p>Estamos realizando algunas actualizaciones para ofrecerte una mejor experiencia<br /><br />Por favor, vuelve a intentarlo en unos minutos</p>
+        <a href="/" class="button">Intentar de nuevo</a>
+    </div>
+</body>
+</html>
