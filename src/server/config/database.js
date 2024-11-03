@@ -74,7 +74,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
         if (row.count === 0) {
           const tiposIncidenciasStr = process.env.TIPOS_INCIDENCIAS_INICIALES || 
-            '["Basura u objetos abandonados", "Vegetación crecida o descuidada", "Bache/desperfecto en calzada o acera", "Mobiliario urbano dañado", "Señalización ausente o deficiente", "Alumbrado defectuoso o insuficiente", "Animal muerto o plaga", "Otros"]';
+            '[{"tipo": "Basura u objetos abandonados", "icono": "mdi-trash-can"}, {"tipo": "Vegetación crecida o descuidada", "icono": "mdi-tree"}, {"tipo": "Bache/desperfecto en calzada o acera", "icono": "mdi-road-variant"}, {"tipo": "Mobiliario urbano dañado", "icono": "mdi-bench-back"}, {"tipo": "Señalización ausente o deficiente", "icono": "mdi-sign-direction"}, {"tipo": "Alumbrado defectuoso o insuficiente", "icono": "mdi-lightbulb-off"}, {"tipo": "Animal muerto o plaga", "icono": "mdi-bug"}, {"tipo": "Otros", "icono": "mdi-circle"}]';
             
           let tiposIncidencias;
           try {
@@ -98,7 +98,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             let contador = 0;
 
             tiposIncidencias.forEach(tipo => {
-              stmt.run(tipo, (err) => {
+              stmt.run(tipo.tipo, (err) => {
                 if (err) reject(err);
                 contador++;
                 if (contador === tiposIncidencias.length) {

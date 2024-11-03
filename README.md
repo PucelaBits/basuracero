@@ -98,7 +98,7 @@ Configura los enlaces a redes sociales y otros recursos mediante `APP_SOCIAL_LIN
 - `icon`: Icono de Material Design Icons a mostrar
 
 ### Tipos de incidencias
-Define los tipos de incidencias iniciales mediante `TIPOS_INCIDENCIAS_INICIALES`. Debe ser un array JSON con los nombres de los tipos.
+Define los tipos de incidencias iniciales en `TIPOS_INCIDENCIAS_INICIALES`, podrás definir un icono personalizado para cada tipo.
 
 Una vez iniciada la aplicación, puedes gestionar los tipos usando:
 ```bash
@@ -114,6 +114,8 @@ npm run tipos edit ID "Nuevo nombre"
 # Eliminar tipo
 npm run tipos remove ID
 ```
+
+Si añades nuevos tipos a posteriori, no olvides actualizar el array `TIPOS_INCIDENCIAS_INICIALES` en el archivo `.env` con su nombre e icono (opcional).
 
 ### Captcha (opcional)
 Configura [Friendly Captcha](https://friendlycaptcha.com/) para proteger los formularios:
