@@ -184,7 +184,10 @@
             <v-icon color="success" size="64" class="mb-4">mdi-check-circle</v-icon>
             <h2 class="text-h5 mb-4">Incidencia creada</h2>
             <p class="mb-4"><v-icon left>mdi-share</v-icon><strong>Compartela</strong> con tus vecinos en redes sociales o grupos de chat</p>
-            <p>No olvides <v-icon left>mdi-whatsapp</v-icon> <strong>informar al ayuntamiento</strong> para que se registre oficialmente, anima a tus vecinos a que lo hagan también</p>
+            <p v-if="whatsAppShare.isEnabled.value" class="mt-4">
+              <v-icon left>mdi-whatsapp</v-icon>
+              No olvides usar el botón <strong>{{ whatsAppShare.buttonText }}</strong> para que se registre oficialmente, anima a tus vecinos a que lo hagan también
+            </p>
             <p class="mt-4">Cuando se haya solucionado vuelve y márcala como <v-icon left>mdi-check-circle</v-icon> <strong>resuelta</strong></p>
             <p class="mt-4">Fácil y rápido, usa los botones de parte inferior</p>
           </v-card-text>

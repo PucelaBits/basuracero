@@ -116,7 +116,7 @@
                               <li>Explica el objetivo del evento</li>
                             </ul>
                             <v-alert class="mt-3 text-body-2" density="compact" :icon="false">
-                              <i class="text-grey-darken-1">"Con este evento queremos mejorar nuestro barrio documentando incidencias que lleven sin atender más de 24 horas, añadiéndolas a un mapa e informando al ayuntamiento para que quede constancia oficial.<br /><br /> También queremos validar si las ya reportadas han sido solucionadas y marcarlas como tales."</i>
+                              <i class="text-grey-darken-1">"Con este evento queremos mejorar nuestro barrio documentando incidencias que lleven sin atender más de 24 horas, añadiéndolas a un mapa e informando para que quede constancia oficial.<br /><br /> También queremos validar si las ya reportadas han sido solucionadas y marcarlas como tales."</i>
                             </v-alert>
                           </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -128,10 +128,10 @@
                           </v-expansion-panel-title>
                           <div class="text-caption text-grey ml-14 mb-2">5 min.</div>
                           <v-expansion-panel-text>
-                            <p>Muestra cómo instalar Basura Cero:</p>
+                            <p>Muestra cómo instalar la app:</p>
                             <ol>
                               <li>Abre el navegador en el móvil (Chrome o Safari preferiblemente)</li>
-                              <li>Ve a basuracero.pucelabits.org o busca Basura Cero Valladolid en tu buscador</li>
+                              <li>Ve a {{ baseUrl }} o busca {{ appName }} en tu buscador</li>
                               <li>Sigue las instrucciones para añadir a la pantalla de inicio</li>
                             </ol>
                           </v-expansion-panel-text>
@@ -153,7 +153,7 @@
                               <li>Describe brevemente el problema (puedes dictarlo por voz usando el icono de micrófono)</li>
                               <li>Añade o toma una foto de la incidencia<br /><small>Evita sacar caras, matrículas o datos personales en las fotos</small></li>
                               <li>Envía el reporte</li>
-                              <li>Usa el botón de informar al ayuntamiento</li>
+                              <li v-if="whatsAppShare.isEnabled">Usa el botón "{{ whatsAppShare.buttonText }}"</li>
                               <li>Comparte el enlace en redes y en el grupo de chat de vecinos</li>
                             </ol>
                           </v-expansion-panel-text>
@@ -172,7 +172,7 @@
                               <li>Busca incidencias cercanas en el mapa y desplázate hasta ellas</li>
                               <li>Verifica en persona si realmente está solucionada</li>
                               <li>Confirma en la app si está resuelta pulsando el botón de "Resolver"</li>
-                              <li>Si no está resuelta, haz clic en "Informar al ayuntamiento" y comparte el enlace en el grupo de chat de vecinos</li>
+                              <li>Si no está resuelta,<span v-if="whatsAppShare.isEnabled"> haz clic en "{{ whatsAppShare.buttonText }}" y</span> comparte el enlace en el grupo de chat de vecinos</li>
                             </ol>
                             <v-alert class="mt-3 text-body-2" density="compact" :icon="false">
                               Nota: Se necesitan varios reportes de personas diferentes para dar por resuelta una incidencia
@@ -278,6 +278,7 @@
 <script>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useWhatsAppShare } from '../composables/useWhatsAppShare'
 
 export default {
   name: 'MaratonGuide',
@@ -286,11 +287,15 @@ export default {
     const router = useRouter()
     const route = useRoute()
     const showScrollToTop = ref(false)
+    const whatsAppShare = useWhatsAppShare()
 
     // Obtener la URL de la comunidad desde las variables de entorno
     const socialLinks = JSON.parse(import.meta.env.VITE_APP_SOCIAL_LINKS || '[]')
     const communityLink = socialLinks.find(link => link.name === 'Comunidad')
     const communityUrl = ref(communityLink?.url || null)
+
+    const baseUrl = (import.meta.env.VITE_BASE_URL || window.location.origin).replace(/^https?:\/\/|\/+$/g, '')
+    const appName = import.meta.env.VITE_APP_NAME || 'Basura Cero'
 
     const cerrar = () => {
       dialogVisible.value = false
@@ -341,7 +346,10 @@ export default {
       scrollToTop,
       scrollToPaso,
       showScrollToTop,
-      communityUrl
+      communityUrl,
+      baseUrl,
+      appName,
+      whatsAppShare
     }
   }
 }
