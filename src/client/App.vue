@@ -123,7 +123,7 @@
             <div class="d-flex justify-space-between align-center mb-2" v-if="incidenciasAntiguasUsuario > 0">
               <div class="d-flex align-center">
                 <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>
-                <span>Más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de 7 días</span>
+                <span>Más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de {{ diasParaConsiderarAntigua }} días</span>
               </div>
               <span class="numero-incidencias ml-2">{{ incidenciasAntiguasUsuario }}</span>
             </div>
@@ -783,9 +783,11 @@ export default {
     const incidenciasAntiguasUsuario = ref(0);
     const incidenciasConReportesSolucion = ref(0);
 
+    const diasParaConsiderarAntigua = parseInt(import.meta.env.VITE_DIAS_PARA_CONSIDERAR_ANTIGUA) || 7;
+
     const calcularIncidenciasAntiguasUsuario = () => {
       const diasAtras = new Date();
-      diasAtras.setDate(diasAtras.getDate() - 7);
+      diasAtras.setDate(diasAtras.getDate() - diasParaConsiderarAntigua);
       
       // Verificar si incidenciasUsuario.value es un array
       const incidenciasIds = Array.isArray(incidenciasUsuario.value) 
@@ -1113,6 +1115,7 @@ export default {
       socialLinks,
       comunidadLink,
       appLogoPath,
+      diasParaConsiderarAntigua,
     }
   }
 }
