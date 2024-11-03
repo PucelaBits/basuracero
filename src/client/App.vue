@@ -288,7 +288,7 @@
                     <v-icon size="x-large">mdi-clock-alert</v-icon>
                   </v-col>
                   <v-col cols="10" align="center" class="pl-2">
-                    <span class="text-caption">Hay <strong>{{ incidenciasAntiguas }}</strong> incidencias activas<br />con más de una semana</span>
+                    <span class="text-caption">Hay <strong>{{ incidenciasAntiguas }}</strong> incidencias activas<br />más antiguas de {{ diasParaConsiderarAntigua }} días</span>
                   </v-col>
                 </v-row>
                 <v-row align="center" class="mt-0">
@@ -984,7 +984,7 @@ export default {
 
     const incidenciasAntiguas = computed(() => {
       const unaSemanaAtras = new Date();
-      unaSemanaAtras.setDate(unaSemanaAtras.getDate() - 7);
+      unaSemanaAtras.setDate(unaSemanaAtras.getDate() - diasParaConsiderarAntigua);
       
       return todasLasIncidencias.value.filter(incidencia => 
         incidencia.estado === 'activa' && new Date(incidencia.fecha) < unaSemanaAtras
