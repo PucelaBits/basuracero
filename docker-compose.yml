@@ -1,6 +1,9 @@
 services:
   basuracero-app:
-    build: .
+    build:
+      context: .
+      args:
+        - PORT=${PORT:-5050}
     network_mode: "host"
     volumes:
       - ./uploads:/app/uploads
@@ -8,8 +11,9 @@ services:
     environment:
       - NODE_ENV=production
       - TZ=Europe/Madrid
+      - PORT=${PORT:-5050}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5050', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:' + process.env.PORT, (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
       interval: 30s
       timeout: 10s
       retries: 3

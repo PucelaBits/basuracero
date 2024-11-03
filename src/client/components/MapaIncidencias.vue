@@ -188,7 +188,10 @@ export default {
         map = L.map(mapContainer.value, { 
           closePopupOnClick: false,
           closePopupOnMove: false
-        }).setView([41.652251, -4.724532], props.zoomForzado || 13)
+        }).setView([
+          import.meta.env.VITE_MAPA_CENTRO_LAT,
+          import.meta.env.VITE_MAPA_CENTRO_LON
+        ], props.zoomForzado || import.meta.env.VITE_MAPA_ZOOM_INICIAL)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
@@ -464,7 +467,10 @@ export default {
     const searchAddress = async () => {
       if (searchQuery.value.length < 3) return
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.value)}+Valladolid+España&limit=5`)
+        const regionLimit = import.meta.env.VITE_SEARCH_REGION_LIMIT_ENABLED === 'true' 
+          ? import.meta.env.VITE_SEARCH_REGION_QUERY 
+          : '';
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.value)}${regionLimit}&limit=5`)
         const data = await response.json()
         if (Array.isArray(data) && data.length > 0) {
           const result = data[0]
@@ -895,7 +901,7 @@ export default {
 }
 
 .add-incidencia-btn {
-  background-color: #7361a0;
+  background-color: rgb(var(--v-theme-secondary));
   color: white;
   border: none;
   padding: 10px 15px;
@@ -909,7 +915,7 @@ export default {
 }
 
 .add-incidencia-btn:hover {
-  background-color: #5a4a8a;
+  background-color: color-mix(in srgb, rgb(var(--v-theme-secondary)) 85%, black);
 }
 
 .custom-popup-class {

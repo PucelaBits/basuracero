@@ -41,7 +41,10 @@
                     density="compact"
                     class="mb-0"
                   >
-                    <strong>¡Tú eliges!</strong><br /> Puedes participar solo, con amigos y familiares o unirte a un grupo de vecinos<br /><br /> Únete a <u><a href="https://t.me/basuraceroapp" target="_blank">nuestro grupo de Telegram</a></u> para conocer a otros vecinos activos
+                    <strong>¡Tú eliges!</strong><br /> Puedes participar solo, con amigos y familiares o unirte a un grupo de vecinos<br /><br />
+                    <template v-if="communityUrl">
+                      Únete a <u><a :href="communityUrl" target="_blank">nuestra comunidad</a></u> para conocer a otros vecinos activos
+                    </template>
                   </v-alert>
                 </v-card-text>
               </v-card>
@@ -76,9 +79,12 @@
                         <v-list-item prepend-icon="mdi-map-marker">Define un punto de encuentro en el barrio</v-list-item>
                         <v-list-item prepend-icon="mdi-account-group">Invita a tus vecinos por redes sociales, WhatsApp o carteles</v-list-item>
                         <v-list-item prepend-icon="mdi-chat">
-                          Usa un grupo de chat existente para coordinar o usa 
-                          <a href="https://t.me/basuraceroapp" target="_blank">el Telegram de Basura Cero</a> <br />
-                          <small>Puedes solicitar crear un subgrupo para tu barrio</small>
+                          Usa un grupo de chat existente para coordinar 
+                          <template v-if="communityUrl">
+                             o usa <a :href="communityUrl" target="_blank">nuestra comunidad</a>
+                            <br />
+                            <small>Puedes solicitar crear un subgrupo para tu barrio</small>
+                          </template>
                         </v-list-item>
                       </v-list>
                     </v-card-text>
@@ -227,7 +233,11 @@
                     <v-card-text class="pa-2">
                       <ul>
                         <li>Reúne a todos en el punto de encuentro</li>
-                        <li>Comparte los resultados: número de incidencias reportadas y validadas<br /><small>Mándanos un pequeño resumen del evento <a href="https://t.me/basuraceroapp" target="_blank">al grupo de Telegram</a></small></li>
+                        <li>Comparte los resultados: número de incidencias reportadas y validadas<br />
+                          <small v-if="communityUrl">Mándanos un pequeño resumen del evento 
+                            <a :href="communityUrl" target="_blank">a la comunidad</a>
+                          </small>
+                        </li>
                         <li>Recuerda que pueden seguir usando la app a diario para reportar nuevas incidencias y validar si ven alguna ya solucionada</li>
                         <li>Agradece la participación y planea el próximo evento</li>
                       </ul>
@@ -277,6 +287,11 @@ export default {
     const route = useRoute()
     const showScrollToTop = ref(false)
 
+    // Obtener la URL de la comunidad desde las variables de entorno
+    const socialLinks = JSON.parse(import.meta.env.VITE_APP_SOCIAL_LINKS || '[]')
+    const communityLink = socialLinks.find(link => link.name === 'Comunidad')
+    const communityUrl = ref(communityLink?.url || null)
+
     const cerrar = () => {
       dialogVisible.value = false
       router.push({ name: 'Home' })
@@ -325,7 +340,8 @@ export default {
       pasos,
       scrollToTop,
       scrollToPaso,
-      showScrollToTop
+      showScrollToTop,
+      communityUrl
     }
   }
 }

@@ -160,16 +160,20 @@
     </v-dialog>
 
     <!-- Diálogo para WhatsApp -->
-    <v-dialog v-model="mostrarDialogoWhatsApp" max-width="500px">
+    <v-dialog 
+      v-if="whatsAppShare.isEnabled.value"
+      v-model="mostrarDialogoWhatsApp" 
+      max-width="500px"
+    >
       <v-card>
         <v-card-title class="headline">
           <v-icon left>mdi-whatsapp</v-icon>
-          Informar por WhatsApp
+          {{ whatsAppShare.dialogTitle }}
         </v-card-title>
         <v-card-text>
-          Cuando pulses aceptar se te redirigirá al bot de WhatsApp del ayuntamiento adjuntando la descripción y la dirección
+          {{ whatsAppShare.dialogText }}
           <br>
-          <br><span class="subtitle-text"><strong>Nota:</strong> Si es la primera vez que hablas con el bot necesitarás mandarle primero "Hola" para activarle</span>
+          <br><span class="subtitle-text"><strong>Nota:</strong> {{ whatsAppShare.dialogNote }}</span>
           <v-checkbox
             v-model="añadirAFavoritas"
             label="Añadir a mis favoritas"
@@ -232,7 +236,7 @@ import { ref, computed, onMounted, watch, onUnmounted, nextTick, reactive } from
 import { useRouter, useRoute } from 'vue-router'
 import MapaIncidencias from './MapaIncidencias.vue'
 import { useResolverIncidencia } from '@/composables/useResolverIncidencia'
-import { useInformarAyuntamiento } from '@/composables/useInformarAyuntamiento'
+import { useWhatsAppShare } from '@/composables/useWhatsAppShare'
 import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
 
@@ -250,7 +254,7 @@ export default {
     const route = useRoute()
     
     const { resolverIncidencia, reportando, mensajeError } = useResolverIncidencia()
-    const { enviarWhatsApp } = useInformarAyuntamiento()
+    const whatsAppShare = useWhatsAppShare()
     const { añadirFavorito, quitarFavorito, esFavorito, loadFavoritos } = useFavoritosStore()
 
     const dialogVisible = ref(false)
@@ -439,8 +443,12 @@ export default {
         }
 
         if (estado === 'activa') {
-          añadirAFavoritas.value = !esFavorito(incidenciaSeleccionada.value.id)
-          mostrarDialogoWhatsApp.value = true
+          if (whatsAppShare.isEnabled.value) {
+            añadirAFavoritas.value = !esFavorito(incidenciaSeleccionada.value.id)
+            mostrarDialogoWhatsApp.value = true
+          } else {
+            ocultarFaldon(incidenciaSeleccionada.value)
+          }
         } else if (estado === 'solucionada') {
           mostrarDialogoConfirmacion.value = true
           await nextTick()
@@ -530,21 +538,20 @@ export default {
 
     const enviarWhatsAppYFavoritos = async () => {
       if (incidenciaSeleccionada.value) {
-        await enviarWhatsApp(incidenciaSeleccionada.value)
+        await whatsAppShare.enviarWhatsApp(incidenciaSeleccionada.value);
         if (añadirAFavoritas.value) {
-          añadirFavorito(incidenciaSeleccionada.value.id)
-          // Actualizar el estado de la incidencia en la lista
-          const index = incidenciasCalculadas.value.findIndex(inc => inc.id === incidenciaSeleccionada.value.id)
+          añadirFavorito(incidenciaSeleccionada.value.id);
+          const index = incidenciasCalculadas.value.findIndex(inc => inc.id === incidenciaSeleccionada.value.id);
           if (index !== -1) {
             incidenciasCalculadas.value[index] = {
               ...incidenciasCalculadas.value[index],
               esFavorita: true
-            }
+            };
           }
         }
       }
-      mostrarDialogoWhatsApp.value = false
-    }
+      mostrarDialogoWhatsApp.value = false;
+    };
 
     const mostrarError = (mensaje) => {
       mensajeError.value = mensaje
@@ -655,7 +662,8 @@ export default {
       nombreUsuario,
       snackbar,
       snackbarText,
-      mostrarMensaje
+      mostrarMensaje,
+      whatsAppShare
     }
   }
 }

@@ -73,16 +73,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
         }
 
         if (row.count === 0) {
-          const tiposIncidencias = [
-            'Basura u objetos abandonados',
-            'Vegetación crecida o descuidada',
-            'Bache/desperfecto en calzada o acera',
-            'Mobiliario urbano dañado',
-            'Señalización ausente o deficiente',
-            'Alumbrado defectuoso o insuficiente',
-            'Animal muerto o plaga',
-            'Otros'
-          ];
+          const tiposIncidenciasStr = process.env.TIPOS_INCIDENCIAS_INICIALES || 
+            '["Basura u objetos abandonados", "Vegetación crecida o descuidada", "Bache/desperfecto en calzada o acera", "Mobiliario urbano dañado", "Señalización ausente o deficiente", "Alumbrado defectuoso o insuficiente", "Animal muerto o plaga", "Otros"]';
+            
+          let tiposIncidencias;
+          try {
+            tiposIncidencias = JSON.parse(tiposIncidenciasStr);
+            if (!Array.isArray(tiposIncidencias)) {
+              throw new Error('TIPOS_INCIDENCIAS_INICIALES debe ser un array JSON');
+            }
+          } catch (error) {
+            console.error('Error al parsear TIPOS_INCIDENCIAS_INICIALES:', error);
+            tiposIncidencias = [];
+          }
+
+          if (tiposIncidencias.length === 0) {
+            console.warn('No se han definido tipos de incidencias iniciales en TIPOS_INCIDENCIAS_INICIALES');
+            return;
+          }
 
           // Usar una promesa para asegurar que todas las inserciones se completen
           const insertarTipos = new Promise((resolve, reject) => {

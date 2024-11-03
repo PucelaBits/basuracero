@@ -7,3 +7,8 @@ uploads
 .env
 !.env.sample
 /data
+# Ignorar imágenes personalizadas pero mantener las por defecto
+/public/img/custom/*
+!/public/img/custom/.gitkeep
+# Archivos generados
+/public/manifest.json

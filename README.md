@@ -1,8 +1,21 @@
-## **Basura Cero: La app para mejorar tu ciudad**
+## **Basura Cero: La app para mejorar tu ciudad, pueblo o barrio**
 
-**[Basura Cero](https://basuracero.pucelabits.org)** es una aplicación sencilla y colaborativa que te permite reportar problemas sin solucionar en la ciudad, como basura, baches o áreas verdes descuidadas. Con solo unos clics, ayudas a reclamar que tu ciudad esté más limpia y en mejores condiciones. **Juntos, podemos exigir que nuestra ciudad sea un lugar más agradable para todos.**
+**Basura Cero** es una plataforma sencilla para generar una web app colaborativa que permita reportar incidencias o problemas sin solucionar en un área concreta, como basura, baches, áreas verdes descuidadas, etc. Con solo unos clics, los vecinos pueden ayudar a reclamar que su zona esté más limpia y en mejores condiciones. 
 
-Actualmente está configurada para aceptar sólo incidencias en la ciudad de Valladolid, pero puedes modificar la configuración para que acepte incidencias en tu ciudad.
+**Juntos, podemos exigir que nuestra zona sea un lugar más agradable para todos**
+
+La configuración por defecto acepta incidencias en la ciudad de Valladolid, pero puedes modificarla para que acepte incidencias de cualquier otra zona o usando otras categorías.
+
+**Instancias que usan esta plataforma**
+
+<img src="./public/img/screenshots/basuracero.jpg" alt="Basura Cero Valladolid" width="300" align="center"/>
+
+[Basura Cero Valladolid](https://basuracero.pucelabits.org) - Incidencias sin resolver en via pública
+
+<img src="./public/img/screenshots/alertadana.jpg" alt="Alerta DANA" width="300" align="center"/>
+
+[Alerta DANA](https://dana.pucelabits.org) - Documentación de incidencias provocadas por la DANA 2024 en España
+
 
 ### **¿Cómo funciona?**
 
@@ -18,36 +31,129 @@ Actualmente está configurada para aceptar sólo incidencias en la ciudad de Val
 4. **Geolocalización automática**:
    - La app detecta automáticamente tu ubicación para hacer el reporte más rápido. O elige la ubicación manualmente si lo prefieres.
 
-5. **Informar al ayuntamiento**:
-   - Puedes registrar una incidencia oficialmente con el ayuntamiento, solo con un clic te mandamos a su bot de WhatsApp con los datos ya rellenados.
+5. **Informar a un número de WhatsApp oficial**:
+   - Puedes registrar una incidencia oficialmente con el WhatsApp del organismo responsable, solo con un clic te mandamos a su WhatsApp con los datos ya rellenados.
 
 6. **Diseño adaptable**:
-   - Usa **Basura Cero** desde tu móvil, tablet u ordenador, ¡cuándo y dónde quieras!
+   - Usala desde tu móvil, tablet u ordenador, ¡cuándo y dónde quieras!
 
-### **¿Por qué usar Basura Cero?**
+### **¿Por qué usar la plataforma Basura Cero?**
 
 - **Rápido y sencillo**: Solo necesitas unos segundos para reportar un problema y contribuir a una ciudad mejor.
 - **Colaborativo**: Todos los ciudadanos participan para que nuestra ciudad esté más limpia y en buen estado.
 - **Transparente**: Consulta fácilmente el estado de los reportes y los solucionados.
 - **Seguro**: No compartimos tus datos personales con nadie.
 
-Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a visibilizarlos y a asegurar que se solucionen. Además, puedes enviar tus reportes directamente al sistema oficial del ayuntamiento. **Cuantos más participemos, más limpia y ordenada estará nuestra ciudad.**
+Al usar **Basura Cero**, no solo reportas problemas, sino que también ayudas a visibilizarlos y a asegurar que se solucionen. Además, puedes habilitar un botón para enviar tus reportes directamente al sistema oficial del ayuntamiento.
 
-## Desarrollo
+## Configuración
 
 **Antes de empezar**
 
-Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env` y rellenar los datos del API de [friendly captcha](https://friendlycaptcha.com), así como el área en el que se pueden crear incidencias, puedes definir también la URL base de la aplicación.
+Antes de ejecutar la aplicación, asegúrate de hacer una copia del archivo `.env.sample` a `.env`:
 
 ```bash
 cp .env.sample .env
 ```
 
-Debes crear también las carpetas `uploads` y `data` en la raíz del proyecto.
+En el archivo `.env` podrás configurar:
+
+### Información básica
+- `APP_NAME`: Nombre de la aplicación
+- `APP_SUBTITLE`: Subtítulo de la aplicación
+- `APP_DESCRIPTION`: Descripción del proyecto
+- `BASE_URL`: URL base de la aplicación (varía según el entorno)
+
+### Límites geográficos
+Define el área en la que se pueden reportar incidencias:
+- `CIUDAD_LAT_MIN`: Latitud mínima
+- `CIUDAD_LAT_MAX`: Latitud máxima
+- `CIUDAD_LON_MIN`: Longitud mínima
+- `CIUDAD_LON_MAX`: Longitud máxima
+
+### Configuración de reportes
+- `REPORTES_PARA_SOLUCIONAR`: Número de reportes necesarios para marcar una incidencia como solucionada
+- `DIAS_PARA_CONSIDERAR_ANTIGUA`: Días tras los cuales una incidencia se considera antigua
+- `REPORTES_PARA_SOLUCIONAR_ANTIGUA`: Número de reportes necesarios para solucionar una incidencia antigua
+
+### Personalización visual
+- `APP_FAVICON_PATH`: Ruta al favicon (por defecto "/img/default/favicon.png")
+- `APP_LOGO_PATH`: Ruta al logo (por defecto "/img/default/logo.png")
+
+Puedes colocar tus propias imágenes en la carpeta `public/img/custom/` (no incluyas `/public/` en la ruta del config).
+
+### Colores de la aplicación
+- `APP_PRIMARY_COLOR`: Color principal
+- `APP_SECONDARY_COLOR`: Color secundario
+- `APP_SUCCESS_COLOR`: Color para éxitos
+- `APP_ERROR_COLOR`: Color para errores
+- `APP_WARNING_COLOR`: Color para advertencias
+- `APP_INFO_COLOR`: Color para información
+- `APP_BACKGROUND_COLOR`: Color de fondo
+
+### Enlaces sociales
+Configura los enlaces a redes sociales y otros recursos mediante `APP_SOCIAL_LINKS`. Debe ser un array JSON con objetos que contengan:
+- `name`: Nombre del enlace
+- `url`: URL del enlace
+- `icon`: Icono de Material Design Icons a mostrar
+
+### Tipos de incidencias
+Define los tipos de incidencias iniciales mediante `TIPOS_INCIDENCIAS_INICIALES`. Debe ser un array JSON con los nombres de los tipos.
+
+Una vez iniciada la aplicación, puedes gestionar los tipos usando:
+```bash
+# Listar tipos existentes
+npm run tipos ls
+
+# Añadir nuevo tipo
+npm run tipos add "Nuevo tipo de incidencia"
+
+# Editar tipo existente
+npm run tipos edit ID "Nuevo nombre"
+
+# Eliminar tipo
+npm run tipos remove ID
+```
+
+### Captcha (opcional)
+Configura [Friendly Captcha](https://friendlycaptcha.com/) para proteger los formularios:
+- `friendlycaptcha_enabled`: Activa/desactiva el captcha
+- `VITE_FRIENDLYCAPTCHA_SITEKEY`: Clave pública
+- `friendlycaptcha_secret`: Clave secreta de la API
+
+### Analytics (opcional)
+Configura el analytics de la aplicación:
+
+- `VITE_ANALYTICS_PROVIDER`: Define qué proveedores de analytics usar. Opciones:
+  - `none`: Sin analytics
+  - `matomo`: Solo Matomo
+  - `google`: Solo Google Analytics
+  - `matomo,google`: Ambos proveedores
+
+Configuración para Matomo:
+- `VITE_MATOMO_URL`: URL de tu instalación de Matomo
+- `VITE_MATOMO_SITE_ID`: ID del sitio en Matomo
+
+Configuración para Google Analytics:
+- `VITE_GA_ID`: ID de Google Analytics (formato: G-XXXXXXXXXX)
+
+### Directorios necesarios
+Crea las carpetas necesarias para el funcionamiento:
 
 ```bash
 mkdir uploads data
 ```
+
+### Configuración del plugin de WhatsApp (opcional)
+
+Permite tener un botón en las incidencias para enviar la descripción y ubicación a un número de WhatsApp.
+
+- `VITE_WHATSAPP_SHARE_ENABLED`: Activa o desactiva la funcionalidad de compartir por WhatsApp (true/false)
+- `VITE_WHATSAPP_SHARE_PHONE`: Número de teléfono al que se enviará el mensaje (formato: 34666666666)
+- `VITE_WHATSAPP_SHARE_BUTTON_TEXT`: Texto del botón de compartir
+- `VITE_WHATSAPP_SHARE_DIALOG_TITLE`: Título del diálogo de confirmación
+- `VITE_WHATSAPP_SHARE_DIALOG_TEXT`: Texto principal del diálogo
+- `VITE_WHATSAPP_SHARE_DIALOG_NOTE`: Texto de la nota adicional en el diálogo
 
 ## Ejecución en producción con Docker
 
@@ -60,13 +166,14 @@ Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos
    git clone https://github.com/pucelabits/basura-cero.git
    cd basura-cero-pucela
    ```
+3. Sigue las instrucciones en la sección [Configuración](#configuración).
 
-3. Construye y ejecuta el contenedor Docker:
+4. Construye y ejecuta el contenedor Docker:
    ```
    docker compose up --build
    ```
 
-4. La aplicación estará disponible en `http://localhost:5050`.
+La aplicación estará disponible en `http://localhost:5050`.
 
 ### Scripts de mantenimiento
 
@@ -247,7 +354,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 
 6. La aplicación estará disponible en `http://localhost:5173`.
 
-## Scripts disponibles
+### Scripts disponibles
 
 - `npm run start`: Inicia el servidor en modo producción.
 - `npm run dev:server`: Inicia el servidor en modo desarrollo con hot-reload.
@@ -256,7 +363,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 - `npm run borrar-incidencia ID`: Borra una incidencia por su ID.
 - `npm run tipos`: Gestiona los tipos de incidencias (listar, añadir, editar, eliminar y reasignar).
 
-## Notas adicionales
+### Notas adicionales
 
 - Asegúrate de que el puerto 5173 esté disponible en tu sistema.
 - La base de datos SQLite se creará automáticamente en la carpeta `data` al iniciar la aplicación.
@@ -265,7 +372,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 
 Para más detalles sobre la configuración y el desarrollo, consulta los archivos `package.json`, `docker-compose.yml`, `Dockerfile` y `vite.config.js`.
 
-## Estructura del proyecto
+### Estructura del proyecto
 
 - `src/client`: Contiene el código fuente del cliente Vue.js.
 - `src/server`: Contiene el código fuente del servidor Express.js.
@@ -278,8 +385,16 @@ Para más detalles sobre la configuración y el desarrollo, consulta los archivo
 
 ## Contribuciones
 
-Las contribuciones son bienvenidas. Por favor, abre un issue o realiza un pull request para sugerir cambios o mejoras.
+Las contribuciones son bienvenidas. Por favor, [abre un issue](https://github.com/PucelaBits/basuracero/issues) para informar de errores o sugerir cambios y mejoras.
 
 ## Licencia
 
-[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
+El código fuente de esta aplicación está licenciado bajo la [AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html). Si reutilizas o modificas el código, debes:
+
+- Mantener la misma licencia AGPL v3.
+- Proporcionar un enlace al código fuente original.
+- Hacer público el código fuente modificado bajo la misma licencia.
+
+Además, si usas el software modificado en un servidor accesible al público, debes ofrecer el acceso al código fuente a los usuarios de ese servidor.
+
+Puedes definir una licencia para el contenido que suban los usuarios a tu instancia, modificando el enlace a la licencia en el archivo `.env`.

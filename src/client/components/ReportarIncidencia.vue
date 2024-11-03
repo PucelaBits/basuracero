@@ -106,7 +106,7 @@
               </template>
             </v-textarea>
 
-            <v-row justify="center" class="mb-4">
+            <v-row justify="center" class="mb-4 mt-1">
               <v-col cols="6" class="text-center">
                 <v-btn @click="obtenerUbicacion" color="secondary" :loading="obteniendoUbicacion" size="small">
                   <v-icon left size="small">mdi-map-marker</v-icon>
@@ -378,7 +378,7 @@ export default {
       if (isNaN(lat) || isNaN(lon) || 
           lat < CIUDAD_LAT_MIN || lat > CIUDAD_LAT_MAX ||
           lon < CIUDAD_LON_MIN || lon > CIUDAD_LON_MAX) {
-        return 'Ubicación fuera de los límites de la ciudad';
+        return 'Ubicación fuera de la zona habilitada';
       }
       return true;
     };
@@ -443,7 +443,7 @@ export default {
             const response = await fetch(url)
             const data = await response.json()
             direccion.value = data.display_name
-            incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || ''
+            incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || ''
           } catch (error) {
             console.error('Error al obtener la dirección:', error)
             direccion.value = 'No se pudo obtener la dirección'

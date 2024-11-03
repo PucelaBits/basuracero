@@ -3,51 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Basura Cero - Sistema colaborativo de incidencias urbanas en Valladolid</title>
+    <title>%VITE_APP_NAME% - %VITE_APP_DESCRIPTION%</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="/favicon.png" type="image/png">
+    <link rel="icon" href="%VITE_APP_FAVICON_PATH%" type="image/png">
     
     <!-- Manifest -->
     <link rel="manifest" href="/manifest.json">
     
     <!-- Theme color -->
-    <meta name="theme-color" content="#4b3481">
+    <meta name="theme-color" content="%VITE_APP_PRIMARY_COLOR%">
     
     <!-- iOS support -->
-    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="apple-touch-icon" href="%VITE_APP_FAVICON_PATH%">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     
     <!-- Metaetiquetas para redes sociales -->
-    <meta property="og:title" content="Basura Cero">
-    <meta property="og:description" content="Sistema colaborativo de incidencias urbanas en Valladolid">
-    <meta property="og:image" content="https://basuracero.pucelabits.org/favicon.png">
+    <meta property="og:title" content="%VITE_APP_NAME%">
+    <meta property="og:description" content="%VITE_APP_DESCRIPTION%">
+    <meta property="og:image" content="%VITE_BASE_URL%%VITE_APP_FAVICON_PATH%">
     <meta property="og:image:width" content="200">
     <meta property="og:image:height" content="200">
-    <meta property="og:url" content="https://basuracero.pucelabits.org">
+    <meta property="og:url" content="%VITE_BASE_URL%">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Basura Cero">
-    <meta name="twitter:description" content="Sistema colaborativo de incidencias urbanas en Valladolid">
-    <meta name="twitter:image" content="https://basuracero.pucelabits.org/favicon.png">
-    <meta name="twitter:url" content="https://basuracero.pucelabits.org">
+    <meta name="twitter:title" content="%VITE_APP_NAME%">
+    <meta name="twitter:description" content="%VITE_APP_DESCRIPTION%">
+    <meta name="twitter:image" content="%VITE_BASE_URL%%VITE_APP_FAVICON_PATH%">
+    <meta name="twitter:url" content="%VITE_BASE_URL%">
 
-    <link rel="alternate" type="application/rss+xml" title="Basura Cero RSS Feed" href="/api/rss">
+    <link rel="alternate" type="application/rss+xml" title="%VITE_APP_NAME% RSS Feed" href="/api/rss">
 
-    <script>
-        var _paq = window._paq = window._paq || [];
-        /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-        _paq.push(['trackPageView']);
-        _paq.push(['enableLinkTracking']);
-        (function() {
-        var u="//stats.pucelabits.org/";
-        _paq.push(['setTrackerUrl', u+'matomo.php']);
-        _paq.push(['setSiteId', '10']);
-        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-        })();
-    </script>
-  
     <script
         type="module"
         src="https://cdn.jsdelivr.net/npm/friendly-challenge@0.9.18/widget.module.min.js"
@@ -58,7 +44,7 @@
 </head>
 <body>
     <div id="app"></div>
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
