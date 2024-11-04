@@ -465,7 +465,7 @@ export default {
             const response = await fetch(url)
             const data = await response.json()
             direccion.value = data.display_name
-            incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || ''
+            incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || ''
           } catch (error) {
             console.error('Error al obtener la dirección:', error)
             direccion.value = 'No se pudo obtener la dirección'

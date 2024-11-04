@@ -9,7 +9,7 @@ async function obtenerBarrio(lat, lon) {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=es`;
     const response = await axios.get(url);
     const data = response.data;
-    return data.address.suburb || data.address.neighbourhood || '';
+    return data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || '';
   } catch (error) {
     console.error('Error al obtener el barrio:', error);
     return '';
