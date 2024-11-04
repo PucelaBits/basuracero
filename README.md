@@ -179,7 +179,8 @@ La aplicación estará disponible en `http://localhost:5050`.
 
 ### Scripts de mantenimiento
 
-- `docker-compose exec basuracero-app npm run borrar-incidencia ID`: Borra una incidencia por su ID.
+- `docker-compose exec basuracero-app npm run incidencia remove ID`: Borra una incidencia por su ID.
+- `docker-compose exec basuracero-app npm run incidencia edit-tipo ID TIPO_ID`: Cambia el tipo de una incidencia.
 - `docker-compose exec basuracero-app npm run tipos`: Gestiona los tipos de incidencias.
 - `docker-compose exec basuracero-app npm run rellenar-direcciones`: Actualiza las direcciones de las incidencias que no tienen una dirección asignada.
 - `docker-compose exec basuracero-app npm run rellenar-barrios`: Actualiza los barrios de las incidencias que no tienen un barrio asignado.
@@ -362,7 +363,8 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 - `npm run dev:server`: Inicia el servidor en modo desarrollo con hot-reload.
 - `npm run dev:client`: Inicia el cliente en modo desarrollo con hot-reload.
 - `npm run build`: Construye la aplicación para producción.
-- `npm run borrar-incidencia ID`: Borra una incidencia por su ID.
+- `npm run incidencia remove ID`: Borra una incidencia por su ID.
+- `npm run incidencia edit-tipo ID TIPO_ID`: Cambia el tipo de una incidencia.
 - `npm run tipos`: Gestiona los tipos de incidencias (listar, añadir, editar, eliminar y reasignar).
 
 ### Notas adicionales
