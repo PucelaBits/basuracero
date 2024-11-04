@@ -11,6 +11,7 @@ const { obtenerIP } = require('../utils/ip');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
+const { toCSV, toGeoJSON } = require('../utils/formatters');
 
 const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
 const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
@@ -218,6 +219,7 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
 
 // Obtener incidencias paginadas
 router.get('/', (req, res) => {
+  const format = req.query.format?.toLowerCase();
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
@@ -283,12 +285,23 @@ router.get('/', (req, res) => {
 
       Promise.all(promises)
         .then(incidenciasConImagenes => {
-          res.json({
-            incidencias: incidenciasConImagenes,
-            currentPage: page,
-            totalPages: totalPages,
-            totalItems: total
-          });
+          switch (format) {
+            case 'csv':
+              res.setHeader('Content-Type', 'text/csv');
+              res.setHeader('Content-Disposition', 'attachment; filename=incidencias.csv');
+              res.send(toCSV(incidenciasConImagenes));
+              break;
+            case 'geojson':
+              res.json(toGeoJSON(incidenciasConImagenes));
+              break;
+            default:
+              res.json({
+                incidencias: incidenciasConImagenes,
+                currentPage: page,
+                totalPages: totalPages,
+                totalItems: total
+              });
+          }
         })
         .catch(error => {
           console.error('Error al obtener las imágenes de las incidencias:', error);
@@ -300,6 +313,7 @@ router.get('/', (req, res) => {
 
 // Obtener todas las incidencias sin paginación
 router.get('/todas', (req, res) => {
+  const format = req.query.format?.toLowerCase();
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
 
   let whereClause = 'WHERE i.estado != "spam"';
@@ -343,9 +357,20 @@ router.get('/todas', (req, res) => {
 
     Promise.all(promises)
       .then(incidenciasConImagenes => {
-        res.json({
-          incidencias: incidenciasConImagenes
-        });
+        switch (format) {
+          case 'csv':
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename=todas_incidencias.csv');
+            res.send(toCSV(incidenciasConImagenes));
+            break;
+          case 'geojson':
+            res.json(toGeoJSON(incidenciasConImagenes));
+            break;
+          default:
+            res.json({
+              incidencias: incidenciasConImagenes
+            });
+        }
       })
       .catch(error => {
         console.error('Error al obtener las imágenes de las incidencias:', error);
