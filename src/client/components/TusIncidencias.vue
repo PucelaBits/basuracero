@@ -120,7 +120,7 @@
                     <v-col cols="8">
                       <v-card-text class="pl-2 pb-2 pt-1">
                         <p class="text-caption mb-1" :title="incidencia.tipo">
-                          <v-icon x-small class="mr-1">mdi-tag-outline</v-icon>
+                          <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
                           {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                         </p>
                         <p class="text-caption mb-1">
@@ -170,6 +170,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import MapaIncidencias from './MapaIncidencias.vue'
 import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore'
+
+const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
 export default {
   name: 'TusIncidencias',
@@ -292,6 +294,11 @@ export default {
       }
     }
 
+    const obtenerIconoTipo = (tipo) => {
+      const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo)
+      return tipoInicial?.icono || 'mdi-tag-outline'
+    }
+
     watch(() => route.name, (newRouteName) => {
       dialogVisible.value = newRouteName === 'TusIncidencias'
       if (dialogVisible.value) {
@@ -327,6 +334,7 @@ export default {
       mapKey,
       ordenSeleccionado,
       opcionesOrden,
+      obtenerIconoTipo,
     }
   }
 }

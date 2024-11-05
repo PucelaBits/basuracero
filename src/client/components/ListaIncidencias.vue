@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-row>
       <v-col
-        v-for="incidencia in incidencias"
+        v-for="incidencia in incidenciasConIconos"
         :key="incidencia.id"
         cols="12"
         sm="6"
@@ -29,7 +29,10 @@
               </v-carousel-item>
             </v-carousel>
             <div class="pastillas-container">
-              <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 24) }}</span>
+              <span class="popup-chip" :title="incidencia.tipo">
+                <v-icon size="small" class="mr-1">{{ incidencia.icono }}</v-icon>
+                {{ truncateText(incidencia.tipo, 35) }}
+              </span>
               <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
                 Solucionada
               </span>
@@ -71,6 +74,8 @@
 import { ref } from 'vue';
 import DetalleIncidencia from './DetalleIncidencia.vue';
 import { useRouter, useRoute } from 'vue-router'
+
+const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
 export default {
   name: 'ListaIncidencias',
@@ -120,6 +125,17 @@ export default {
     truncateText(text, maxLength) {
       if (text.length <= maxLength) return text;
       return text.substr(0, maxLength) + '...';
+    }
+  },
+  computed: {
+    incidenciasConIconos() {
+      return this.incidencias.map(incidencia => {
+        const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === incidencia.tipo)
+        return {
+          ...incidencia,
+          icono: tipoInicial?.icono || 'mdi-circle'
+        }
+      })
     }
   }
 };
@@ -236,7 +252,7 @@ export default {
   font-size: 12px;
   display: flex;
   align-items: center;
-  max-width: 200px !important;
+  max-width: 240px !important;
 }
 
 /* Resto de los estilos */

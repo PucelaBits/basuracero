@@ -9,7 +9,7 @@
     "dev:client": "node scripts/generateManifest.js public && vite",
     "build": "vite build && node scripts/generateManifest.js dist && npm run copy-index",
     "copy-index": "cp dist/index.html dist/200.html",
-    "borrar-incidencia": "node scripts/borrarIncidencia.js",
+    "incidencia": "node scripts/gestionarIncidencias.js",
     "tipos": "node scripts/gestionarTipos.js",
     "rellenar-barrios": "node scripts/rellenarBarrios.js",
     "migrar-imagenes": "node scripts/migrarImagenes.js",
