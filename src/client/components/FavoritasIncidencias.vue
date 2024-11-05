@@ -88,7 +88,7 @@
                         <v-col cols="8">
                           <v-card-text class="pl-2 pb-2 pt-1">
                             <p class="text-caption mb-1" :title="incidencia.tipo">
-                              <v-icon x-small class="mr-1">mdi-tag-outline</v-icon>
+                              <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
                               {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                             </p>
                             <p class="text-caption mb-1">
@@ -150,6 +150,8 @@
   import { useRouter, useRoute } from 'vue-router'
   import MapaIncidencias from './MapaIncidencias.vue'
   import { useFavoritosStore } from '../store/favoritosStore'
+  
+  const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
   
   export default {
     name: 'FavoritasIncidencias',
@@ -235,6 +237,11 @@
         quitarFavorito(incidencia.id)
       }
   
+      const obtenerIconoTipo = (tipo) => {
+        const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo)
+        return tipoInicial?.icono || 'mdi-tag-outline'
+      }
+  
       watch(() => props.incidencias, async (newIncidencias) => {
         if (newIncidencias instanceof Promise) {
           todasLasIncidencias.value = await newIncidencias
@@ -276,6 +283,7 @@
         snackbar,
         filtroEstado,
         incidenciasFiltradas,
+        obtenerIconoTipo,
       }
     }
   }

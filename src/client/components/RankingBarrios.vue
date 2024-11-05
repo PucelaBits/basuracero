@@ -79,7 +79,10 @@
                     <div v-if="barrio.mostrarDetalles" class="pb-2">
                       <v-list>
                         <v-list-item v-for="tipo in barrio.tiposIncidencias" :key="tipo.tipo" dense>
-                          <v-list-item-title class="text-caption mr-1"><v-icon size="small" color="grey" class="mr-1">mdi-tag-outline</v-icon> {{ tipo.tipo }}</v-list-item-title>
+                          <v-list-item-title class="text-caption mr-1">
+                            <v-icon size="small" color="grey" class="mr-1">{{ obtenerIconoTipo(tipo.tipo) }}</v-icon>
+                            {{ tipo.tipo }}
+                          </v-list-item-title>
                           <template v-slot:append>
                             <v-chip
                               color="grey"
@@ -123,6 +126,8 @@
   import { ref, onMounted, watch, computed } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
   import axios from 'axios';
+  
+  const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
   
   export default {
     name: 'RankingBarrios',
@@ -212,6 +217,11 @@
         return fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
       };
   
+      const obtenerIconoTipo = (tipo) => {
+        const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo)
+        return tipoInicial?.icono || 'mdi-tag-outline'
+      }
+  
       onMounted(() => {
         obtenerRanking();
         if (route.name === 'RankingBarrios') {
@@ -251,6 +261,7 @@
         cerrar,
         rangoFechas,
         toggleDetallesBarrio,
+        obtenerIconoTipo,
       };
     },
   };

@@ -31,7 +31,10 @@
         
         <!-- Pastillas de tipo y estado -->
         <div class="pastillas-container">
-          <span class="popup-chip" :title="incidencia.tipo">{{ truncateText(incidencia.tipo, 16) }}</span>
+          <span class="popup-chip" :title="incidenciaConIcono.tipo">
+            <v-icon size="small" class="mr-1">{{ incidenciaConIcono.icono }}</v-icon>
+            {{ truncateText(incidencia.tipo, 16) }}
+          </span>
           <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
             Solucionada
           </span>
@@ -358,6 +361,8 @@ import { enviarEventoMatomo } from '../utils/analytics';
 import { useFavoritosStore } from '../store/favoritosStore'; // Añade esta línea
 import { useHead } from '@unhead/vue';
 import { useWhatsAppShare } from '../composables/useWhatsAppShare';
+
+const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
 export default {
   name: 'DetalleIncidencia',
@@ -846,6 +851,14 @@ export default {
       }
     };
 
+    const incidenciaConIcono = computed(() => {
+      const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === props.incidencia.tipo)
+      return {
+        ...props.incidencia,
+        icono: tipoInicial?.icono || 'mdi-circle'
+      }
+    })
+
     return {
       dialog,
       cerrar,
@@ -882,7 +895,8 @@ export default {
       enviarWhatsAppYFavoritos,
       nombreUsuario,
       appName,
-      showWhatsAppButton
+      showWhatsAppButton,
+      incidenciaConIcono
     };
   }
 };
@@ -935,7 +949,6 @@ a {
   padding: 4px 8px;
   border-radius: 16px;
   font-size: 12px;
-  margin-right: 8px;
   display: flex;
   align-items: center;
 }
@@ -1035,7 +1048,6 @@ a {
   padding: 4px 8px;
   border-radius: 16px;
   font-size: 12px;
-  margin-right: 8px;
 }
 
 .estado-pastilla {

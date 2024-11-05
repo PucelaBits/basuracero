@@ -90,7 +90,7 @@
                   <v-col cols="8">
                     <v-card-text class="pa-2">
                       <p class="text-caption mb-1" :title="incidencia.tipo">
-                        <v-icon x-small class="mr-1">mdi-tag-outline</v-icon>
+                        <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
                         {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                       </p>
                       <p class="text-caption mb-1">
@@ -239,6 +239,8 @@ import { useResolverIncidencia } from '@/composables/useResolverIncidencia'
 import { useWhatsAppShare } from '@/composables/useWhatsAppShare'
 import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
+
+const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
 export default {
   name: 'IncidenciasCercanas',
@@ -624,6 +626,11 @@ export default {
       });
     };
 
+    const obtenerIconoTipo = (tipo) => {
+      const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo)
+      return tipoInicial?.icono || 'mdi-tag-outline'
+    }
+
     return {
       dialogVisible,
       cargandoUbicacion,
@@ -663,7 +670,8 @@ export default {
       snackbar,
       snackbarText,
       mostrarMensaje,
-      whatsAppShare
+      whatsAppShare,
+      obtenerIconoTipo
     }
   }
 }
