@@ -62,54 +62,62 @@
                 </v-col>
               </v-row>
               <!-- Lista de incidencias favoritas -->
-              <v-row v-if="incidenciasFiltradas.length > 0">
-                <v-col v-for="incidencia in incidenciasFiltradas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
-                  <v-card class="ma-2 incidencia-card">
-                    <div class="card-content" @click="abrirDetalleIncidencia(incidencia)">
-                      <v-row no-gutters>
-                        <v-col cols="4">
-                          <v-img
-                            v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
-                            :src="incidencia.imagenes[0].ruta_imagen"
-                            height="160"
-                            cover
-                            @error="handleImageError"
-                          >
-                            <template v-slot:placeholder>
-                              <v-row class="fill-height ma-0" align="center" justify="center">
-                                <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
-                              </v-row>
-                            </template>
-                          </v-img>
-                          <div v-else class="no-image-placeholder">
-                            <v-icon>mdi-image-off</v-icon>
-                          </div>
-                        </v-col>
-                        <v-col cols="8">
-                          <v-card-text class="pl-2 pb-2 pt-1">
-                            <p class="text-caption mb-1" :title="incidencia.tipo">
-                              <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
-                              {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
-                            </p>
-                            <p class="text-caption mb-1">
-                              <v-icon x-small class="mr-1">mdi-map-marker</v-icon>
-                              {{ incidencia.direccion.length > 20 ? incidencia.direccion.substring(0, 20) + '...' : incidencia.direccion }}
-                            </p>
-                            <p class="text-caption mb-1">
-                              <v-icon x-small class="mr-1">mdi-calendar</v-icon>
-                              {{ formatDate(incidencia.fecha) }}
-                            </p>
-                            <p class="text-caption mb-1">
-                              <v-icon x-small class="mr-1" :color="incidencia.estado === 'activa' ? 'error' : 'success'">mdi-circle</v-icon>
-                              {{ incidencia.estado }}
-                            </p>
-                            <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
-                              <v-icon x-small class="mr-1">mdi-account-group</v-icon>
-                              {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de solucionada
-                            </p>
-                          </v-card-text>
-                        </v-col>
-                      </v-row>
+              <v-row v-if="incidenciasFiltradas.length > 0" class="fill-width">
+                <v-col 
+                  v-for="incidencia in incidenciasFiltradas" 
+                  :key="incidencia.id" 
+                  cols="12" 
+                  sm="12" 
+                  md="6" 
+                  lg="4"
+                  class="pa-2"
+                >
+                  <v-card class="incidencia-card">
+                    <div class="card-content d-flex">
+                      <!-- Columna de la imagen -->
+                      <div class="imagen-container">
+                        <v-img
+                          v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
+                          :src="incidencia.imagenes[0].ruta_imagen"
+                          height="120"
+                          width="120"
+                          cover
+                          @error="handleImageError"
+                        >
+                          <template v-slot:placeholder>
+                            <v-row class="fill-height ma-0" align="center" justify="center">
+                              <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                            </v-row>
+                          </template>
+                        </v-img>
+                        <div v-else class="no-image-placeholder">
+                          <v-icon>mdi-image-off</v-icon>
+                        </div>
+                      </div>
+
+                      <!-- Columna del texto -->
+                      <div class="texto-container">
+                        <p class="text-caption mb-1" :title="incidencia.tipo">
+                          <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
+                          {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
+                        </p>
+                        <p class="text-caption mb-1">
+                          <v-icon x-small class="mr-1">mdi-map-marker</v-icon>
+                          {{ incidencia.direccion.length > 20 ? incidencia.direccion.substring(0, 20) + '...' : incidencia.direccion }}
+                        </p>
+                        <p class="text-caption mb-1">
+                          <v-icon x-small class="mr-1">mdi-calendar</v-icon>
+                          {{ formatDate(incidencia.fecha) }}
+                        </p>
+                        <p class="text-caption mb-1">
+                          <v-icon x-small class="mr-1" :color="incidencia.estado === 'activa' ? 'error' : 'success'">mdi-circle</v-icon>
+                          {{ incidencia.estado }}
+                        </p>
+                        <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
+                          <v-icon x-small class="mr-1">mdi-account-group</v-icon>
+                          {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de solucionada
+                        </p>
+                      </div>
                     </div>
                     <v-btn
                       block
@@ -302,33 +310,45 @@
   }
   
   .incidencia-card {
-    display: flex;
-    flex-direction: column;
-    height: 196px;
-    min-width: 200px;
+    width: 100%;
+    max-width: 600px; /* Limitar el ancho máximo */
+    margin: 0 auto; /* Centrar la tarjeta */
   }
   
   .card-content {
-    flex-grow: 1;
-    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
   }
   
-  .quitar-favoritos-btn {
-    flex-shrink: 0;
-    height: 36px;
+  .imagen-container {
+    flex: 0 0 120px; /* Ancho fijo para la imagen */
+    margin-right: 8px;
+  }
+  
+  .texto-container {
+    flex: 1;
+    padding: 8px;
   }
   
   .no-image-placeholder {
-    height: 160px;
+    height: 120px;
+    width: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #f0f0f0;
   }
   
+  .quitar-favoritos-btn {
+    margin-top: auto;
+  }
+  
   /* Asegurarse de que el contenido de la tarjeta no se superponga con el faldón */
   .v-card__text {
-    padding-bottom: 8px !important;
+    padding: 8px !important;
+    height: auto;
+    overflow: visible;
   }
   
   .v-btn-toggle {
@@ -344,5 +364,28 @@
   
   .v-col {
     min-width: 220px;
+  }
+  
+  .v-img, .no-image-placeholder {
+    height: 120px !important;
+    width: 100%;
+  }
+  
+  .v-card-text {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+  }
+  
+  /* Asegurar que las columnas se alineen correctamente */
+  .v-row {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .v-col {
+    display: flex;
+    justify-content: center;
   }
   </style>
