@@ -304,7 +304,8 @@
   .incidencia-card {
     display: flex;
     flex-direction: column;
-    height: 196px; /* 160px para el contenido + 36px para el botón */
+    height: 196px;
+    min-width: 200px;
   }
   
   .card-content {
@@ -339,5 +340,9 @@
     font-size: 0.75rem !important;
     font-weight: 500 !important;
     letter-spacing: 0.0178571429em !important;
+  }
+  
+  .v-col {
+    min-width: 220px;
   }
   </style>

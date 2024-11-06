@@ -354,6 +354,7 @@ export default {
 
 .incidencia-card {
   min-height: 150px;
+  min-width: 200px; /* Añadir ancho mínimo */
 }
 
 .incidencia-card:hover {
@@ -407,5 +408,10 @@ export default {
 /* Nuevo estilo para el contenedor de filtros */
 .gap-4 {
   gap: 1rem;
+}
+
+/* Asegurar que la columna también respeta el ancho mínimo */
+.v-col {
+  min-width: 220px; /* Ligeramente mayor que la tarjeta para incluir márgenes */
 }
 </style>
