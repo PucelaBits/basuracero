@@ -62,48 +62,58 @@
             </v-row>
             
             <!-- Contenedor para filtros -->
-            <v-row class="mb-4" justify="center">
-              <v-col cols="12" class="d-flex justify-center align-center flex-wrap gap-4">
-                <v-btn-toggle
-                  v-model="filtroEstado"
-                  mandatory
-                  color="primary"
-                  rounded="pill"
-                  density="compact"
-                  class="mb-5"
-                >
-                  <v-btn value="todas" size="small">Todas</v-btn>
-                  <v-btn value="activas" size="small">Activas</v-btn>
-                  <v-btn value="solucionadas" size="small">Solucionadas</v-btn>
-                </v-btn-toggle>
+            <v-row class="mb-4">
+              <v-col cols="12">
+                <div class="d-flex justify-center align-center flex-wrap gap-4">
+                  <v-btn-toggle
+                    v-model="filtroEstado"
+                    mandatory
+                    color="primary"
+                    rounded="pill"
+                    density="compact"
+                    class="mb-2"
+                  >
+                    <v-btn value="todas" size="small">Todas</v-btn>
+                    <v-btn value="activas" size="small">Activas</v-btn>
+                    <v-btn value="solucionadas" size="small">Solucionadas</v-btn>
+                  </v-btn-toggle>
 
-                <v-select
-                  v-model="ordenSeleccionado"
-                  :items="opcionesOrden"
-                  label="Ordenar por"
-                  density="compact"
-                  variant="outlined"
-                  rounded="pill"
-                  hide-details
-                  class="orden-select"
-                >
-                  <template v-slot:prepend-inner>
-                    <v-icon size="small" color="primary">mdi-sort</v-icon>
-                  </template>
-                </v-select>
+                  <v-select
+                    v-model="ordenSeleccionado"
+                    :items="opcionesOrden"
+                    label="Ordenar por"
+                    density="compact"
+                    variant="outlined"
+                    rounded="pill"
+                    hide-details
+                    class="orden-select"
+                  >
+                    <template v-slot:prepend-inner>
+                      <v-icon size="small" color="primary">mdi-sort</v-icon>
+                    </template>
+                  </v-select>
+                </div>
               </v-col>
             </v-row>
             
             <!-- Lista de incidencias -->
-            <v-row v-if="incidenciasFiltradas.length > 0">
-              <v-col v-for="incidencia in incidenciasFiltradas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
-                <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-2 incidencia-card">
+            <v-row v-if="incidenciasFiltradas.length > 0" class="fill-width">
+              <v-col 
+                v-for="incidencia in incidenciasFiltradas" 
+                :key="incidencia.id" 
+                cols="12" 
+                sm="12" 
+                md="6" 
+                lg="4"
+                class="pa-2"
+              >
+                <v-card @click="abrirDetalleIncidencia(incidencia)" class="incidencia-card">
                   <v-row no-gutters>
                     <v-col cols="4">
                       <v-img
                         v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
                         :src="incidencia.imagenes[0].ruta_imagen"
-                        height="150"
+                        height="188"
                         cover
                         @error="handleImageError"
                       >
@@ -353,7 +363,11 @@ export default {
 }
 
 .incidencia-card {
+  width: 100%;
+  max-width: 600px; /* Limitar el ancho máximo */
+  margin: 0 auto; /* Centrar la tarjeta */
   min-height: 150px;
+  height: 170px;
 }
 
 .incidencia-card:hover {
@@ -407,5 +421,15 @@ export default {
 /* Nuevo estilo para el contenedor de filtros */
 .gap-4 {
   gap: 1rem;
+}
+
+.v-row {
+  width: 100%;
+  margin: 0;
+}
+
+.v-col {
+  display: flex;
+  justify-content: center;
 }
 </style>

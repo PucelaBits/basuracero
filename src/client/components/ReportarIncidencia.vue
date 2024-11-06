@@ -444,13 +444,20 @@ export default {
     const obtenerTiposIncidencias = async () => {
       try {
         const response = await axios.get('/api/incidencias/tipos')
-        tiposIncidencias.value = response.data.map(tipo => {
-          const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)
-          return {
+        const tiposOrdenados = response.data
+          .map(tipo => ({
             ...tipo,
-            icono: tipoInicial?.icono || 'mdi-circle'
-          }
-        })
+            icono: TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)?.icono || 'mdi-circle'
+          }))
+          .sort((a, b) => {
+            // Si alguno es "Otros" u "Otras", va al final
+            if (a.nombre.match(/^Otros?$/i)) return 1;
+            if (b.nombre.match(/^Otros?$/i)) return -1;
+            // Ordenar el resto alfabéticamente
+            return a.nombre.localeCompare(b.nombre, 'es');
+          });
+        
+        tiposIncidencias.value = tiposOrdenados;
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }

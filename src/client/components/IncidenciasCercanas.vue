@@ -66,7 +66,7 @@
             <v-col v-else-if="incidenciasCalculadas.length === 0" cols="12" class="text-center">
               <p>No se encontraron incidencias cercanas.</p>
             </v-col>
-            <v-col v-else v-for="incidencia in incidenciasOrdenadas" :key="incidencia.id" cols="12" sm="6" md="4" lg="3">
+            <v-col v-else v-for="incidencia in incidenciasOrdenadas" :key="incidencia.id" cols="12" sm="6" md="4">
               <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-2 incidencia-card" height="auto">
                 <v-row no-gutters>
                   <v-col cols="4">
