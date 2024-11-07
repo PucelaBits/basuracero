@@ -323,8 +323,8 @@ export default {
                   ` : ''}
                 </div>
                 <div class="popup-chips">
-                  <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
-                  ${incidencia.estado === 'solucionada' ? `<span class="estado-pastilla solucionada">Solucionada</span>` : ''}
+                  ${incidencia.estado === 'solucionada' ? `<span class="estado-pastilla solucionada"><i class="mdi mdi-check-circle"></i></span>` : ''}
+                  <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 32)}</span>
                 </div>
               </div>
               <div class="popup-content">
@@ -842,7 +842,7 @@ export default {
   font-size: 12px;
   font-weight: bold;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  max-width: 150px;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

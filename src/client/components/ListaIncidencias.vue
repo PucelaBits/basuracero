@@ -31,10 +31,10 @@
             <div class="pastillas-container">
               <span class="popup-chip" :title="incidencia.tipo">
                 <v-icon size="small" class="mr-1">{{ incidencia.icono }}</v-icon>
-                {{ truncateText(incidencia.tipo, 35) }}
+                {{ truncateText(incidencia.tipo, 32) }}
               </span>
               <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
-                Solucionada
+                <v-icon small>mdi-check-circle</v-icon>
               </span>
             </div>
           </div>
