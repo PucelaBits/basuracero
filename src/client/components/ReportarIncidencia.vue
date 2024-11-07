@@ -7,7 +7,7 @@
     >
       <v-card>
         <v-card-title class="d-flex justify-space-between align-center">
-          Enviar incidencia
+          Añadir nuevo
           <v-btn icon @click="cerrar">
             <v-icon>mdi-close</v-icon>
           </v-btn>
@@ -19,14 +19,14 @@
                 <v-icon>mdi-information</v-icon>
               </v-col>
               <v-col cols="10" class="pl-2">
-                <span class="text-caption">Informa sólo si lleva <strong>más de 24h</strong> sin solución</span>
+                <span class="text-caption">Informa sólo si lleva <strong>más de 24h</strong> presente</span>
               </v-col>
             </v-row>
           </v-alert>
         </v-card-text>
         <v-card-text>
           <v-form ref="form" @submit.prevent="enviarIncidencia" v-model="formValido">
-            <v-divider class="my-4"><span style="color: grey;">Incidencia</span></v-divider>
+            <v-divider class="my-4"><span style="color: grey;">Información</span></v-divider>
             <v-select
               v-model="incidencia.tipo_id"
               :items="tiposIncidencias"
@@ -207,7 +207,7 @@
 
             <div class="subtitle-text text-center mt-4">
               <v-icon color="grey mr-2">mdi-information</v-icon>
-              <span color="grey">Máx. 2 fotos. No incluyas caras de personas, matrículas o info personal</span>
+              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal). No incluyas caras de personas, matrículas o info personal</span>
             </div>
 
             <v-divider class="my-4"><span style="color: grey;">Tus datos</span></v-divider>
