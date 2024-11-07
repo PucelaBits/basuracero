@@ -13,7 +13,7 @@
 
       <v-card-text fluid class="pa-0">
         <MapaIncidencias 
-          :incidencias="incidenciasCalculadas" 
+          :incidencias="incidenciasOrdenadas"
           :incluirSolucionadas="incluirSolucionadas"
           :ubicacionUsuario="ubicacionUsuario"
           :seguirUsuario="true"
@@ -41,7 +41,7 @@
             </v-col>
           </v-row>
           <v-row>
-            <v-col cols="12">
+            <v-col cols="12" sm="6">
               <v-select
                 v-model="ordenSeleccionado"
                 :items="opcionesOrden"
@@ -54,6 +54,45 @@
               >
                 <template v-slot:prepend-inner>
                   <v-icon size="small" color="primary">mdi-sort</v-icon>
+                </template>
+              </v-select>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-select
+                v-model="tipoSeleccionado"
+                :items="tiposIncidencias"
+                item-value="id"
+                item-title="nombre"
+                label="Filtrar por tipo"
+                density="compact"
+                variant="outlined"
+                rounded="pill"
+                hide-details
+                class="mb-2"
+              >
+                <template v-slot:prepend-item>
+                  <v-list-item title="Todas" value="Todas" @click="tipoSeleccionado = 'Todas'" density="compact">
+                    <template v-slot:prepend>
+                      <v-icon size="small" class="mr-4">mdi-filter-variant</v-icon>
+                    </template>
+                  </v-list-item>
+                  <v-divider class="mt-2"></v-divider>
+                </template>
+
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props" density="compact">
+                    <template v-slot:prepend>
+                      <v-icon size="small" class="mr-0">{{ item.raw.icono }}</v-icon>
+                    </template>
+                    <template v-slot:title>
+                      {{ item.raw.nombre }}
+                    </template>
+                  </v-list-item>
+                </template>
+
+                <template v-slot:selection="{ item }">
+                  <v-icon size="small" class="mr-4">{{ item.raw.icono }}</v-icon>
+                  <span class="text-caption">{{ item.raw.nombre }}</span>
                 </template>
               </v-select>
             </v-col>
@@ -239,6 +278,7 @@ import { useResolverIncidencia } from '@/composables/useResolverIncidencia'
 import { useWhatsAppShare } from '@/composables/useWhatsAppShare'
 import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
+import { obtenerTiposIncidencias } from '@/utils/api'
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
@@ -292,6 +332,30 @@ export default {
 
     const snackbar = ref(false);
     const snackbarText = ref('');
+
+    const tipoSeleccionado = ref('Todas')
+    const tiposIncidencias = ref([])
+
+    const obtenerTipos = async () => {
+      try {
+        const response = await obtenerTiposIncidencias()
+        tiposIncidencias.value = response.data
+          .map(tipo => {
+            const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)
+            return {
+              ...tipo,
+              icono: tipoInicial?.icono || 'mdi-circle'
+            }
+          })
+          .sort((a, b) => {
+            if (a.nombre.match(/^Otros?$/i)) return 1;
+            if (b.nombre.match(/^Otros?$/i)) return -1;
+            return a.nombre.localeCompare(b.nombre, 'es');
+          });
+      } catch (error) {
+        console.error('Error al obtener tipos de incidencias:', error)
+      }
+    }
 
     const validarNombre = (nombre) => {
       if (!nombre || typeof nombre !== 'string') {
@@ -390,10 +454,14 @@ export default {
     }
 
     const incidenciasOrdenadas = computed(() => {
+      const incidenciasFiltradas = tipoSeleccionado.value === 'Todas' 
+        ? incidenciasCalculadas.value
+        : incidenciasCalculadas.value.filter(inc => inc.tipo_id === tipoSeleccionado.value);
+
       if (ordenSeleccionado.value === 'distancia') {
-        return [...incidenciasCalculadas.value].sort((a, b) => a.distancia - b.distancia)
+        return [...incidenciasFiltradas].sort((a, b) => a.distancia - b.distancia)
       } else {
-        return [...incidenciasCalculadas.value].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+        return [...incidenciasFiltradas].sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
       }
     })
 
@@ -590,6 +658,7 @@ export default {
         esFavorita: esFavorito(incidencia.id)
       }))
       cargarNombreGuardado();
+      obtenerTipos()
     })
 
     watch(() => props.incidencias, (newIncidencias) => {
@@ -671,7 +740,9 @@ export default {
       snackbarText,
       mostrarMensaje,
       whatsAppShare,
-      obtenerIconoTipo
+      obtenerIconoTipo,
+      tipoSeleccionado,
+      tiposIncidencias,
     }
   }
 }
@@ -797,9 +868,7 @@ export default {
 }
 
 .v-select {
-  max-width: 200px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: none;
 }
 
 .v-select :deep(.v-field__input) {
