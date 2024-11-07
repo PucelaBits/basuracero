@@ -494,7 +494,7 @@ export default {
     const ubicacionSeleccionada = ref({})
     const currentPage = ref(1)
     const totalPages = ref(1)
-    const itemsPerPage = 10
+    const itemsPerPage = 12
     const reportarIncidencia = ref(null)
     const imageModal = ref(null)
     const mensajeExito = ref('')
