@@ -205,9 +205,9 @@
               multiple
             >
 
-            <div class="subtitle-text text-center mt-4">
-              <v-icon color="grey mr-2">mdi-information</v-icon>
-              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal). No incluyas caras de personas, matrículas o info personal</span>
+            <div class="subtitle-text d-flex align-center justify-center mt-4">
+              <v-icon color="grey" class="mr-2">mdi-information</v-icon>
+              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal)<br/>No incluyas caras, matrículas o info personal</span>
             </div>
 
             <v-divider class="my-4"><span style="color: grey;">Tus datos</span></v-divider>
@@ -293,9 +293,23 @@
                   @click="enviarIncidencia"
                   :loading="enviando"
                   :disabled="!formValido || enviando || !incidencia.imagenes || incidencia.imagenes.length === 0 || !aceptaLicencia"
+                  :class="{ 'v-btn--disabled': !incidencia.imagenes || incidencia.imagenes.length === 0 }"
                 >
                   {{ enviando ? 'Enviando...' : 'Enviar' }}
+                  <v-tooltip v-if="!incidencia.imagenes || incidencia.imagenes.length === 0">
+                    <span>Añade al menos una foto</span>
+                  </v-tooltip>
                 </v-btn>
+                <v-alert
+                  v-if="!incidencia.imagenes || incidencia.imagenes.length === 0"
+                  type="info"
+                  color="grey-lighten-3"
+                  class="mt-4 text-caption text-grey-darken-1"
+                  dense
+                  style="max-width: 300px; margin: 0 auto;"
+                >
+                Recuerda añadir al menos una foto
+                </v-alert>
               </v-col>
             </v-row>
           </v-form>
