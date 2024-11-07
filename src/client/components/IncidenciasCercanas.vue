@@ -35,7 +35,7 @@
                 class="info-banner mb-4"
               >
                 <div class="d-flex align-center">
-                  <span>Ayuda a verificar si las incidencias en tu zona ya están solucionadas</span>
+                  <span>Ayuda a verificar si las cercanas en tu zona ya están solucionadas o ya no están activas</span>
                 </div>
               </v-alert>
             </v-col>
@@ -102,8 +102,11 @@
               <v-progress-circular indeterminate color="primary"></v-progress-circular>
               <p class="mt-2">Cargando incidencias...</p>
             </v-col>
-            <v-col v-else-if="incidenciasCalculadas.length === 0" cols="12" class="text-center">
-              <p>No se encontraron incidencias cercanas.</p>
+            <v-col v-else-if="incidenciasOrdenadas.length === 0" cols="12" class="text-center">
+              <p class="text-caption mt-4">
+                No hay nada de este tipo a menos de {{ (distanciaMaxima / 1000).toFixed(1) }} km, prueba a usar el 
+                <span class="link-text" @click="cerrar">mapa general</span>
+              </p>
             </v-col>
             <v-col v-else v-for="incidencia in incidenciasOrdenadas" :key="incidencia.id" cols="12" sm="6" md="4">
               <v-card @click="abrirDetalleIncidencia(incidencia)" class="ma-2 incidencia-card" height="auto">
@@ -336,6 +339,13 @@ export default {
     const tipoSeleccionado = ref('Todas')
     const tiposIncidencias = ref([])
 
+    const distanciaMaxima = ref(parseInt(import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', 10));
+
+    const obtenerNombreTipo = (tipoId) => {
+      const tipo = tiposIncidencias.value.find(t => t.id === tipoId);
+      return tipo ? tipo.nombre : '';
+    };
+
     const obtenerTipos = async () => {
       try {
         const response = await obtenerTiposIncidencias()
@@ -424,8 +434,6 @@ export default {
 
     const calcularIncidenciasCercanas = () => {
       if (ubicacionUsuario.value && props.incidencias.length > 0) {
-        const distanciaMaxima = parseInt(import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', 10);
-        
         const todasLasIncidencias = props.incidencias
           .filter(incidencia => incidencia.estado !== 'solucionada')
           .map(incidencia => ({
@@ -441,7 +449,7 @@ export default {
           }))
           .sort((a, b) => a.distancia - b.distancia);
 
-        const incidenciasCercanas = todasLasIncidencias.filter(inc => inc.distancia <= distanciaMaxima);
+        const incidenciasCercanas = todasLasIncidencias.filter(inc => inc.distancia <= distanciaMaxima.value);
         
         const nuevasIncidencias = incidenciasCercanas.length >= 10 
           ? incidenciasCercanas 
@@ -745,6 +753,8 @@ export default {
       obtenerIconoTipo,
       tipoSeleccionado,
       tiposIncidencias,
+      distanciaMaxima,
+      obtenerNombreTipo,
     }
   }
 }
@@ -881,6 +891,12 @@ export default {
 
 .v-select :deep(.v-field__append-inner) {
   padding-top: 5px;
+}
+
+.link-text {
+  color: var(--v-primary-base);
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>
 
