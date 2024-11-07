@@ -7,7 +7,7 @@
     >
       <v-card>
         <v-card-title class="d-flex justify-space-between align-center">
-          Enviar incidencia
+          Añadir nuevo
           <v-btn icon @click="cerrar">
             <v-icon>mdi-close</v-icon>
           </v-btn>
@@ -19,14 +19,14 @@
                 <v-icon>mdi-information</v-icon>
               </v-col>
               <v-col cols="10" class="pl-2">
-                <span class="text-caption">Informa sólo si lleva <strong>más de 24h</strong> sin solución</span>
+                <span class="text-caption">Informa sólo si lleva <strong>más de 24h</strong> presente</span>
               </v-col>
             </v-row>
           </v-alert>
         </v-card-text>
         <v-card-text>
           <v-form ref="form" @submit.prevent="enviarIncidencia" v-model="formValido">
-            <v-divider class="my-4"><span style="color: grey;">Incidencia</span></v-divider>
+            <v-divider class="my-4"><span style="color: grey;">Información</span></v-divider>
             <v-select
               v-model="incidencia.tipo_id"
               :items="tiposIncidencias"
@@ -205,9 +205,9 @@
               multiple
             >
 
-            <div class="subtitle-text text-center mt-4">
-              <v-icon color="grey mr-2">mdi-information</v-icon>
-              <span color="grey">Máx. 2 fotos. No incluyas caras de personas, matrículas o info personal</span>
+            <div class="subtitle-text d-flex align-center justify-center mt-4">
+              <v-icon color="grey" class="mr-2">mdi-information</v-icon>
+              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal)<br/>No incluyas caras, matrículas o info personal</span>
             </div>
 
             <v-divider class="my-4"><span style="color: grey;">Tus datos</span></v-divider>
@@ -293,9 +293,23 @@
                   @click="enviarIncidencia"
                   :loading="enviando"
                   :disabled="!formValido || enviando || !incidencia.imagenes || incidencia.imagenes.length === 0 || !aceptaLicencia"
+                  :class="{ 'v-btn--disabled': !incidencia.imagenes || incidencia.imagenes.length === 0 }"
                 >
                   {{ enviando ? 'Enviando...' : 'Enviar' }}
+                  <v-tooltip v-if="!incidencia.imagenes || incidencia.imagenes.length === 0">
+                    <span>Añade al menos una foto</span>
+                  </v-tooltip>
                 </v-btn>
+                <v-alert
+                  v-if="!incidencia.imagenes || incidencia.imagenes.length === 0"
+                  type="info"
+                  color="grey-lighten-3"
+                  class="mt-4 text-caption text-grey-darken-1"
+                  dense
+                  style="max-width: 300px; margin: 0 auto;"
+                >
+                Recuerda añadir al menos una foto
+                </v-alert>
               </v-col>
             </v-row>
           </v-form>
