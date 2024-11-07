@@ -424,6 +424,8 @@ export default {
 
     const calcularIncidenciasCercanas = () => {
       if (ubicacionUsuario.value && props.incidencias.length > 0) {
+        const distanciaMaxima = parseInt(import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', 10);
+        
         const todasLasIncidencias = props.incidencias
           .filter(incidencia => incidencia.estado !== 'solucionada')
           .map(incidencia => ({
@@ -439,7 +441,7 @@ export default {
           }))
           .sort((a, b) => a.distancia - b.distancia);
 
-        const incidenciasCercanas = todasLasIncidencias.filter(inc => inc.distancia <= 1000);
+        const incidenciasCercanas = todasLasIncidencias.filter(inc => inc.distancia <= distanciaMaxima);
         
         const nuevasIncidencias = incidenciasCercanas.length >= 10 
           ? incidenciasCercanas 
