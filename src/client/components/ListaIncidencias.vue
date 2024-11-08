@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-row>
       <v-col
-        v-for="incidencia in incidenciasConIconos"
+        v-for="incidencia in incidenciasFiltradas"
         :key="incidencia.id"
         cols="12"
         sm="6"
@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import DetalleIncidencia from './DetalleIncidencia.vue';
 import { useRouter, useRoute } from 'vue-router'
 
@@ -82,20 +82,28 @@ export default {
   components: {
     DetalleIncidencia
   },
-  emits: ['incidencia-seleccionada'],
   props: {
     incidencias: {
       type: Array,
       required: true
+    },
+    tipoSeleccionado: {
+      type: [String, Number, Array],
+      default: () => []
+    },
+    incluirSolucionadas: {
+      type: Boolean,
+      default: false
     }
   },
-  setup(props, { emit }) {
+  emits: ['incidencia-seleccionada'],
+  setup(props) {
     const router = useRouter();
     const route = useRoute();
     const incidenciaSeleccionada = ref(null);
 
     const abrirDetalle = (incidencia) => {
-      emit('incidencia-seleccionada', incidencia);
+      incidenciaSeleccionada.value = incidencia;
       router.push({ name: 'DetalleIncidencia', params: { id: incidencia.id } });
     };
 
@@ -113,29 +121,46 @@ export default {
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
+    const incidenciasFiltradas = computed(() => {
+      let incidenciasFiltradas = props.incidencias;
+
+      // Filtrar por tipo si hay tipos seleccionados
+      if (Array.isArray(props.tipoSeleccionado) && props.tipoSeleccionado.length > 0) {
+        incidenciasFiltradas = incidenciasFiltradas.filter(inc => 
+          props.tipoSeleccionado.includes(inc.tipo_id)
+        );
+      }
+
+      // Filtrar por estado si no se incluyen solucionadas
+      if (!props.incluirSolucionadas) {
+        incidenciasFiltradas = incidenciasFiltradas.filter(inc => 
+          inc.estado !== 'solucionada'
+        );
+      }
+
+      // Aplicar iconos
+      return incidenciasFiltradas.map(incidencia => {
+        const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === incidencia.tipo)
+        return {
+          ...incidencia,
+          icono: tipoInicial?.icono || 'mdi-circle'
+        }
+      });
+    });
+
     return {
       incidenciaSeleccionada,
       abrirDetalle,
       cerrarDetalle,
       handleImageError,
-      formatDate
+      formatDate,
+      incidenciasFiltradas
     };
   },
   methods: {
     truncateText(text, maxLength) {
       if (text.length <= maxLength) return text;
       return text.substr(0, maxLength) + '...';
-    }
-  },
-  computed: {
-    incidenciasConIconos() {
-      return this.incidencias.map(incidencia => {
-        const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === incidencia.tipo)
-        return {
-          ...incidencia,
-          icono: tipoInicial?.icono || 'mdi-circle'
-        }
-      })
     }
   }
 };

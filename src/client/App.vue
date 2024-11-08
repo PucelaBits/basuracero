@@ -312,7 +312,9 @@
         </v-card>
 
         <ListaIncidencias 
-          :incidencias="incidencias" 
+          :incidencias="incidencias"
+          :tipo-seleccionado="tipoSeleccionado"
+          :incluir-solucionadas="incluirSolucionadas"
           @incidencia-seleccionada="abrirDetalleIncidencia"
         />
         
@@ -565,7 +567,6 @@ export default {
           page: page,
           limit: itemsPerPage,
           incluirSolucionadas: incluirSolucionadas.value,
-          tipo: tipoSeleccionado.value.length > 0 ? tipoSeleccionado.value : null,
         };
         
         if (forzarActualizacion || cargaInicial.value) {
@@ -855,7 +856,11 @@ export default {
     watch([todasLasIncidencias, incidenciasUsuario], calcularIncidenciasAntiguasUsuario, { immediate: true });
 
     onMounted(async () => {
-      await obtenerTipos() // Esperar a que se carguen los tipos
+      // Verificar si el banner ya fue visto antes de mostrarlo
+      const bannerVisto = localStorage.getItem('bannerBienvenidaVisto')
+      mostrarBanner.value = bannerVisto !== 'true'
+      
+      await obtenerTipos()
       obtenerIncidencias(1, true)
       obtenerTodasLasIncidencias(true)
       
@@ -864,11 +869,6 @@ export default {
 
       detectarIOS();
       window.addEventListener('beforeinstallprompt', manejarEventoInstalacion);
-
-      const bannerVisto = localStorage.getItem('bannerBienvenidaVisto')
-      if (bannerVisto === 'true') {
-        mostrarBanner.value = false
-      }
 
       obtenerIncidenciasUsuario();
       calcularIncidenciasAntiguasUsuario();
