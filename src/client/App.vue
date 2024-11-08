@@ -67,6 +67,18 @@
           </template>
           <v-list-item-title>Compartir</v-list-item-title>
         </v-list-item>
+
+        <!-- Enlaces adicionales del sidebar -->
+        <v-list-item 
+          v-for="link in sidebarLinks" 
+          :key="link.name"
+          :href="link.url"
+        >
+          <template v-slot:prepend>
+            <v-icon>{{ link.icon }}</v-icon>
+          </template>
+          <v-list-item-title>{{ link.name }}</v-list-item-title>
+        </v-list-item>
       </v-list>
       
       <!-- Nuevo contenedor para el icono de "Tus datos" -->
@@ -1146,6 +1158,9 @@ export default {
     const MAX_TIPO_ID = 100
     const URL_TIPOS_REGEX = /^[\d,]+$/
 
+    // Añadir la referencia para los enlaces del sidebar
+    const sidebarLinks = ref(JSON.parse(import.meta.env.VITE_APP_SIDEBAR_LINKS || '[]'))
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -1228,6 +1243,7 @@ export default {
       appLogoPath,
       diasParaConsiderarAntigua,
       seleccionarTodos,
+      sidebarLinks,
     }
   }
 }
