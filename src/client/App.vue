@@ -542,6 +542,9 @@ export default {
             // Ordenar el resto alfabéticamente
             return a.nombre.localeCompare(b.nombre, 'es');
           });
+
+        // Procesar los tipos de la URL después de cargar los tipos disponibles
+        procesarTiposDeURL()
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }
@@ -851,10 +854,10 @@ export default {
     // Asegúrate de llamar a esta función cuando se carguen las incidencias
     watch([todasLasIncidencias, incidenciasUsuario], calcularIncidenciasAntiguasUsuario, { immediate: true });
 
-    onMounted(() => {
-      obtenerIncidencias(1, true);
-      obtenerTodasLasIncidencias(true);
-      obtenerTipos();
+    onMounted(async () => {
+      await obtenerTipos() // Esperar a que se carguen los tipos
+      obtenerIncidencias(1, true)
+      obtenerTodasLasIncidencias(true)
       
       // Verificar actualizaciones cada 30 segundos
       intervalId = setInterval(verificarActualizaciones, 30000);
@@ -1084,6 +1087,64 @@ export default {
       }
       obtenerIncidencias()
     }
+
+    const MAX_TIPOS_PERMITIDOS = 10
+
+    const ultimaActualizacion = ref(Date.now())
+    const MIN_TIEMPO_ENTRE_UPDATES = 1000 // 1 segundo
+
+    const sanitizarTipo = (tipo) => {
+      // Convertir a string y escapar caracteres especiales si es necesario
+      return String(tipo).replace(/[<>'"]/g, '')
+    }
+
+    const procesarTiposDeURL = () => {
+      try {
+        const tiposQuery = route.query.tipos
+        if (!tiposQuery) return
+        
+        // Validar que sea un string
+        if (typeof tiposQuery !== 'string') return
+        
+        // Validar formato y longitud máxima
+        if (tiposQuery.length > 100 || !/^[\d,]+$/.test(tiposQuery)) {
+          console.warn('Formato de tipos en URL inválido')
+          return
+        }
+        
+        // Convertir y validar cada tipo
+        const tiposArray = tiposQuery
+          .split(',')
+          .map(tipo => {
+            const num = parseInt(tipo, 10)
+            // Validar que sea un número positivo y dentro de un rango razonable
+            return (!isNaN(num) && num > 0 && num <= 100) ? num : null
+          })
+          .filter(tipo => tipo !== null)
+        
+        // Validar que los tipos existan en tiposIncidencias
+        const tiposValidos = tiposArray.filter(tipo => 
+          tiposIncidencias.value.some(t => t.id === tipo)
+        )
+        
+        if (tiposValidos.length > 0) {
+          tipoSeleccionado.value = tiposValidos
+        }
+      } catch (error) {
+        console.error('Error al procesar tipos de URL:', error)
+      }
+    }
+
+    watch(() => route.query.tipos, () => {
+      if (tiposIncidencias.value.length > 0) {
+        procesarTiposDeURL()
+      }
+    })
+
+    const MAX_URL_LENGTH = 100
+    const MIN_TIPO_ID = 1
+    const MAX_TIPO_ID = 100
+    const URL_TIPOS_REGEX = /^[\d,]+$/
 
     return {
       incidencias,
