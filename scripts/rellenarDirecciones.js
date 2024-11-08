@@ -1,13 +1,36 @@
 const db = require('../src/server/config/database');
 const axios = require('axios');
+require('dotenv').config();
 
 // Función para esperar un tiempo determinado
 const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function obtenerDireccion(lat, lon) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=es`;
+  
+  // Obtener el User-Agent con valores por defecto
+  const appName = process.env.APP_NAME || 'BasuraCeroApp';
+  let contactEmail = 'app@example.com';
+  
   try {
-    const response = await axios.get(url);
+    // Intentar obtener el email del APP_SOCIAL_LINKS
+    const socialLinks = process.env.APP_SOCIAL_LINKS;
+    if (socialLinks) {
+      const emailMatch = socialLinks.match(/mailto:(.*?)"/);
+      if (emailMatch && emailMatch[1]) {
+        contactEmail = emailMatch[1];
+      }
+    }
+  } catch (error) {
+    console.warn('No se pudo obtener el email de configuración, usando valor por defecto');
+  }
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': `${appName}/1.0 (${contactEmail})`
+      }
+    });
     const data = response.data;
     return {
       direccion: data.display_name,
