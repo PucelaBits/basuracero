@@ -262,7 +262,7 @@ export default {
       
       const popupContent = L.DomUtil.create('div');
       const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent);
-      addButton.innerHTML = 'Añadir incidencia aquí';
+      addButton.innerHTML = 'Añadir aquí';
       L.DomEvent.on(addButton, 'click', (e) => {
         L.DomEvent.stopPropagation(e);
         enviarEventoMatomo('Incidencia', 'Nueva', 'Mapa');
