@@ -14,10 +14,29 @@ const routes = [
     component: App
   },
   {
-    path: '/incidencia/:id',
+    path: '/i/:id',
     name: 'DetalleIncidencia',
     component: DetalleIncidencia,
     props: true,
+    meta: {
+      title: 'Detalle de Incidencia',
+      metaTags: [
+        {
+          name: 'description',
+          content: 'Detalles de la incidencia'
+        },
+        {
+          property: 'og:description',
+          content: 'Detalles de la incidencia'
+        }
+      ]
+    }
+  },
+  {
+    path: '/incidencia/:id',
+    redirect: to => {
+      return { path: `/i/${to.params.id}` }
+    },
     meta: {
       title: 'Detalle de Incidencia',
       metaTags: [
