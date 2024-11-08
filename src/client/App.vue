@@ -229,11 +229,14 @@
               :items="tiposIncidencias"
               item-value="id"
               item-title="nombre"
-              label="Filtrar por tipo"
+              label="Filtrar por tipos"
+              multiple
+              chips
+              closable-chips
               @update:model-value="obtenerIncidencias"
             >
               <template v-slot:prepend-item>
-                <v-list-item title="Todas" value="Todas" @click="tipoSeleccionado = 'Todas'" density="compact">
+                <v-list-item title="Todas" @click="seleccionarTodos" density="compact">
                   <template v-slot:prepend>
                     <v-icon size="small" class="mr-4">mdi-filter-variant</v-icon>
                   </template>
@@ -508,7 +511,7 @@ export default {
     const router = useRouter()
 
     const totalIncidencias = ref(0)
-    const tipoSeleccionado = ref('Todas')
+    const tipoSeleccionado = ref([])
     const tiposIncidencias = ref([])
 
     const textoTotalIncidencias = computed(() => {
@@ -559,7 +562,7 @@ export default {
           page: page,
           limit: itemsPerPage,
           incluirSolucionadas: incluirSolucionadas.value,
-          tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
+          tipo: tipoSeleccionado.value.length > 0 ? tipoSeleccionado.value : null,
         };
         
         if (forzarActualizacion || cargaInicial.value) {
@@ -1073,6 +1076,15 @@ export default {
 
     const appLogoPath = ref(import.meta.env.VITE_APP_LOGO_PATH || '/img/default/logo.png')
 
+    const seleccionarTodos = () => {
+      if (tipoSeleccionado.value.length === tiposIncidencias.value.length) {
+        tipoSeleccionado.value = []
+      } else {
+        tipoSeleccionado.value = tiposIncidencias.value.map(tipo => tipo.id)
+      }
+      obtenerIncidencias()
+    }
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -1154,6 +1166,7 @@ export default {
       comunidadLink,
       appLogoPath,
       diasParaConsiderarAntigua,
+      seleccionarTodos,
     }
   }
 }
@@ -1453,5 +1466,20 @@ export default {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
+}
+
+.v-select :deep(.v-field__input) {
+  padding-top: 32px !important;
+  padding-bottom: 12px !important;
+  min-height: 35px;
+}
+
+.v-select :deep(.v-field__append-inner) {
+  padding-top: 5px;
+}
+
+/* Ajustar el espacio entre chips */
+.v-select :deep(.v-chip) {
+  margin: 4px 4px;
 }
 </style>

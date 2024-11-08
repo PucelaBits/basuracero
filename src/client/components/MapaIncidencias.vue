@@ -137,8 +137,8 @@ export default {
       default: false
     },
     tipoSeleccionado: {
-      type: [String, Number],
-      default: 'Todas'
+      type: [String, Number, Array],
+      default: () => []
     },
     esCercanas: {
       type: Boolean,
@@ -288,7 +288,6 @@ export default {
         const openPopups = new Map();
         map.eachLayer((layer) => {
           if (layer instanceof L.Popup && map.hasLayer(layer)) {
-            // Usar el contenido del popup como clave para mantener la referencia
             openPopups.set(layer._content, {
               latlng: layer.getLatLng(),
               content: layer._content,
@@ -300,10 +299,10 @@ export default {
         // Limpiar marcadores existentes
         markerClusterGroup.clearLayers();
 
-        // Filtrar incidencias según el tipo seleccionado
-        const incidenciasFiltradas = props.tipoSeleccionado === 'Todas'
-          ? props.incidencias
-          : props.incidencias.filter(inc => inc.tipo_id === props.tipoSeleccionado)
+        // Filtrar incidencias según los tipos seleccionados
+        const incidenciasFiltradas = Array.isArray(props.tipoSeleccionado) && props.tipoSeleccionado.length > 0
+          ? props.incidencias.filter(inc => props.tipoSeleccionado.includes(inc.tipo_id))
+          : props.incidencias;
 
         // Crear nuevos marcadores para las incidencias filtradas
         incidenciasFiltradas.forEach(incidencia => {

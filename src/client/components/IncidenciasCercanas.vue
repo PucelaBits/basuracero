@@ -63,15 +63,18 @@
                 :items="tiposIncidencias"
                 item-value="id"
                 item-title="nombre"
-                label="Filtrar por tipo"
+                label="Filtrar por tipos"
                 density="compact"
                 variant="outlined"
                 rounded="pill"
                 hide-details
                 class="mb-2"
+                multiple
+                chips
+                closable-chips
               >
                 <template v-slot:prepend-item>
-                  <v-list-item title="Todas" value="Todas" @click="tipoSeleccionado = 'Todas'" density="compact">
+                  <v-list-item title="Todas" @click="seleccionarTodos" density="compact">
                     <template v-slot:prepend>
                       <v-icon size="small" class="mr-4">mdi-filter-variant</v-icon>
                     </template>
@@ -336,7 +339,7 @@ export default {
     const snackbar = ref(false);
     const snackbarText = ref('');
 
-    const tipoSeleccionado = ref('Todas')
+    const tipoSeleccionado = ref([])
     const tiposIncidencias = ref([])
 
     const distanciaMaxima = ref(parseInt(import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', 10));
@@ -464,9 +467,9 @@ export default {
     }
 
     const incidenciasOrdenadas = computed(() => {
-      const incidenciasFiltradas = tipoSeleccionado.value === 'Todas' 
+      const incidenciasFiltradas = tipoSeleccionado.value.length === 0
         ? incidenciasCalculadas.value
-        : incidenciasCalculadas.value.filter(inc => inc.tipo_id === tipoSeleccionado.value);
+        : incidenciasCalculadas.value.filter(inc => tipoSeleccionado.value.includes(inc.tipo_id));
 
       if (ordenSeleccionado.value === 'distancia') {
         return [...incidenciasFiltradas].sort((a, b) => a.distancia - b.distancia)
@@ -710,6 +713,14 @@ export default {
       return tipoInicial?.icono || 'mdi-tag-outline'
     }
 
+    const seleccionarTodos = () => {
+      if (tipoSeleccionado.value.length === tiposIncidencias.value.length) {
+        tipoSeleccionado.value = []
+      } else {
+        tipoSeleccionado.value = tiposIncidencias.value.map(tipo => tipo.id)
+      }
+    }
+
     return {
       dialogVisible,
       cargandoUbicacion,
@@ -755,6 +766,7 @@ export default {
       tiposIncidencias,
       distanciaMaxima,
       obtenerNombreTipo,
+      seleccionarTodos,
     }
   }
 }
@@ -884,8 +896,8 @@ export default {
 }
 
 .v-select :deep(.v-field__input) {
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
   min-height: 35px;
 }
 
@@ -897,6 +909,11 @@ export default {
   color: var(--v-primary-base);
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* Ajustar el espacio entre chips */
+.v-select :deep(.v-chip) {
+  margin: 4px 4px;
 }
 </style>
 
