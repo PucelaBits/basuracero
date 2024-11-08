@@ -163,11 +163,11 @@
               <v-row justify="center" class="mb-6">
                 <v-col cols="4" class="text-center">
                   <v-icon size="large" color="primary" class="mb-2">mdi-camera</v-icon>
-                  <div class="text-caption">Detecta el problema</div>
+                  <div class="text-caption">Detecta el lugar</div>
                 </v-col>
                 <v-col cols="4" class="text-center">
                   <v-icon size="large" color="primary" class="mb-2">mdi-plus-circle</v-icon>
-                  <div class="text-caption">Crea una incidencia</div>
+                  <div class="text-caption">Crea un registro</div>
                 </v-col>
                 <v-col cols="4" class="text-center">
                   <v-icon size="large" color="primary" class="mb-2">mdi-check-circle</v-icon>
