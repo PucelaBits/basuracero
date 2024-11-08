@@ -4,6 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const readline = require('readline');
 const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
 // Validación de campos
 async function validarRegistro(registro, numeroLinea) {
@@ -57,7 +58,7 @@ async function validarRegistro(registro, numeroLinea) {
   return errores;
 }
 
-async function importarIncidencias(rutaCsv) {
+async function importarIncidencias(rutaCsv, nombreReportador) {
   let rl;
   
   try {
@@ -125,8 +126,8 @@ async function importarIncidencias(rutaCsv) {
         const stmt = db.prepare(`
           INSERT INTO incidencias (
             tipo_id, descripcion, latitud, longitud, 
-            fecha, estado, codigo_unico
-          ) VALUES (?, ?, ?, ?, datetime('now', 'localtime'), 'activa', ?)
+            fecha, estado, codigo_unico, nombre
+          ) VALUES (?, ?, ?, ?, datetime('now', 'localtime'), 'activa', ?, ?)
         `);
 
         const stmtImagen = db.prepare(`
@@ -147,7 +148,8 @@ async function importarIncidencias(rutaCsv) {
               registro.descripcion,
               registro.latitud,
               registro.longitud,
-              codigoUnico
+              codigoUnico,
+              nombreReportador
             ],
             function(err) {
               if (err) {
@@ -198,11 +200,13 @@ async function importarIncidencias(rutaCsv) {
 
 // Verificar argumentos de línea de comandos
 const rutaCsv = process.argv[2];
+const nombreReportador = process.argv[3] || process.env.APP_NAME || 'Admin';
 
 if (!rutaCsv) {
   console.error('Debe proporcionar la ruta del archivo CSV');
-  console.error('Uso: npm run import-incidencias <ruta-del-csv>');
+  console.error('Uso: npm run import-incidencias <ruta-del-csv> [nombre-reportador]');
+  console.error('Si no se especifica el nombre-reportador, se usará el APP_NAME del archivo .env');
   process.exit(1);
 }
 
-importarIncidencias(rutaCsv);
+importarIncidencias(rutaCsv, nombreReportador);
