@@ -33,10 +33,7 @@
         <div class="pastillas-container">
           <span class="popup-chip" :title="incidenciaConIcono.tipo">
             <v-icon size="small" class="mr-1">{{ incidenciaConIcono.icono }}</v-icon>
-            {{ truncateText(incidencia.tipo, 16) }}
-          </span>
-          <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
-            Solucionada
+            {{ truncateText(incidencia.tipo, 30) }}
           </span>
           <!-- Botón de favoritos -->
           <v-btn
@@ -102,8 +99,15 @@
           <v-row v-if="incidencia.estado === 'solucionada'" align="center" class="mt-1">
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
-                <v-icon color="success" small class="mr-1">mdi-check-circle</v-icon>
-                <v-icon small class="mr-2">mdi-calendar</v-icon>
+                <v-icon color="success" small class="mr-2">mdi-check-circle</v-icon>
+                <span>Solucionada</span>
+              </div>
+            </v-col>
+          </v-row>
+          <v-row v-if="incidencia.estado === 'solucionada'" align="center" class="mt-1">
+            <v-col cols="auto">
+              <div class="d-flex align-center text-caption">
+                <v-icon color="success" small class="mr-2">mdi-calendar-check</v-icon>
                 <span>{{ formatDate(incidencia.fecha_solucion) }}</span>
               </div>
             </v-col>
@@ -1048,6 +1052,7 @@ a {
   padding: 4px 8px;
   border-radius: 16px;
   font-size: 12px;
+  max-width: 300px;
 }
 
 .estado-pastilla {

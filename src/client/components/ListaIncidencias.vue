@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-row>
       <v-col
-        v-for="incidencia in incidenciasConIconos"
+        v-for="incidencia in incidenciasFiltradas"
         :key="incidencia.id"
         cols="12"
         sm="6"
@@ -31,10 +31,10 @@
             <div class="pastillas-container">
               <span class="popup-chip" :title="incidencia.tipo">
                 <v-icon size="small" class="mr-1">{{ incidencia.icono }}</v-icon>
-                {{ truncateText(incidencia.tipo, 35) }}
+                {{ truncateText(incidencia.tipo, 32) }}
               </span>
               <span v-if="incidencia.estado === 'solucionada'" class="estado-pastilla solucionada">
-                Solucionada
+                <v-icon small>mdi-check-circle</v-icon>
               </span>
             </div>
           </div>
@@ -67,11 +67,17 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <v-pagination
+      v-model="currentPage"
+      :length="totalPages"
+      @update:model-value="cambiarPagina"
+    ></v-pagination>
   </v-container>
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import DetalleIncidencia from './DetalleIncidencia.vue';
 import { useRouter, useRoute } from 'vue-router'
 
@@ -82,20 +88,30 @@ export default {
   components: {
     DetalleIncidencia
   },
-  emits: ['incidencia-seleccionada'],
   props: {
     incidencias: {
       type: Array,
       required: true
+    },
+    tipoSeleccionado: {
+      type: [String, Number, Array],
+      default: () => []
+    },
+    incluirSolucionadas: {
+      type: Boolean,
+      default: false
     }
   },
-  setup(props, { emit }) {
+  emits: ['incidencia-seleccionada'],
+  setup(props) {
     const router = useRouter();
     const route = useRoute();
     const incidenciaSeleccionada = ref(null);
+    const currentPage = ref(1);
+    const itemsPerPage = 12; // O el número que necesites
 
     const abrirDetalle = (incidencia) => {
-      emit('incidencia-seleccionada', incidencia);
+      incidenciaSeleccionada.value = incidencia;
       router.push({ name: 'DetalleIncidencia', params: { id: incidencia.id } });
     };
 
@@ -113,29 +129,72 @@ export default {
       return date.toLocaleDateString('es-ES', options).replace(',', '');
     };
 
+    const incidenciasFiltradas = computed(() => {
+      let resultado = props.incidencias;
+
+      // Filtrar por tipo si hay tipos seleccionados
+      if (Array.isArray(props.tipoSeleccionado) && props.tipoSeleccionado.length > 0) {
+        resultado = resultado.filter(inc => 
+          props.tipoSeleccionado.includes(inc.tipo_id)
+        );
+      }
+
+      // Filtrar por estado si no se incluyen solucionadas
+      if (!props.incluirSolucionadas) {
+        resultado = resultado.filter(inc => 
+          inc.estado !== 'solucionada'
+        );
+      }
+
+      // Aplicar iconos y paginación
+      const incidenciasConIconos = resultado.map(incidencia => {
+        const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === incidencia.tipo)
+        return {
+          ...incidencia,
+          icono: tipoInicial?.icono || 'mdi-circle'
+        }
+      });
+
+      // Calcular paginación
+      const inicio = (currentPage.value - 1) * itemsPerPage;
+      const fin = inicio + itemsPerPage;
+      
+      return incidenciasConIconos.slice(inicio, fin);
+    });
+
+    const totalPages = computed(() => {
+      const totalFiltradas = props.incidencias.filter(inc => {
+        if (Array.isArray(props.tipoSeleccionado) && props.tipoSeleccionado.length > 0) {
+          if (!props.tipoSeleccionado.includes(inc.tipo_id)) return false;
+        }
+        if (!props.incluirSolucionadas && inc.estado === 'solucionada') return false;
+        return true;
+      }).length;
+      
+      return Math.ceil(totalFiltradas / itemsPerPage);
+    });
+
+    // Método para cambiar de página
+    const cambiarPagina = (nuevaPagina) => {
+      currentPage.value = nuevaPagina;
+    };
+
     return {
       incidenciaSeleccionada,
       abrirDetalle,
       cerrarDetalle,
       handleImageError,
-      formatDate
+      formatDate,
+      incidenciasFiltradas,
+      currentPage,
+      totalPages,
+      cambiarPagina
     };
   },
   methods: {
     truncateText(text, maxLength) {
       if (text.length <= maxLength) return text;
       return text.substr(0, maxLength) + '...';
-    }
-  },
-  computed: {
-    incidenciasConIconos() {
-      return this.incidencias.map(incidencia => {
-        const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === incidencia.tipo)
-        return {
-          ...incidencia,
-          icono: tipoInicial?.icono || 'mdi-circle'
-        }
-      })
     }
   }
 };

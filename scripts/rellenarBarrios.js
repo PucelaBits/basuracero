@@ -1,13 +1,35 @@
 const db = require('../src/server/config/database');
 const axios = require('axios');
+require('dotenv').config();
 
 // Configuración del rate limit
 const RATE_LIMIT = 1000; // 1 segundo entre solicitudes
 
 async function obtenerBarrio(lat, lon) {
+  // Obtener el User-Agent con valores por defecto
+  const appName = process.env.APP_NAME || 'BasuraCeroApp';
+  let contactEmail = 'app@example.com';
+  
+  try {
+    // Intentar obtener el email del APP_SOCIAL_LINKS
+    const socialLinks = process.env.APP_SOCIAL_LINKS;
+    if (socialLinks) {
+      const emailMatch = socialLinks.match(/mailto:(.*?)"/);
+      if (emailMatch && emailMatch[1]) {
+        contactEmail = emailMatch[1];
+      }
+    }
+  } catch (error) {
+    console.warn('No se pudo obtener el email de configuración, usando valor por defecto');
+  }
+
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=es`;
-    const response = await axios.get(url);
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': `${appName}/1.0 (${contactEmail})`
+      }
+    });
     const data = response.data;
     return data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || '';
   } catch (error) {

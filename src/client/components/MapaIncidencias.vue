@@ -137,8 +137,8 @@ export default {
       default: false
     },
     tipoSeleccionado: {
-      type: [String, Number],
-      default: 'Todas'
+      type: [String, Number, Array],
+      default: () => []
     },
     esCercanas: {
       type: Boolean,
@@ -262,7 +262,7 @@ export default {
       
       const popupContent = L.DomUtil.create('div');
       const addButton = L.DomUtil.create('button', 'add-incidencia-btn', popupContent);
-      addButton.innerHTML = 'Añadir incidencia aquí';
+      addButton.innerHTML = 'Añadir aquí';
       L.DomEvent.on(addButton, 'click', (e) => {
         L.DomEvent.stopPropagation(e);
         enviarEventoMatomo('Incidencia', 'Nueva', 'Mapa');
@@ -288,7 +288,6 @@ export default {
         const openPopups = new Map();
         map.eachLayer((layer) => {
           if (layer instanceof L.Popup && map.hasLayer(layer)) {
-            // Usar el contenido del popup como clave para mantener la referencia
             openPopups.set(layer._content, {
               latlng: layer.getLatLng(),
               content: layer._content,
@@ -300,10 +299,10 @@ export default {
         // Limpiar marcadores existentes
         markerClusterGroup.clearLayers();
 
-        // Filtrar incidencias según el tipo seleccionado
-        const incidenciasFiltradas = props.tipoSeleccionado === 'Todas'
-          ? props.incidencias
-          : props.incidencias.filter(inc => inc.tipo_id === props.tipoSeleccionado)
+        // Filtrar incidencias según los tipos seleccionados
+        const incidenciasFiltradas = Array.isArray(props.tipoSeleccionado) && props.tipoSeleccionado.length > 0
+          ? props.incidencias.filter(inc => props.tipoSeleccionado.includes(inc.tipo_id))
+          : props.incidencias;
 
         // Crear nuevos marcadores para las incidencias filtradas
         incidenciasFiltradas.forEach(incidencia => {
@@ -323,8 +322,8 @@ export default {
                   ` : ''}
                 </div>
                 <div class="popup-chips">
-                  <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 16)}</span>
-                  ${incidencia.estado === 'solucionada' ? `<span class="estado-pastilla solucionada">Solucionada</span>` : ''}
+                  ${incidencia.estado === 'solucionada' ? `<span class="estado-pastilla solucionada"><i class="mdi mdi-check-circle"></i></span>` : ''}
+                  <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 32)}</span>
                 </div>
               </div>
               <div class="popup-content">
@@ -842,7 +841,7 @@ export default {
   font-size: 12px;
   font-weight: bold;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  max-width: 150px;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -16,6 +16,7 @@
     "borrar-reportes-solucion": "node scripts/borrarReportesSolucion.js",
     "rellenar-direcciones": "node scripts/rellenarDirecciones.js",
     "asignar-imagen": "node scripts/asignarImagen.js",
+    "import-incidencias": "node scripts/importarIncidencias.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },

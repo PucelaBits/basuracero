@@ -67,6 +67,18 @@
           </template>
           <v-list-item-title>Compartir</v-list-item-title>
         </v-list-item>
+
+        <!-- Enlaces adicionales del sidebar -->
+        <v-list-item 
+          v-for="link in sidebarLinks" 
+          :key="link.name"
+          :href="link.url"
+        >
+          <template v-slot:prepend>
+            <v-icon>{{ link.icon }}</v-icon>
+          </template>
+          <v-list-item-title>{{ link.name }}</v-list-item-title>
+        </v-list-item>
       </v-list>
       
       <!-- Nuevo contenedor para el icono de "Tus datos" -->
@@ -163,11 +175,11 @@
               <v-row justify="center" class="mb-6">
                 <v-col cols="4" class="text-center">
                   <v-icon size="large" color="primary" class="mb-2">mdi-camera</v-icon>
-                  <div class="text-caption">Detecta el problema</div>
+                  <div class="text-caption">Detecta el lugar</div>
                 </v-col>
                 <v-col cols="4" class="text-center">
                   <v-icon size="large" color="primary" class="mb-2">mdi-plus-circle</v-icon>
-                  <div class="text-caption">Crea una incidencia</div>
+                  <div class="text-caption">Crea un registro</div>
                 </v-col>
                 <v-col cols="4" class="text-center">
                   <v-icon size="large" color="primary" class="mb-2">mdi-check-circle</v-icon>
@@ -229,11 +241,14 @@
               :items="tiposIncidencias"
               item-value="id"
               item-title="nombre"
-              label="Filtrar por tipo"
+              label="Filtrar por tipos"
+              multiple
+              chips
+              closable-chips
               @update:model-value="obtenerIncidencias"
             >
               <template v-slot:prepend-item>
-                <v-list-item title="Todas" value="Todas" @click="tipoSeleccionado = 'Todas'" density="compact">
+                <v-list-item title="Todas" @click="seleccionarTodos" density="compact">
                   <template v-slot:prepend>
                     <v-icon size="small" class="mr-4">mdi-filter-variant</v-icon>
                   </template>
@@ -253,10 +268,21 @@
                 </v-list-item>
               </template>
               
-              <!-- Personalizar el valor seleccionado -->
+              <!-- Personalizar el valor seleccionado (pastillas) -->
               <template v-slot:selection="{ item }">
-                <v-icon size="small" class="mr-4">{{ item.raw.icono }}</v-icon>
+                <v-icon size="small" class="mr-1">{{ item.raw.icono }}</v-icon>
                 <span class="text-caption">{{ item.raw.nombre }}</span>
+              </template>
+
+              <!-- Personalizar los chips seleccionados -->
+              <template v-slot:chip="{ props, item }">
+                <v-chip
+                  v-bind="props"
+                  class="d-flex align-center"
+                >
+                  <v-icon size="small" class="mr-1">{{ item.raw.icono }}</v-icon>
+                  <span>{{ item.raw.nombre }}</span>
+                </v-chip>
               </template>
             </v-select>
             <v-row justify="center" class="mb-0">
@@ -309,16 +335,11 @@
         </v-card>
 
         <ListaIncidencias 
-          :incidencias="incidencias" 
+          :incidencias="todasLasIncidencias"
+          :tipo-seleccionado="tipoSeleccionado"
+          :incluir-solucionadas="incluirSolucionadas"
           @incidencia-seleccionada="abrirDetalleIncidencia"
         />
-        
-        <v-pagination
-          v-model="currentPage"
-          :length="totalPages"
-          @update:model-value="(page) => obtenerIncidencias(page)"
-          class="my-4"
-        ></v-pagination>
       </v-container>
     </v-main>
 
@@ -449,7 +470,6 @@
     <MaratonGuide v-if="$route.name === 'OrganizarEvento'" />
   </v-app>
 </template>
-
 <script>
 import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useTheme } from 'vuetify'
@@ -508,7 +528,7 @@ export default {
     const router = useRouter()
 
     const totalIncidencias = ref(0)
-    const tipoSeleccionado = ref('Todas')
+    const tipoSeleccionado = ref([])
     const tiposIncidencias = ref([])
 
     const textoTotalIncidencias = computed(() => {
@@ -539,6 +559,9 @@ export default {
             // Ordenar el resto alfabéticamente
             return a.nombre.localeCompare(b.nombre, 'es');
           });
+
+        // Procesar los tipos de la URL después de cargar los tipos disponibles
+        procesarTiposDeURL()
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }
@@ -559,7 +582,6 @@ export default {
           page: page,
           limit: itemsPerPage,
           incluirSolucionadas: incluirSolucionadas.value,
-          tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
         };
         
         if (forzarActualizacion || cargaInicial.value) {
@@ -848,21 +870,20 @@ export default {
     // Asegúrate de llamar a esta función cuando se carguen las incidencias
     watch([todasLasIncidencias, incidenciasUsuario], calcularIncidenciasAntiguasUsuario, { immediate: true });
 
-    onMounted(() => {
-      obtenerIncidencias(1, true);
-      obtenerTodasLasIncidencias(true);
-      obtenerTipos();
+    onMounted(async () => {
+      // Verificar si el banner ya fue visto antes de mostrarlo
+      const bannerVisto = localStorage.getItem('bannerBienvenidaVisto')
+      mostrarBanner.value = bannerVisto !== 'true'
+      
+      await obtenerTipos()
+      obtenerIncidencias(1, true)
+      obtenerTodasLasIncidencias(true)
       
       // Verificar actualizaciones cada 30 segundos
       intervalId = setInterval(verificarActualizaciones, 30000);
 
       detectarIOS();
       window.addEventListener('beforeinstallprompt', manejarEventoInstalacion);
-
-      const bannerVisto = localStorage.getItem('bannerBienvenidaVisto')
-      if (bannerVisto === 'true') {
-        mostrarBanner.value = false
-      }
 
       obtenerIncidenciasUsuario();
       calcularIncidenciasAntiguasUsuario();
@@ -1073,6 +1094,76 @@ export default {
 
     const appLogoPath = ref(import.meta.env.VITE_APP_LOGO_PATH || '/img/default/logo.png')
 
+    const seleccionarTodos = () => {
+      if (tipoSeleccionado.value.length === tiposIncidencias.value.length) {
+        tipoSeleccionado.value = []
+      } else {
+        tipoSeleccionado.value = tiposIncidencias.value.map(tipo => tipo.id)
+      }
+      obtenerIncidencias()
+    }
+
+    const MAX_TIPOS_PERMITIDOS = 10
+
+    const ultimaActualizacion = ref(Date.now())
+    const MIN_TIEMPO_ENTRE_UPDATES = 1000 // 1 segundo
+
+    const sanitizarTipo = (tipo) => {
+      // Convertir a string y escapar caracteres especiales si es necesario
+      return String(tipo).replace(/[<>'"]/g, '')
+    }
+
+    const procesarTiposDeURL = () => {
+      try {
+        const tiposQuery = route.query.tipos
+        if (!tiposQuery) return
+        
+        // Validar que sea un string
+        if (typeof tiposQuery !== 'string') return
+        
+        // Validar formato y longitud máxima
+        if (tiposQuery.length > 100 || !/^[\d,]+$/.test(tiposQuery)) {
+          console.warn('Formato de tipos en URL inválido')
+          return
+        }
+        
+        // Convertir y validar cada tipo
+        const tiposArray = tiposQuery
+          .split(',')
+          .map(tipo => {
+            const num = parseInt(tipo, 10)
+            // Validar que sea un número positivo y dentro de un rango razonable
+            return (!isNaN(num) && num > 0 && num <= 100) ? num : null
+          })
+          .filter(tipo => tipo !== null)
+        
+        // Validar que los tipos existan en tiposIncidencias
+        const tiposValidos = tiposArray.filter(tipo => 
+          tiposIncidencias.value.some(t => t.id === tipo)
+        )
+        
+        if (tiposValidos.length > 0) {
+          tipoSeleccionado.value = tiposValidos
+        }
+      } catch (error) {
+        console.error('Error al procesar tipos de URL:', error)
+      }
+    }
+
+    watch(() => route.query.tipos, () => {
+      if (tiposIncidencias.value.length > 0) {
+        procesarTiposDeURL()
+      }
+    })
+
+    const MAX_URL_LENGTH = 100
+    const MIN_TIPO_ID = 1
+    const MAX_TIPO_ID = 100
+    const URL_TIPOS_REGEX = /^[\d,]+$/
+
+    // Añadir la referencia para los enlaces del sidebar
+    const sidebarLinks = ref(JSON.parse(import.meta.env.VITE_APP_SIDEBAR_LINKS || '[]'))
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -1154,6 +1245,8 @@ export default {
       comunidadLink,
       appLogoPath,
       diasParaConsiderarAntigua,
+      seleccionarTodos,
+      sidebarLinks,
     }
   }
 }
@@ -1453,5 +1546,20 @@ export default {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
+}
+
+.v-select :deep(.v-field__input) {
+  padding-top: 32px !important;
+  padding-bottom: 12px !important;
+  min-height: 35px;
+}
+
+.v-select :deep(.v-field__append-inner) {
+  padding-top: 5px;
+}
+
+/* Ajustar el espacio entre chips */
+.v-select :deep(.v-chip) {
+  margin: 4px 4px;
 }
 </style>
