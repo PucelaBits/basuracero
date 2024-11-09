@@ -335,7 +335,7 @@
         </v-card>
 
         <ListaIncidencias 
-          :incidencias="incidencias"
+          :incidencias="todasLasIncidencias"
           :tipo-seleccionado="tipoSeleccionado"
           :incluir-solucionadas="incluirSolucionadas"
           @incidencia-seleccionada="abrirDetalleIncidencia"
