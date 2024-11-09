@@ -67,6 +67,12 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <v-pagination
+      v-model="currentPage"
+      :length="totalPages"
+      @update:model-value="cambiarPagina"
+    ></v-pagination>
   </v-container>
 </template>
 
@@ -101,6 +107,8 @@ export default {
     const router = useRouter();
     const route = useRoute();
     const incidenciaSeleccionada = ref(null);
+    const currentPage = ref(1);
+    const itemsPerPage = 12; // O el número que necesites
 
     const abrirDetalle = (incidencia) => {
       incidenciaSeleccionada.value = incidencia;
@@ -122,31 +130,54 @@ export default {
     };
 
     const incidenciasFiltradas = computed(() => {
-      let incidenciasFiltradas = props.incidencias;
+      let resultado = props.incidencias;
 
       // Filtrar por tipo si hay tipos seleccionados
       if (Array.isArray(props.tipoSeleccionado) && props.tipoSeleccionado.length > 0) {
-        incidenciasFiltradas = incidenciasFiltradas.filter(inc => 
+        resultado = resultado.filter(inc => 
           props.tipoSeleccionado.includes(inc.tipo_id)
         );
       }
 
       // Filtrar por estado si no se incluyen solucionadas
       if (!props.incluirSolucionadas) {
-        incidenciasFiltradas = incidenciasFiltradas.filter(inc => 
+        resultado = resultado.filter(inc => 
           inc.estado !== 'solucionada'
         );
       }
 
-      // Aplicar iconos
-      return incidenciasFiltradas.map(incidencia => {
+      // Aplicar iconos y paginación
+      const incidenciasConIconos = resultado.map(incidencia => {
         const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === incidencia.tipo)
         return {
           ...incidencia,
           icono: tipoInicial?.icono || 'mdi-circle'
         }
       });
+
+      // Calcular paginación
+      const inicio = (currentPage.value - 1) * itemsPerPage;
+      const fin = inicio + itemsPerPage;
+      
+      return incidenciasConIconos.slice(inicio, fin);
     });
+
+    const totalPages = computed(() => {
+      const totalFiltradas = props.incidencias.filter(inc => {
+        if (Array.isArray(props.tipoSeleccionado) && props.tipoSeleccionado.length > 0) {
+          if (!props.tipoSeleccionado.includes(inc.tipo_id)) return false;
+        }
+        if (!props.incluirSolucionadas && inc.estado === 'solucionada') return false;
+        return true;
+      }).length;
+      
+      return Math.ceil(totalFiltradas / itemsPerPage);
+    });
+
+    // Método para cambiar de página
+    const cambiarPagina = (nuevaPagina) => {
+      currentPage.value = nuevaPagina;
+    };
 
     return {
       incidenciaSeleccionada,
@@ -154,7 +185,10 @@ export default {
       cerrarDetalle,
       handleImageError,
       formatDate,
-      incidenciasFiltradas
+      incidenciasFiltradas,
+      currentPage,
+      totalPages,
+      cambiarPagina
     };
   },
   methods: {

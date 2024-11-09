@@ -340,13 +340,6 @@
           :incluir-solucionadas="incluirSolucionadas"
           @incidencia-seleccionada="abrirDetalleIncidencia"
         />
-        
-        <v-pagination
-          v-model="currentPage"
-          :length="totalPages"
-          @update:model-value="(page) => obtenerIncidencias(page)"
-          class="my-4"
-        ></v-pagination>
       </v-container>
     </v-main>
 
@@ -477,7 +470,6 @@
     <MaratonGuide v-if="$route.name === 'OrganizarEvento'" />
   </v-app>
 </template>
-
 <script>
 import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useTheme } from 'vuetify'
