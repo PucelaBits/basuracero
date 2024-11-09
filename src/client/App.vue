@@ -268,10 +268,21 @@
                 </v-list-item>
               </template>
               
-              <!-- Personalizar el valor seleccionado -->
+              <!-- Personalizar el valor seleccionado (pastillas) -->
               <template v-slot:selection="{ item }">
-                <v-icon size="small" class="mr-4">{{ item.raw.icono }}</v-icon>
+                <v-icon size="small" class="mr-1">{{ item.raw.icono }}</v-icon>
                 <span class="text-caption">{{ item.raw.nombre }}</span>
+              </template>
+
+              <!-- Personalizar los chips seleccionados -->
+              <template v-slot:chip="{ props, item }">
+                <v-chip
+                  v-bind="props"
+                  class="d-flex align-center"
+                >
+                  <v-icon size="small" class="mr-1">{{ item.raw.icono }}</v-icon>
+                  <span>{{ item.raw.nombre }}</span>
+                </v-chip>
               </template>
             </v-select>
             <v-row justify="center" class="mb-0">

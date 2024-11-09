@@ -97,6 +97,17 @@
                   <v-icon size="small" class="mr-4">{{ item.raw.icono }}</v-icon>
                   <span class="text-caption">{{ item.raw.nombre }}</span>
                 </template>
+
+                <!-- Añadir el slot para los chips -->
+                <template v-slot:chip="{ props, item }">
+                  <v-chip
+                    v-bind="props"
+                    class="d-flex align-center"
+                  >
+                    <v-icon size="small" class="mr-1">{{ item.raw.icono }}</v-icon>
+                    <span>{{ item.raw.nombre }}</span>
+                  </v-chip>
+                </template>
               </v-select>
             </v-col>
           </v-row>
