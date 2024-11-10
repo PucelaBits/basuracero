@@ -34,20 +34,22 @@ async function obtenerDireccion(lat, lon) {
     const data = response.data;
     return {
       direccion: data.display_name,
-      barrio: data.address.suburb || data.address.neighbourhood || ''
+      barrio: data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || '',
+      direccion_json: JSON.stringify(data.address)
     };
   } catch (error) {
     console.error('Error al obtener la dirección:', error);
     return {
       direccion: 'No se pudo obtener la dirección',
-      barrio: ''
+      barrio: '',
+      direccion_json: null
     };
   }
 }
 
 async function actualizarDirecciones() {
   return new Promise((resolve, reject) => {
-    db.all('SELECT id, latitud, longitud FROM incidencias WHERE direccion IS NULL OR direccion = "" OR direccion = "No se pudo obtener la dirección"', async (err, rows) => {
+    db.all('SELECT id, latitud, longitud, barrio, direccion_json FROM incidencias WHERE (barrio IS NULL OR barrio = "") OR (direccion_json IS NULL OR direccion_json = "")', async (err, rows) => {
       if (err) {
         reject(err);
         return;
@@ -58,16 +60,33 @@ async function actualizarDirecciones() {
 
       for (let i = 0; i < Math.min(rows.length, LIMITE_SOLICITUDES); i++) {
         const row = rows[i];
-        const { direccion, barrio } = await obtenerDireccion(row.latitud, row.longitud);
+        const { barrio: nuevoBarrio, direccion_json: nuevoDireccionJson } = await obtenerDireccion(row.latitud, row.longitud);
+        
+        // Construimos la consulta SQL dinámicamente según los campos que falten
+        let updateFields = [];
+        let updateValues = [];
+        
+        if (!row.barrio) {
+          updateFields.push('barrio = ?');
+          updateValues.push(nuevoBarrio);
+        }
+        if (!row.direccion_json) {
+          updateFields.push('direccion_json = ?');
+          updateValues.push(nuevoDireccionJson);
+        }
+        
+        // Agregamos el ID al final de los valores
+        updateValues.push(row.id);
+        
         await new Promise((resolve, reject) => {
-          db.run('UPDATE incidencias SET direccion = ?, barrio = ? WHERE id = ?', [direccion, barrio, row.id], (err) => {
+          const updateQuery = `UPDATE incidencias SET ${updateFields.join(', ')} WHERE id = ?`;
+          db.run(updateQuery, updateValues, (err) => {
             if (err) reject(err);
             else resolve();
           });
         });
-        console.log(`Actualizada dirección para incidencia ${row.id}: ${direccion}`);
         
-        // Esperar antes de la siguiente solicitud
+        console.log(`Actualizada incidencia ${row.id}: ${updateFields.join(', ')}`);
         await esperar(RETRASO_MS);
       }
 

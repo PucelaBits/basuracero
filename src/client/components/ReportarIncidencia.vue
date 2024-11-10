@@ -13,13 +13,13 @@
           </v-btn>
         </v-card-title>
         <v-card-text class="pb-0">
-          <v-alert color="grey" elevation="1" class="aviso-formulario">
+          <v-alert v-if="instruccionesRegistro" color="grey" elevation="1" class="aviso-formulario">
             <v-row align="center" no-gutters>
               <v-col cols="2" class="text-center">
                 <v-icon>mdi-information</v-icon>
               </v-col>
               <v-col cols="10" class="pl-2">
-                <span class="text-caption">Informa sólo si lleva <strong>más de 24h</strong> presente</span>
+                <span class="text-caption" v-html="instruccionesRegistro"></span>
               </v-col>
             </v-row>
           </v-alert>
@@ -398,6 +398,7 @@ export default {
     const fileInput = ref(null)
     const aceptaLicencia = ref(false)
     const { incidenciasUsuario, añadirIncidenciaUsuario } = useIncidenciasUsuarioStore()
+    const instruccionesRegistro = ref(import.meta.env.VITE_INSTRUCCIONES_REGISTRO || '')
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -487,17 +488,21 @@ export default {
             const data = await response.json()
             direccion.value = data.display_name
             incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || ''
+            incidencia.value.direccion_json = JSON.stringify(data.address)
           } catch (error) {
             console.error('Error al obtener la dirección:', error)
             direccion.value = 'No se pudo obtener la dirección'
             incidencia.value.barrio = ''
+            incidencia.value.direccion_json = null
           }
         } else {
           incidencia.value.barrio = ''
+          incidencia.value.direccion_json = null
         }
       } else {
         direccion.value = ''
         incidencia.value.barrio = ''
+        incidencia.value.direccion_json = null
       }
       if (form.value) {
         form.value.validate()
@@ -808,6 +813,7 @@ export default {
       onCameraCapture,
       aceptaLicencia,
       incidenciasUsuario,
+      instruccionesRegistro,
     }
   }
 }

@@ -173,9 +173,32 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
         db.run('BEGIN TRANSACTION');
 
         // Insertar la incidencia en la base de datos
-        const sql = `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, direccion, ip, codigo_unico, barrio) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)`;
+        const sql = `INSERT INTO incidencias (
+          tipo_id, 
+          descripcion, 
+          latitud, 
+          longitud, 
+          nombre, 
+          fecha, 
+          direccion, 
+          direccion_json,
+          ip, 
+          codigo_unico, 
+          barrio
+        ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?, ?)`;
         
-        db.run(sql, [tipo_id, descripcion, latitud, longitud, req.body.nombre, direccion, ip, codigoUnico, req.body.barrio], function(err) {
+        db.run(sql, [
+          tipo_id, 
+          descripcion, 
+          latitud, 
+          longitud, 
+          req.body.nombre, 
+          direccion,
+          req.body.direccion_json,
+          ip, 
+          codigoUnico, 
+          req.body.barrio
+        ], function(err) {
           if (err) {
             console.error('Error al insertar en la base de datos:', err);
             db.run('ROLLBACK');
@@ -241,6 +264,7 @@ router.get('/', (req, res) => {
   const dataSql = `
     SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
+           i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
            (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
     FROM incidencias i
@@ -285,18 +309,29 @@ router.get('/', (req, res) => {
 
       Promise.all(promises)
         .then(incidenciasConImagenes => {
+          const incidenciasConDireccion = incidenciasConImagenes.map(incidencia => {
+            try {
+              incidencia.direccion_completa = incidencia.direccion_json ? JSON.parse(incidencia.direccion_json) : null;
+              delete incidencia.direccion_json; // Eliminamos el campo original JSON
+            } catch (e) {
+              console.error('Error al parsear direccion_json:', e);
+              incidencia.direccion_completa = null;
+            }
+            return incidencia;
+          });
+
           switch (format) {
             case 'csv':
               res.setHeader('Content-Type', 'text/csv');
               res.setHeader('Content-Disposition', 'attachment; filename=incidencias.csv');
-              res.send(toCSV(incidenciasConImagenes));
+              res.send(toCSV(incidenciasConDireccion));
               break;
             case 'geojson':
-              res.json(toGeoJSON(incidenciasConImagenes));
+              res.json(toGeoJSON(incidenciasConDireccion));
               break;
             default:
               res.json({
-                incidencias: incidenciasConImagenes,
+                incidencias: incidenciasConDireccion,
                 currentPage: page,
                 totalPages: totalPages,
                 totalItems: total
@@ -324,6 +359,7 @@ router.get('/todas', (req, res) => {
   const sql = `
     SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
+           i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
            (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
     FROM incidencias i
@@ -357,18 +393,29 @@ router.get('/todas', (req, res) => {
 
     Promise.all(promises)
       .then(incidenciasConImagenes => {
+        const incidenciasConDireccion = incidenciasConImagenes.map(incidencia => {
+          try {
+            incidencia.direccion_completa = incidencia.direccion_json ? JSON.parse(incidencia.direccion_json) : null;
+            delete incidencia.direccion_json; // Eliminamos el campo original JSON
+          } catch (e) {
+            console.error('Error al parsear direccion_json:', e);
+            incidencia.direccion_completa = null;
+          }
+          return incidencia;
+        });
+
         switch (format) {
           case 'csv':
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename=todas_incidencias.csv');
-            res.send(toCSV(incidenciasConImagenes));
+            res.send(toCSV(incidenciasConDireccion));
             break;
           case 'geojson':
-            res.json(toGeoJSON(incidenciasConImagenes));
+            res.json(toGeoJSON(incidenciasConDireccion));
             break;
           default:
             res.json({
-              incidencias: incidenciasConImagenes
+              incidencias: incidenciasConDireccion
             });
         }
       })
@@ -546,6 +593,7 @@ router.get('/:id', (req, res) => {
   const sql = `
     SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
+           i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
            (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
     FROM incidencias i
@@ -563,6 +611,14 @@ router.get('/:id', (req, res) => {
     if (!row) {
       res.status(404).json({ error: 'Incidencia no encontrada' });
       return;
+    }
+
+    try {
+      row.direccion_completa = row.direccion_json ? JSON.parse(row.direccion_json) : null;
+      delete row.direccion_json;
+    } catch (e) {
+      console.error('Error al parsear direccion_json:', e);
+      row.direccion_completa = null;
     }
 
     // Obtener las imágenes de la incidencia
@@ -623,7 +679,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
     });
 
     if (reporteExistente && !esAutor) {
-      return res.status(400).json({ error: 'Ya has reportado esta incidencia como solucionada' });
+      return res.status(400).json({ error: 'Ya has reportado esto antes' });
     }
 
     // Insertar el reporte de solución
@@ -732,7 +788,7 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
     });
 
     if (reporteExistente) {
-      return res.status(400).json({ error: 'Ya has reportado esta incidencia como contenido inadecuado' });
+      return res.status(400).json({ error: 'Ya has reportado esto antes como contenido inadecuado' });
     }
 
     // Insertar el nuevo reporte

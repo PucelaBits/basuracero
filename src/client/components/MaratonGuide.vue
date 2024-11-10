@@ -31,7 +31,7 @@
                     </v-col>
                     <v-col>
                       <h3 class="text-h6 font-weight-bold mb-2">Objetivo</h3>
-                      <p class="text-body-3">Facilitar la coordinación entre vecinos para reportar y validar incidencias en nuestros barrios</p>
+                      <p class="text-body-3">Facilitar la coordinación entre vecinos para reportar y validar puntos activos en nuestros barrios</p>
                     </v-col>
                   </v-row>
                   <v-alert
@@ -116,7 +116,7 @@
                               <li>Explica el objetivo del evento</li>
                             </ul>
                             <v-alert class="mt-3 text-body-2" density="compact" :icon="false">
-                              <i class="text-grey-darken-1">"Con este evento queremos mejorar nuestro barrio documentando incidencias que lleven sin atender más de 24 horas, añadiéndolas a un mapa e informando para que quede constancia oficial.<br /><br /> También queremos validar si las ya reportadas han sido solucionadas y marcarlas como tales."</i>
+                              <i class="text-grey-darken-1">"Con este evento queremos mejorar nuestro barrio documentando puntos que lleven activos más de 24 horas, añadiéndolos a un mapa e informando para que quede constancia oficial.<br /><br /> También queremos validar si los creados han sido {{ textoEstadoSolucionado.toLowerCase() }}s y marcarlos como tales."</i>
                             </v-alert>
                           </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -140,7 +140,7 @@
                         <v-expansion-panel>
                           <v-expansion-panel-title class="pb-0">
                             <v-icon start>mdi-plus-circle</v-icon>
-                            Cómo reportar incidencias
+                            Cómo informar de una nueva
                           </v-expansion-panel-title>
                           <div class="text-caption text-grey ml-14 mb-2">5 min.</div>
                           <v-expansion-panel-text>
@@ -149,9 +149,9 @@
                               <li>Abre la app</li>
                               <li>Pulsa el icono "+"</li>
                               <li>Rellena el formulario</li>
-                              <li>Elige el tipo de incidencia</li>
+                              <li>Elige el tipo</li>
                               <li>Describe brevemente el problema (puedes dictarlo por voz usando el icono de micrófono)</li>
-                              <li>Añade o toma una foto de la incidencia<br /><small>Evita sacar caras, matrículas o datos personales en las fotos</small></li>
+                              <li>Añade o toma una foto<br /><small>Evita sacar caras, matrículas o datos personales en las fotos</small></li>
                               <li>Envía el reporte</li>
                               <li v-if="whatsAppShare.isEnabled.value">Usa el botón "{{ whatsAppShare.buttonText }}"</li>
                               <li>Comparte el enlace en redes y en el grupo de chat de vecinos</li>
@@ -162,20 +162,20 @@
                         <v-expansion-panel>
                           <v-expansion-panel-title class="pb-0">
                             <v-icon start>mdi-check-circle</v-icon>
-                            Cómo validar incidencias solucionadas
+                            Cómo validar los {{ textoEstadoSolucionado.toLowerCase() }}s
                           </v-expansion-panel-title>
                           <div class="text-caption text-grey ml-14 mb-2">5 min.</div>
                           <v-expansion-panel-text>
                             <p>Explica el proceso:</p>
                             <ol>
                               <li>Abre el menú superior derecho y selecciona "Validar cercanas"</li>
-                              <li>Busca incidencias cercanas en el mapa y desplázate hasta ellas</li>
-                              <li>Verifica en persona si realmente está solucionada</li>
-                              <li>Confirma en la app si está resuelta pulsando el botón de "Resolver"</li>
-                              <li>Si no está resuelta,<span v-if="whatsAppShare.isEnabled.value"> haz clic en "{{ whatsAppShare.buttonText }}" y</span> comparte el enlace en el grupo de chat de vecinos</li>
+                              <li>Busca cercanas en el mapa y desplázate hasta ellas</li>
+                              <li>Verifica en persona si realmente está {{ textoEstadoSolucionado.toLowerCase() }}</li>
+                              <li>Confirma en la app si está {{ textoEstadoSolucionado.toLowerCase() }} pulsando el botón de "{{ textoBotonResolver }}"</li>
+                              <li>Si no está {{ textoEstadoSolucionado.toLowerCase() }},<span v-if="whatsAppShare.isEnabled.value"> haz clic en "{{ whatsAppShare.buttonText }}" y</span> comparte el enlace en el grupo de chat de vecinos</li>
                             </ol>
                             <v-alert class="mt-3 text-body-2" density="compact" :icon="false">
-                              Nota: Se necesitan varios reportes de personas diferentes para dar por resuelta una incidencia
+                              Nota: Se necesitan varios reportes de personas diferentes para darlo por {{ textoEstadoSolucionado.toLowerCase() }}
                             </v-alert>
                           </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -213,7 +213,7 @@
                     <v-card-text class="pa-2">
                       <ul>
                         <li>Anima a los participantes a reportar todo lo que vean</li>
-                        <li>Recuérdales validar las incidencias ya solucionadas</li>
+                        <li>Recuérdales validar los ya {{ textoEstadoSolucionado.toLowerCase() }}s</li>
                       </ul>
                     </v-card-text>
                   </v-card>
@@ -233,12 +233,12 @@
                     <v-card-text class="pa-2">
                       <ul>
                         <li>Reúne a todos en el punto de encuentro</li>
-                        <li>Comparte los resultados: número de incidencias reportadas y validadas<br />
+                        <li>Comparte los resultados: número de reportadas y validadas<br />
                           <small v-if="communityUrl">Mándanos un pequeño resumen del evento 
                             <a :href="communityUrl" target="_blank">a la comunidad</a>
                           </small>
                         </li>
-                        <li>Recuerda que pueden seguir usando la app a diario para reportar nuevas incidencias y validar si ven alguna ya solucionada</li>
+                        <li>Recuerda que pueden seguir usando la app a diario para reportar nuevos y validar si ven alguno ya {{ textoEstadoSolucionado.toLowerCase() }}</li>
                         <li>Agradece la participación y planea el próximo evento</li>
                       </ul>
                     </v-card-text>
@@ -276,7 +276,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useWhatsAppShare } from '../composables/useWhatsAppShare'
 
@@ -339,6 +339,14 @@ export default {
       window.removeEventListener('scroll', handleScroll)
     })
 
+    const textoBotonResolver = computed(() => 
+      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+    )
+
+    const textoEstadoSolucionado = computed(() => 
+      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+    )
+
     return {
       dialogVisible,
       cerrar,
@@ -349,7 +357,9 @@ export default {
       communityUrl,
       baseUrl,
       appName,
-      whatsAppShare
+      whatsAppShare,
+      textoBotonResolver,
+      textoEstadoSolucionado,
     }
   }
 }

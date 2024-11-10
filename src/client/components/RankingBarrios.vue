@@ -115,7 +115,7 @@
             <v-icon>mdi-file-document-multiple</v-icon>
             Enviadas
             <v-icon class="ml-4">mdi-check-circle</v-icon>
-            Solucionadas
+            {{ textoEstadoSolucionado }}s
           </div>
         </v-card-text>
       </v-card>
@@ -222,6 +222,14 @@
         return tipoInicial?.icono || 'mdi-tag-outline'
       }
   
+      const textoBotonResolver = computed(() => 
+        import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+      )
+  
+      const textoEstadoSolucionado = computed(() => 
+        import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      )
+  
       onMounted(() => {
         obtenerRanking();
         if (route.name === 'RankingBarrios') {
@@ -262,6 +270,8 @@
         rangoFechas,
         toggleDetallesBarrio,
         obtenerIconoTipo,
+        textoBotonResolver,
+        textoEstadoSolucionado,
       };
     },
   };

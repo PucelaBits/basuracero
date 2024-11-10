@@ -8,11 +8,11 @@ function getFullImageUrl(path) {
   return path.startsWith('http') ? path : `${BASE_URL}${path}`;
 }
 
-function toCSV(data) {
-  const maxImages = data.reduce((max, item) => 
+function toCSV(incidencias) {
+  const maxImages = incidencias.reduce((max, item) => 
     Math.max(max, (item.imagenes?.length || 0)), 0);
   
-  const processedData = data.map(item => {
+  const processedData = incidencias.map(item => {
     const processed = { 
       id: item.id,
       tipo: item.tipo,
@@ -24,7 +24,8 @@ function toCSV(data) {
       estado: item.estado,
       direccion: item.direccion,
       reportes_solucion: item.reportes_solucion,
-      reportes_inadecuado: item.reportes_inadecuado
+      reportes_inadecuado: item.reportes_inadecuado,
+      ...item.direccion_completa,
     };
     
     for (let i = 0; i < maxImages; i++) {
@@ -58,6 +59,7 @@ function toGeoJSON(incidencias) {
         fecha: inc.fecha,
         estado: inc.estado,
         direccion: inc.direccion,
+        direccion_completa: inc.direccion_completa,
         reportes_solucion: inc.reportes_solucion,
         reportes_inadecuado: inc.reportes_inadecuado,
         imagenes: inc.imagenes?.map(img => getFullImageUrl(img.ruta_imagen)) || [],
