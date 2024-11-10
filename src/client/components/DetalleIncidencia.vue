@@ -764,7 +764,6 @@ export default {
 
       // Extraer los dos primeros elementos de la dirección
       const direccionCorta = direccionCompleta.split(',').slice(0, 2).join(',');
-
       const textoCompartir = `
         ${tipoIncidencia} en ${direccionCorta}
       `.trim();
@@ -772,7 +771,7 @@ export default {
       if (navigator.share) {
         enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
         navigator.share({
-          title: 'Basura Cero',
+          title: appName,
           text: textoCompartir,
           url: window.location.href
         }).catch((error) => {

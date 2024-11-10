@@ -19,7 +19,7 @@
           <template v-slot:prepend>
             <v-icon>mdi-account-details</v-icon>
           </template>
-          <v-list-item-title>Tus incidencias</v-list-item-title>
+          <v-list-item-title>Tus enviadas</v-list-item-title>
         </v-list-item>
         <v-list-item to="/favoritas" v-if="tieneFavoritos">
           <template v-slot:prepend>
@@ -131,7 +131,7 @@
           style="border-radius: 0;"
         >
           <div style="max-width: 250px; margin: 0 auto;">
-            <h3 class="mb-2">Tus incidencias</h3>
+            <h3 class="mb-2">Tus enviadas</h3>
             <div class="d-flex justify-space-between align-center mb-2" v-if="incidenciasAntiguasUsuario > 0">
               <div class="d-flex align-center">
                 <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>

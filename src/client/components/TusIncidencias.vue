@@ -7,7 +7,7 @@
         </v-btn>
         <v-toolbar-title class="d-flex align-center">
           <v-icon left size="small" class="mr-2 mb-1">mdi-account-details</v-icon>
-          <span>Tus incidencias</span>
+          <span>Tus enviadas</span>
         </v-toolbar-title>
       </v-toolbar>
 
@@ -32,7 +32,7 @@
           <v-row v-else-if="incidenciasUsuarioFiltradas.length === 0">
             <v-col cols="12">
               <v-alert type="info">
-                No has reportado ninguna incidencia aún.
+                No has enviado nada aún
               </v-alert>
             </v-col>
           </v-row>
@@ -55,7 +55,7 @@
                 class="info-banner mb-4"
               >
                 <div class="d-flex align-center text-body-2">
-                  <span>Revisa habitualmente tus incidencias y marca como solucionadas las que ya lo estén</span>
+                  <span>Revisa habitualmente tus enviadas y marca como solucionadas las que ya lo estén</span>
                 </div>
               </v-alert>
               </v-col>
@@ -158,7 +158,7 @@
             <v-row v-else>
               <v-col cols="12">
                 <v-alert type="info">
-                  No hay incidencias que coincidan con el filtro seleccionado.
+                  No hay ninguna que coincida con el filtro seleccionado
                 </v-alert>
               </v-col>
             </v-row>
@@ -168,7 +168,7 @@
     </v-card>
     <v-card v-else-if="!cargando && incidenciasUsuarioFiltradas.length === 0" v-show="dialogVisible" class="tus-incidencias-card">
       <v-card-text>
-        No tienes incidencias registradas.
+        No tienes ninguna enviada
       </v-card-text>
     </v-card>
     <v-progress-circular v-else indeterminate color="primary"></v-progress-circular>
