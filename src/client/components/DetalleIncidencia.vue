@@ -116,7 +116,7 @@
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon small class="mr-2">mdi-account-group</v-icon>
-                <span>{{ incidencia.reportes_solucion === 1 ? '1 persona ha indicado que está solucionada' : `${incidencia.reportes_solucion} personas han indicado que está solucionada` }}</span>
+                <span>{{ incidencia.reportes_solucion === 1 ? `1 persona ha indicado que está ${textoEstadoSolucionado.toLowerCase()}` : `${incidencia.reportes_solucion} personas han indicado que está ${textoEstadoSolucionado.toLowerCase()}` }}</span>
               </div>
             </v-col>
           </v-row>
