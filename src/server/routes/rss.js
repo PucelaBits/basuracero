@@ -61,8 +61,9 @@ router.get('/', (req, res) => {
         link: `${process.env.BASE_URL}/incidencia/${incidencia.id}`,
         description: incidencia.descripcion,
         content: `
-            <p>📍 ${direccion}</p>
+            <p>🏷 ${incidencia.tipo}</p>
             <p>👤 ${incidencia.nombre}</p>
+            <p>📍 ${direccion}</p>
             <p>💬 ${incidencia.descripcion}</p>
             ${contenidoImagenes}
         `,
