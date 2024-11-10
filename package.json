@@ -18,7 +18,8 @@
     "asignar-imagen": "node scripts/asignarImagen.js",
     "import-incidencias": "node scripts/importarIncidencias.js",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "migrate": "node scripts/runMigrations.js"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

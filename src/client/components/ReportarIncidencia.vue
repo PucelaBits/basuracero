@@ -487,17 +487,21 @@ export default {
             const data = await response.json()
             direccion.value = data.display_name
             incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || ''
+            incidencia.value.direccion_json = JSON.stringify(data.address)
           } catch (error) {
             console.error('Error al obtener la dirección:', error)
             direccion.value = 'No se pudo obtener la dirección'
             incidencia.value.barrio = ''
+            incidencia.value.direccion_json = null
           }
         } else {
           incidencia.value.barrio = ''
+          incidencia.value.direccion_json = null
         }
       } else {
         direccion.value = ''
         incidencia.value.barrio = ''
+        incidencia.value.direccion_json = null
       }
       if (form.value) {
         form.value.validate()
