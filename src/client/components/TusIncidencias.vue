@@ -73,8 +73,8 @@
                     density="compact"
                     class="mb-2"
                   >
-                    <v-btn value="todas" size="small">Todas</v-btn>
-                    <v-btn value="activas" size="small">Activas</v-btn>
+                    <v-btn value="todas" size="small">Todos</v-btn>
+                    <v-btn value="activas" size="small">Activos</v-btn>
                     <v-btn value="solucionadas" size="small">{{ textoEstadoSolucionado }}s</v-btn>
                   </v-btn-toggle>
 
@@ -206,7 +206,7 @@ export default {
     const ordenSeleccionado = ref('fecha_desc')
     const opcionesOrden = computed(() => [
       { title: 'Más recientes', value: 'fecha_desc' },
-      { title: 'Más antiguas', value: 'fecha_asc' },
+      { title: 'Más antiguos', value: 'fecha_asc' },
       { title: `Más votos de ${textoEstadoSolucionado.value.toLowerCase()}s`, value: 'votos_desc' }
     ])
     const incidenciasUsuarioFiltradas = computed(() => {

@@ -7,7 +7,7 @@
         </v-btn>
         <v-toolbar-title class="d-flex align-center">
           <v-icon left size="small" class="mr-2 mb-1">mdi-map-marker-radius</v-icon>
-          <span>Validar cercanas</span>
+          <span>Validar cercanos</span>
         </v-toolbar-title>
       </v-toolbar>
 
@@ -265,7 +265,7 @@
       <v-card>
         <v-card-title class="headline">Advertencia</v-card-title>
         <v-card-text>
-          Sólo puedes marcarla como {{ textoEstadoSolucionado.toLowerCase() }} si lo has comprobado presencialmente.
+          Sólo puedes marcarlo como {{ textoEstadoSolucionado.toLowerCase() }} si lo has comprobado presencialmente.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -324,8 +324,8 @@ export default {
     const watchId = ref(null)
     const ordenSeleccionado = ref('distancia')
     const opcionesOrden = [
-      { title: 'Más cercanas', value: 'distancia' },
-      { title: 'Más antiguas', value: 'antiguedad' }
+      { title: 'Más cercanos', value: 'distancia' },
+      { title: 'Más antiguos', value: 'antiguedad' }
     ]
     const incluirSolucionadas = ref(false)
 
