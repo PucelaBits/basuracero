@@ -208,7 +208,7 @@
 
     <v-dialog v-model="mostrarDialogoConfirmacion" max-width="500px">
       <v-card>
-        <v-card-title class="headline">Confirmar {{ textoEstadoSolucionado.toLowerCase() }}</v-card-title>
+        <v-card-title class="headline">Confirmar</v-card-title>
         <v-card-text>
           ¿Has verificado presencialmente que ha sido {{ textoEstadoSolucionado.toLowerCase() }}?
           <v-text-field
