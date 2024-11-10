@@ -100,7 +100,7 @@
             <v-col cols="auto">
               <div class="d-flex align-center text-caption">
                 <v-icon color="success" small class="mr-2">mdi-check-circle</v-icon>
-                <span>Solucionada</span>
+                <span>{{ textoEstadoSolucionado }}</span>
               </div>
             </v-col>
           </v-row>
@@ -161,7 +161,7 @@
               color="success"
             >
               <v-icon left class="mr-1">mdi-check-circle</v-icon>
-              <span>{{ reportando ? 'Resolviendo...' : 'Resolver' }}</span>
+              <span>{{ reportando ? 'Procesando...' : textoBotonResolver }}</span>
             </v-btn>
           </v-col>
           <v-col cols="auto" class="pt-2 pb-1" v-if="canShare">
@@ -208,9 +208,9 @@
 
     <v-dialog v-model="mostrarDialogoConfirmacion" max-width="500px">
       <v-card>
-        <v-card-title class="headline">Confirmar resolución</v-card-title>
+        <v-card-title class="headline">Confirmar {{ textoEstadoSolucionado.toLowerCase() }}</v-card-title>
         <v-card-text>
-          ¿Has verificado presencialmente que la incidencia ha sido solucionada?
+          ¿Has verificado presencialmente que ha sido {{ textoEstadoSolucionado.toLowerCase() }}?
           <v-text-field
             v-model="nombreUsuario"
             label="Tu nombre o apodo"
@@ -233,7 +233,7 @@
       <v-card>
         <v-card-title class="headline">Advertencia</v-card-title>
         <v-card-text>
-          Sólo puedes marcarla como solucionada si lo has comprobado presencialmente.
+          Sólo puedes marcarlo como {{ textoEstadoSolucionado.toLowerCase() }} si lo has comprobado presencialmente
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -339,8 +339,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <!-- Añadir esto al final del template -->
     <v-snackbar
       v-model="snackbar"
       :timeout="2000"
@@ -533,16 +531,16 @@ export default {
           if (resultado.solucionada) {
             props.incidencia.estado = 'solucionada';
             props.incidencia.fecha_solucion = new Date().toISOString();
-            snackbarText.value = resultado.esAutor ? 'Incidencia marcada como solucionada' : 'Se añadió tu voto de solucionada';
+            snackbarText.value = resultado.esAutor ? `Incidencia marcada como ${textoEstadoSolucionado.value.toLowerCase()}` : `Se añadió tu voto de ${textoEstadoSolucionado.value.toLowerCase()}`;
           } else {
             props.incidencia.reportes_solucion = resultado.reportes_solucion;
-            snackbarText.value = 'Se añadió tu voto de solucionada';
+            snackbarText.value = `Se añadió tu voto de ${textoEstadoSolucionado.value.toLowerCase()}`;
           }
           snackbar.value = true;
         }
       } catch (error) {
         if (isComponentMounted.value) {
-          mostrarError(error.response?.data?.error || 'Error al marcar como solucionada');
+          mostrarError(error.response?.data?.error || `Error al marcar como ${textoEstadoSolucionado.value.toLowerCase()}`);
         }
       } finally {
         if (captchaWidget.value) {
@@ -862,6 +860,14 @@ export default {
       }
     })
 
+    const textoBotonResolver = computed(() => 
+      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+    )
+
+    const textoEstadoSolucionado = computed(() => 
+      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+    )
+
     return {
       dialog,
       cerrar,
@@ -899,7 +905,9 @@ export default {
       nombreUsuario,
       appName,
       showWhatsAppButton,
-      incidenciaConIcono
+      incidenciaConIcono,
+      textoBotonResolver,
+      textoEstadoSolucionado,
     };
   }
 };

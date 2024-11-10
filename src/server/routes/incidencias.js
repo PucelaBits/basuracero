@@ -679,7 +679,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
     });
 
     if (reporteExistente && !esAutor) {
-      return res.status(400).json({ error: 'Ya has reportado esta incidencia como solucionada' });
+      return res.status(400).json({ error: 'Ya has reportado esto antes' });
     }
 
     // Insertar el reporte de solución
@@ -788,7 +788,7 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
     });
 
     if (reporteExistente) {
-      return res.status(400).json({ error: 'Ya has reportado esta incidencia como contenido inadecuado' });
+      return res.status(400).json({ error: 'Ya has reportado esto antes como contenido inadecuado' });
     }
 
     // Insertar el nuevo reporte

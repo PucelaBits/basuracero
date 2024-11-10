@@ -19,13 +19,13 @@
           <template v-slot:prepend>
             <v-icon>mdi-account-details</v-icon>
           </template>
-          <v-list-item-title>Tus enviadas</v-list-item-title>
+          <v-list-item-title>Tus enviados</v-list-item-title>
         </v-list-item>
         <v-list-item to="/favoritas" v-if="tieneFavoritos">
           <template v-slot:prepend>
             <v-icon>mdi-star</v-icon>
           </template>
-          <v-list-item-title>Tus favoritas</v-list-item-title>
+          <v-list-item-title>Tus favoritos</v-list-item-title>
         </v-list-item>
         <v-list-item to="/cercanas">
           <template v-slot:prepend>
@@ -142,7 +142,7 @@
             <div class="d-flex justify-space-between align-center" v-if="incidenciasConReportesSolucion > 0">
               <div class="d-flex align-center">
                 <v-icon color="white" size="small" class="mr-2">mdi-check-circle-outline</v-icon>
-                <span>Con votos de solucionada{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }}</span>
+                <span>Con votos de {{ textoEstadoSolucionado.toLowerCase() }}{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }}</span>
               </div>
               <span class="numero-incidencias ml-2">{{ incidenciasConReportesSolucion }}</span>
             </div>
@@ -1164,6 +1164,14 @@ export default {
     // Añadir la referencia para los enlaces del sidebar
     const sidebarLinks = ref(JSON.parse(import.meta.env.VITE_APP_SIDEBAR_LINKS || '[]'))
 
+    const textoBotonResolver = computed(() => 
+      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+    )
+
+    const textoEstadoSolucionado = computed(() => 
+      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+    )
+
     return {
       incidencias,
       ubicacionSeleccionada,
@@ -1247,6 +1255,8 @@ export default {
       diasParaConsiderarAntigua,
       seleccionarTodos,
       sidebarLinks,
+      textoBotonResolver,
+      textoEstadoSolucionado,
     }
   }
 }

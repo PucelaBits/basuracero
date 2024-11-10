@@ -7,7 +7,7 @@
         </v-btn>
         <v-toolbar-title class="d-flex align-center">
           <v-icon left size="small" class="mr-2 mb-1">mdi-account-details</v-icon>
-          <span>Tus enviadas</span>
+          <span>Tus enviados</span>
         </v-toolbar-title>
       </v-toolbar>
 
@@ -55,7 +55,7 @@
                 class="info-banner mb-4"
               >
                 <div class="d-flex align-center text-body-2">
-                  <span>Revisa habitualmente tus enviadas y marca como solucionadas las que ya lo estén</span>
+                  <span>Revisa habitualmente y marca como {{ textoEstadoSolucionado.toLowerCase() }}s los que ya lo estén</span>
                 </div>
               </v-alert>
               </v-col>
@@ -75,7 +75,7 @@
                   >
                     <v-btn value="todas" size="small">Todas</v-btn>
                     <v-btn value="activas" size="small">Activas</v-btn>
-                    <v-btn value="solucionadas" size="small">Solucionadas</v-btn>
+                    <v-btn value="solucionadas" size="small">{{ textoEstadoSolucionado }}s</v-btn>
                   </v-btn-toggle>
 
                   <v-select
@@ -143,11 +143,11 @@
                         </p>
                         <p class="text-caption mb-1">
                           <v-icon x-small class="mr-1" :color="incidencia.estado === 'activa' ? 'error' : 'success'">mdi-circle</v-icon>
-                          {{ incidencia.estado }}
+                          {{ incidencia.estado === 'activa' ? 'activa' : textoEstadoSolucionado.toLowerCase() }}
                         </p>
                         <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
                           <v-icon x-small class="mr-1">mdi-account-group</v-icon>
-                          {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de solucionada
+                          {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de {{ textoEstadoSolucionado.toLowerCase() }}
                         </p>
                       </v-card-text>
                     </v-col>
@@ -204,20 +204,29 @@ export default {
     const filtroEstado = ref('todas')
     const mapKey = ref(0)
     const ordenSeleccionado = ref('fecha_desc')
-    const opcionesOrden = [
+    const opcionesOrden = computed(() => [
       { title: 'Más recientes', value: 'fecha_desc' },
       { title: 'Más antiguas', value: 'fecha_asc' },
-      { title: 'Más votos de solucionadas', value: 'votos_desc' }
-    ]
-
+      { title: `Más votos de ${textoEstadoSolucionado.value.toLowerCase()}s`, value: 'votos_desc' }
+    ])
     const incidenciasUsuarioFiltradas = computed(() => {
       return todasLasIncidencias.value.filter(incidencia => 
         incidenciasUsuario.value.includes(incidencia.id)
       )
     })
 
+    const textoBotonResolver = computed(() => 
+      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+    )
+
+    const textoEstadoSolucionado = computed(() => 
+      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+    )
+
     const incidenciasSolucionadas = computed(() => {
-      return incidenciasUsuarioFiltradas.value.filter(incidencia => incidencia.estado === 'solucionada').length
+      return incidenciasUsuarioFiltradas.value.filter(incidencia => 
+        incidencia.estado === 'solucionada'
+      ).length
     })
 
     const incidenciasFiltradas = computed(() => {
@@ -345,6 +354,8 @@ export default {
       ordenSeleccionado,
       opcionesOrden,
       obtenerIconoTipo,
+      textoBotonResolver,
+      textoEstadoSolucionado,
     }
   }
 }

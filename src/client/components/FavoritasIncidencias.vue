@@ -7,7 +7,7 @@
           </v-btn>
           <v-toolbar-title class="d-flex align-center">
             <v-icon left size="small" class="mr-2 mb-1">mdi-star</v-icon>
-            <span>Tus favoritas</span>
+            <span>Tus favoritos</span>
           </v-toolbar-title>
         </v-toolbar>
   
@@ -55,9 +55,9 @@
                     rounded="pill"
                     density="compact"
                   >
-                    <v-btn value="todas" size="small">Todas</v-btn>
-                    <v-btn value="activas" size="small">Activas</v-btn>
-                    <v-btn value="solucionadas" size="small">Solucionadas</v-btn>
+                    <v-btn value="todas" size="small">Todos</v-btn>
+                    <v-btn value="activas" size="small">Activos</v-btn>
+                    <v-btn value="solucionadas" size="small">{{ textoEstadoSolucionado }}s</v-btn>
                   </v-btn-toggle>
                 </v-col>
               </v-row>
@@ -111,11 +111,11 @@
                         </p>
                         <p class="text-caption mb-1">
                           <v-icon x-small class="mr-1" :color="incidencia.estado === 'activa' ? 'error' : 'success'">mdi-circle</v-icon>
-                          {{ incidencia.estado }}
+                          {{ incidencia.estado === 'activa' ? 'activa' : textoEstadoSolucionado.toLowerCase() }}
                         </p>
                         <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
                           <v-icon x-small class="mr-1">mdi-account-group</v-icon>
-                          {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de solucionada
+                          {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de {{ textoEstadoSolucionado.toLowerCase() }}
                         </p>
                       </div>
                     </div>
@@ -250,6 +250,14 @@
         return tipoInicial?.icono || 'mdi-tag-outline'
       }
   
+      const textoBotonResolver = computed(() => 
+        import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+      )
+  
+      const textoEstadoSolucionado = computed(() => 
+        import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      )
+  
       watch(() => props.incidencias, async (newIncidencias) => {
         if (newIncidencias instanceof Promise) {
           todasLasIncidencias.value = await newIncidencias
@@ -292,6 +300,8 @@
         filtroEstado,
         incidenciasFiltradas,
         obtenerIconoTipo,
+        textoBotonResolver,
+        textoEstadoSolucionado,
       }
     }
   }

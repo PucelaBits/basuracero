@@ -157,6 +157,10 @@ Permite tener un botón en las incidencias para enviar la descripción y ubicaci
 - `VITE_WHATSAPP_SHARE_DIALOG_TEXT`: Texto principal del diálogo
 - `VITE_WHATSAPP_SHARE_DIALOG_NOTE`: Texto de la nota adicional en el diálogo
 
+### Textos personalizables
+- `VITE_TEXTO_BOTON_RESOLVER`: Texto para el botón de resolver incidencias (por defecto "Resolver")
+- `VITE_TEXTO_ESTADO_SOLUCIONADO`: Texto para el estado de solucionado (por defecto "Solucionada")
+
 ## Ejecución en producción con Docker
 
 Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos:

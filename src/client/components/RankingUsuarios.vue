@@ -89,7 +89,7 @@
           <v-icon>mdi-file-document-multiple</v-icon>
           Enviadas
           <v-icon class="ml-4">mdi-check-circle</v-icon>
-          Solucionadas
+          {{ textoEstadoSolucionado }}s
           <v-icon class="ml-4">mdi-eye-check</v-icon>
           Revisadas
         </div>
@@ -135,6 +135,14 @@ export default {
       mes: 'mdi-calendar-month',
       total: 'mdi-calendar-clock'
     };
+
+    const textoBotonResolver = computed(() => 
+      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+    )
+
+    const textoEstadoSolucionado = computed(() => 
+      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+    )
 
     const cerrar = () => {
       if (route.name === 'RankingUsuarios') {
@@ -231,6 +239,8 @@ export default {
       cerrar,
       getAvatarUrl,
       rangoFechas,
+      textoBotonResolver,
+      textoEstadoSolucionado,
     };
   },
 };

@@ -35,7 +35,7 @@
                 class="info-banner mb-4"
               >
                 <div class="d-flex align-center">
-                  <span>Ayuda a verificar si las cercanas en tu zona ya están solucionadas o ya no están activas</span>
+                  <span>Ayuda a verificar si los cercanos a tu zona ya están {{ textoEstadoSolucionado.toLowerCase() }}s</span>
                 </div>
               </v-alert>
             </v-col>
@@ -159,7 +159,7 @@
                       </p>
                       <p class="text-caption mb-1" v-if="incidencia.reportes_solucion > 0">
                         <v-icon x-small class="mr-1">mdi-account-group</v-icon>
-                        {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de solucionada
+                        {{ incidencia.reportes_solucion }} voto{{ incidencia.reportes_solucion !== 1 ? 's' : '' }} de {{ textoEstadoSolucionado.toLowerCase() }}
                       </p>
                       <p class="text-caption mb-1">
                         <v-icon x-small class="mr-1">mdi-map-marker-distance</v-icon>
@@ -170,7 +170,7 @@
                 </v-row>
                 <v-divider></v-divider>
                 <div v-if="incidencia.faldonOculto !== undefined && !incidencia.faldonOculto" class="popup-verification pa-2">
-                  <p class="text-center mb-2">¿Está ya solucionada?</p>
+                  <p class="text-center mb-2">¿Está {{ textoEstadoSolucionado.toLowerCase() }}?</p>
                   <div class="verification-buttons">
                     <v-btn x-small class="verify-btn verify-yes" @click.stop="verificarEstadoIncidencia(incidencia.id, 'solucionada')">
                       <v-icon left x-small>mdi-check</v-icon> Sí
@@ -193,9 +193,9 @@
     <!-- Diálogo de confirmación para resolver incidencia -->
     <v-dialog v-model="mostrarDialogoConfirmacion" max-width="500px">
       <v-card>
-        <v-card-title class="headline">Confirmar resolución</v-card-title>
+        <v-card-title class="headline">{{ textoBotonResolver }}</v-card-title>
         <v-card-text>
-          ¿Has verificado presencialmente que la incidencia ha sido solucionada?
+          ¿Has verificado presencialmente que ha sido {{ textoEstadoSolucionado.toLowerCase() }}?
           <v-text-field
             v-model="nombreUsuario"
             label="Tu nombre o apodo"
@@ -265,7 +265,7 @@
       <v-card>
         <v-card-title class="headline">Advertencia</v-card-title>
         <v-card-text>
-          Sólo puedes marcarla como solucionada si lo has comprobado presencialmente.
+          Sólo puedes marcarla como {{ textoEstadoSolucionado.toLowerCase() }} si lo has comprobado presencialmente.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -600,14 +600,14 @@ export default {
             faldonOculto: true
           };
           actualizarIncidencias();
-          mostrarMensaje(resultado.esAutor ? 'Incidencia marcada como solucionada' : 'Se añadió tu voto de solucionada');
+          mostrarMensaje(resultado.esAutor ? `Incidencia marcada como ${textoEstadoSolucionado.value.toLowerCase()}` : `Se añadió tu voto de ${textoEstadoSolucionado.value.toLowerCase()}`);
         } else {
           incidenciaSeleccionada.value.reportes_solucion = resultado.reportes_solucion;
-          mostrarMensaje('Se añadió tu voto de solucionada');
+          mostrarMensaje(`Se añadió tu voto de ${textoEstadoSolucionado.value.toLowerCase()}`);
         }
       } catch (error) {
         console.error('Error en confirmarSolucion:', error);
-        mostrarError(error.response?.data?.error || 'Error al marcar como solucionada');
+        mostrarError(error.response?.data?.error || `Error al marcar como ${textoEstadoSolucionado.value.toLowerCase()}`);
       } finally {
         if (captchaWidget.value) {
           captchaWidget.value.reset();
@@ -732,6 +732,14 @@ export default {
       }
     }
 
+    const textoBotonResolver = computed(() => 
+      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+    )
+
+    const textoEstadoSolucionado = computed(() => 
+      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+    )
+
     return {
       dialogVisible,
       cargandoUbicacion,
@@ -778,6 +786,8 @@ export default {
       distanciaMaxima,
       obtenerNombreTipo,
       seleccionarTodos,
+      textoBotonResolver,
+      textoEstadoSolucionado,
     }
   }
 }
