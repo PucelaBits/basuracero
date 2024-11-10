@@ -133,7 +133,7 @@
               <v-row v-else>
                 <v-col cols="12">
                   <v-alert color="grey-lighten-4">
-                    No hay incidencias favoritas que coincidan con el filtro seleccionado.
+                    No hay favoritos que coincidan con el filtro seleccionado
                   </v-alert>
                 </v-col>
               </v-row>

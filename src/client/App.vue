@@ -31,7 +31,7 @@
           <template v-slot:prepend>
             <v-icon>mdi-map-marker-radius</v-icon>
           </template>
-          <v-list-item-title>Validar cercanas</v-list-item-title>
+          <v-list-item-title>Validar cercanos</v-list-item-title>
         </v-list-item>
         <v-list-item @click="abrirRanking">
           <template v-slot:prepend>
@@ -131,18 +131,18 @@
           style="border-radius: 0;"
         >
           <div style="max-width: 250px; margin: 0 auto;">
-            <h3 class="mb-2">Tus enviadas</h3>
+            <h3 class="mb-2">Tus enviados</h3>
             <div class="d-flex justify-space-between align-center mb-2" v-if="incidenciasAntiguasUsuario > 0">
               <div class="d-flex align-center">
                 <v-icon color="white" size="small" class="mr-2">mdi-clock-alert</v-icon>
-                <span>Más antigua{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de {{ diasParaConsiderarAntigua }} días</span>
+                <span>Más antiguo{{ incidenciasAntiguasUsuario !== 1 ? 's' : '' }} de {{ diasParaConsiderarAntigua }} días</span>
               </div>
               <span class="numero-incidencias ml-2">{{ incidenciasAntiguasUsuario }}</span>
             </div>
             <div class="d-flex justify-space-between align-center" v-if="incidenciasConReportesSolucion > 0">
               <div class="d-flex align-center">
                 <v-icon color="white" size="small" class="mr-2">mdi-check-circle-outline</v-icon>
-                <span>Con votos de {{ textoEstadoSolucionado.toLowerCase() }}{{ incidenciasConReportesSolucion !== 1 ? 's' : '' }}</span>
+                <span>Con votos de {{ textoEstadoSolucionado.toLowerCase() }}</span>
               </div>
               <span class="numero-incidencias ml-2">{{ incidenciasConReportesSolucion }}</span>
             </div>
@@ -183,7 +183,7 @@
                 </v-col>
                 <v-col cols="4" class="text-center">
                   <v-icon size="large" color="primary" class="mb-2">mdi-check-circle</v-icon>
-                  <div class="text-caption">Verifica solucionadas</div>
+                  <div class="text-caption">Verifica {{ textoEstadoSolucionado.toLowerCase() }}s</div>
                 </v-col>
               </v-row>
               
@@ -314,7 +314,7 @@
                     <v-icon size="x-large">mdi-clock-alert</v-icon>
                   </v-col>
                   <v-col cols="10" align="center" class="pl-2">
-                    <span class="text-caption">Hay <strong>{{ incidenciasAntiguas }}</strong> incidencias activas<br />más antiguas de {{ diasParaConsiderarAntigua }} días</span>
+                    <span class="text-caption">Hay <strong>{{ incidenciasAntiguas }}</strong> activos<br />más antiguos de {{ diasParaConsiderarAntigua }} días</span>
                   </v-col>
                 </v-row>
                 <v-row align="center" class="mt-0">
