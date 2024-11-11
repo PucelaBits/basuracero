@@ -16,7 +16,7 @@ export function useWhatsAppShare() {
   const enviarWhatsApp = (incidencia) => {
     if (!isEnabled.value) return;
 
-    const mensaje = `${incidencia.descripcion}\nDirección: ${incidencia.direccion}`;
+    const mensaje = `${incidencia.descripcion}\nDirección: ${incidencia.direccion_completa.road || incidencia.direccion_completa.neighbourhood || incidencia.direccion_completa.suburb}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`;
     const mensajeEncoded = encodeURIComponent(mensaje);
     const url = `https://wa.me/${phoneNumber.value}?text=${mensajeEncoded}`;
     
