@@ -53,13 +53,13 @@ router.get('/', (req, res) => {
       if (incidencia.direccion_json && typeof incidencia.direccion_json === 'string') {
         try {
           const dirObj = JSON.parse(incidencia.direccion_json);
-          direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+          direccion = `${dirObj.road || dirObj.neighbourhood || dirObj.suburb}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
         } catch (e) {
           console.error('Error al parsear direccion_json:', e);
         }
       } else if (incidencia.direccion_json && typeof incidencia.direccion_json === 'object') {
         const dirObj = incidencia.direccion_json;
-        direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+        direccion = `${dirObj.road || dirObj.neighbourhood || dirObj.suburb}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
       }
 
       let contenidoImagenes = '';
@@ -126,13 +126,13 @@ router.get('/spam', (req, res) => {
       if (reporte.direccion_json && typeof reporte.direccion_json === 'string') {
         try {
           const dirObj = JSON.parse(reporte.direccion_json);
-          direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+          direccion = `${dirObj.road || dirObj.neighbourhood || dirObj.suburb}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
         } catch (e) {
           console.error('Error al parsear direccion_json:', e);
         }
       } else if (reporte.direccion_json && typeof reporte.direccion_json === 'object') {
         const dirObj = reporte.direccion_json;
-        direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+        direccion = `${dirObj.road || dirObj.neighbourhood || dirObj.suburb}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
       }
 
       feed.addItem({
