@@ -83,12 +83,12 @@
           </v-row>
 
           <!-- Dirección -->
-          <v-row v-if="incidencia.direccion" align="center" class="mt-2">
+          <v-row v-if="incidencia.direccion_completa" align="center" class="mt-2">
             <v-col cols="12">
               <a :href="geoLink" target="_blank" rel="noopener noreferrer" @click="clickGeoLink" class="text-decoration-none">
                 <div class="d-flex align-center text-caption">
                   <v-icon small class="mr-2">mdi-map-marker</v-icon>
-                  <span>{{ incidencia.direccion }}</span>
+                  <span>{{ incidencia.direccion_completa.road }}{{ incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : '' }}, {{ incidencia.direccion_completa.city || incidencia.direccion_completa.town || incidencia.direccion_completa.hamlet || incidencia.direccion_completa.village }}</span>
                   <v-icon class="ml-1" style="font-size: 25px;">mdi-directions</v-icon>
                 </div>
               </a>
@@ -164,7 +164,7 @@
               <span>{{ reportando ? 'Procesando...' : textoBotonResolver }}</span>
             </v-btn>
           </v-col>
-          <v-col cols="auto" class="pt-2 pb-1" v-if="canShare">
+          <v-col cols="auto" class="pt-2 pb-1">
             <v-btn
               @click="compartir"
               color="info"
@@ -189,13 +189,13 @@
         <v-card>
           <v-card-text class="text-center pa-4">
             <v-icon color="success" size="64" class="mb-4">mdi-check-circle</v-icon>
-            <h2 class="text-h5 mb-4">Incidencia creada</h2>
-            <p class="mb-4"><v-icon left>mdi-share</v-icon><strong>Compartela</strong> con tus vecinos en redes sociales o grupos de chat</p>
+            <h2 class="text-h5 mb-4">Registro creado</h2>
+            <p class="mb-4"><v-icon left>mdi-share</v-icon><strong>Compartelo</strong> con tus vecinos en redes sociales o grupos de chat</p>
             <p v-if="whatsAppShare.isEnabled.value" class="mt-4">
               <v-icon left>mdi-whatsapp</v-icon>
               No olvides usar el botón <strong>{{ whatsAppShare.buttonText }}</strong> para que se registre oficialmente, anima a tus vecinos a que lo hagan también
             </p>
-            <p class="mt-4">Cuando se haya solucionado vuelve y márcala como <v-icon left>mdi-check-circle</v-icon> <strong>resuelta</strong></p>
+            <p class="mt-4">Cuando se haya {{ textoEstadoSolucionado.toLowerCase() }} vuelve e indicalo con <v-icon left>mdi-check-circle</v-icon> <strong>{{ textoBotonResolver }}</strong></p>
             <p class="mt-4">Fácil y rápido, usa los botones de parte inferior</p>
           </v-card-text>
           <v-card-actions>
@@ -390,7 +390,6 @@ export default {
     const captchaSolution = ref(null);
     const captchaContainer = ref(null);
     const captchaWidget = ref(null);
-    const canShare = ref(false);
     const mostrarDialogoWhatsApp = ref(false);
     const mostrarDialogoError = ref(false);
     const isComponentMounted = ref(true);
@@ -582,7 +581,7 @@ export default {
       originalMetaTags.value.twitterImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content') || '';
 
       // Actualizar título
-      document.title = `Basura Cero - Incidencia ${props.incidencia.id}`;
+      document.title = `${appName} - Registro ${props.incidencia.id}`;
       
       // Construir la URL completa de la imagen
       const fullImageUrl = new URL(props.incidencia.imagen, window.location.origin).href;
@@ -599,10 +598,10 @@ export default {
         }
       };
 
-      updateMetaTag('meta[property="og:title"]', 'content', `Basura Cero - Incidencia ${props.incidencia.id}`);
+      updateMetaTag('meta[property="og:title"]', 'content', `${appName} - Registro ${props.incidencia.id}`);
       updateMetaTag('meta[property="og:description"]', 'content', props.incidencia.descripcion);
       updateMetaTag('meta[property="og:image"]', 'content', fullImageUrl);
-      updateMetaTag('meta[name="twitter:title"]', 'content', `Basura Cero - Incidencia ${props.incidencia.id}`);
+      updateMetaTag('meta[name="twitter:title"]', 'content', `${appName} - Registro ${props.incidencia.id}`);
       updateMetaTag('meta[name="twitter:description"]', 'content', props.incidencia.descripcion);
       updateMetaTag('meta[name="twitter:image"]', 'content', fullImageUrl);
     };
@@ -729,10 +728,6 @@ export default {
         }).addTo(map.value);
       }
 
-      if (navigator.share) {
-        canShare.value = true;
-      }
-
       actualizarMetadatos();
 
       if (route.query.mostrarDialogoExito === 'true') {
@@ -756,27 +751,52 @@ export default {
     });
 
     const compartir = () => {
-      // Asumiendo que tienes acceso a estas propiedades
       const tipoIncidencia = props.incidencia.tipo;
-      const direccionCompleta = props.incidencia.direccion;
-
-      // Extraer los dos primeros elementos de la dirección
-      const direccionCorta = direccionCompleta.split(',').slice(0, 2).join(',');
-      const textoCompartir = `
-        ${tipoIncidencia} en ${direccionCorta}
-      `.trim();
+      const direccionCorta = `${props.incidencia.direccion_completa.road}${props.incidencia.direccion_completa.house_number ? ` ${props.incidencia.direccion_completa.house_number}` : ''}, ${props.incidencia.direccion_completa.city || props.incidencia.direccion_completa.town || props.incidencia.direccion_completa.hamlet || props.incidencia.direccion_completa.village}`;
+      const textoCompartir = `${tipoIncidencia} en ${direccionCorta}`.trim();
+      const urlCompartir = window.location.href;
+      const textoCompleto = `${textoCompartir}\n\n${urlCompartir}`;
 
       if (navigator.share) {
         enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
         navigator.share({
           title: appName,
           text: textoCompartir,
-          url: window.location.href
+          url: urlCompartir
         }).catch((error) => {
           console.error('Error al compartir:', error);
+          copiarAlPortapapeles(textoCompleto);
         });
       } else {
-        alert('La funcionalidad de compartir no está soportada en este navegador.');
+        copiarAlPortapapeles(textoCompleto);
+      }
+    };
+
+    const copiarAlPortapapeles = async (texto) => {
+      try {
+        await navigator.clipboard.writeText(texto);
+        snackbarText.value = 'Copiado al portapapeles';
+        snackbar.value = true;
+        enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
+      } catch (err) {
+        // Fallback para navegadores más antiguos
+        const textarea = document.createElement('textarea');
+        textarea.value = texto;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          snackbarText.value = 'Copiado al portapapeles';
+          snackbar.value = true;
+          enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
+        } catch (err) {
+          snackbarText.value = 'No se pudo copiar al portapapeles';
+          snackbar.value = true;
+          console.error('Error al copiar:', err);
+        }
+        document.body.removeChild(textarea);
       }
     };
 
@@ -881,7 +901,6 @@ export default {
       dialogImagen,
       truncateText,
       captchaContainer,
-      canShare,
       compartir,
       mostrarDialogoWhatsApp,
       whatsAppShare,

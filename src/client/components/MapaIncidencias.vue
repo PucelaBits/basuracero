@@ -309,7 +309,11 @@ export default {
           if (props.incluirSolucionadas || incidencia.estado !== 'solucionada') {
             const popupContent = L.DomUtil.create('div', 'custom-popup')
             
-            // Crear el contenido del popup
+            // Obtener la dirección de forma segura
+            const direccion = incidencia.direccion_completa 
+              ? `${incidencia.direccion_completa.road || ''}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`
+              : 'Dirección no disponible';
+            
             popupContent.innerHTML = `
               <div class="popup-header">
                 <div class="popup-image-container">
@@ -327,7 +331,7 @@ export default {
                 </div>
               </div>
               <div class="popup-content">
-                <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion.split(',').slice(0, 2).join(',')}</span></div>
+                <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${direccion}</span></div>
                 <div class="popup-footer text-left mt-3 mb-3"><span><i class="mdi mdi-text"></i> ${incidencia.descripcion.length > 100 ? incidencia.descripcion.substring(0, 100) + '...' : incidencia.descripcion}</span></div>
                 <div class="popup-footer">
                   <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
