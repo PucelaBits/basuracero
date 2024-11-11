@@ -72,7 +72,11 @@
                   lg="4"
                   class="pa-2"
                 >
-                  <v-card class="incidencia-card">
+                  <v-card 
+                    class="incidencia-card"
+                    @click="abrirDetalleIncidencia(incidencia)"
+                    :style="{ cursor: 'pointer' }"
+                  >
                     <div class="card-content d-flex">
                       <!-- Columna de la imagen -->
                       <div class="imagen-container">
