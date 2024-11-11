@@ -164,7 +164,7 @@
               <span>{{ reportando ? 'Procesando...' : textoBotonResolver }}</span>
             </v-btn>
           </v-col>
-          <v-col cols="auto" class="pt-2 pb-1" v-if="canShare">
+          <v-col cols="auto" class="pt-2 pb-1">
             <v-btn
               @click="compartir"
               color="info"
@@ -390,7 +390,6 @@ export default {
     const captchaSolution = ref(null);
     const captchaContainer = ref(null);
     const captchaWidget = ref(null);
-    const canShare = ref(false);
     const mostrarDialogoWhatsApp = ref(false);
     const mostrarDialogoError = ref(false);
     const isComponentMounted = ref(true);
@@ -729,10 +728,6 @@ export default {
         }).addTo(map.value);
       }
 
-      if (navigator.share) {
-        canShare.value = true;
-      }
-
       actualizarMetadatos();
 
       if (route.query.mostrarDialogoExito === 'true') {
@@ -756,27 +751,52 @@ export default {
     });
 
     const compartir = () => {
-      // Asumiendo que tienes acceso a estas propiedades
       const tipoIncidencia = props.incidencia.tipo;
-      const direccionCompleta = props.incidencia.direccion;
-
-      // Extraer los dos primeros elementos de la dirección
       const direccionCorta = `${props.incidencia.direccion_completa.road}${props.incidencia.direccion_completa.house_number ? ` ${props.incidencia.direccion_completa.house_number}` : ''}, ${props.incidencia.direccion_completa.city || props.incidencia.direccion_completa.town || props.incidencia.direccion_completa.hamlet || props.incidencia.direccion_completa.village}`;
-      const textoCompartir = `
-        ${tipoIncidencia} en ${direccionCorta}
-      `.trim();
+      const textoCompartir = `${tipoIncidencia} en ${direccionCorta}`.trim();
+      const urlCompartir = window.location.href;
+      const textoCompleto = `${textoCompartir}\n\n${urlCompartir}`;
 
       if (navigator.share) {
         enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
         navigator.share({
           title: appName,
           text: textoCompartir,
-          url: window.location.href
+          url: urlCompartir
         }).catch((error) => {
           console.error('Error al compartir:', error);
+          copiarAlPortapapeles(textoCompleto);
         });
       } else {
-        alert('La funcionalidad de compartir no está soportada en este navegador.');
+        copiarAlPortapapeles(textoCompleto);
+      }
+    };
+
+    const copiarAlPortapapeles = async (texto) => {
+      try {
+        await navigator.clipboard.writeText(texto);
+        snackbarText.value = 'Copiado al portapapeles';
+        snackbar.value = true;
+        enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
+      } catch (err) {
+        // Fallback para navegadores más antiguos
+        const textarea = document.createElement('textarea');
+        textarea.value = texto;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          snackbarText.value = 'Copiado al portapapeles';
+          snackbar.value = true;
+          enviarEventoMatomo('Incidencia', 'Compartir', `ID: ${props.incidencia.id}`);
+        } catch (err) {
+          snackbarText.value = 'No se pudo copiar al portapapeles';
+          snackbar.value = true;
+          console.error('Error al copiar:', err);
+        }
+        document.body.removeChild(textarea);
       }
     };
 
@@ -881,7 +901,6 @@ export default {
       dialogImagen,
       truncateText,
       captchaContainer,
-      canShare,
       compartir,
       mostrarDialogoWhatsApp,
       whatsAppShare,
