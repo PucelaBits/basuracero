@@ -19,7 +19,7 @@ router.get('/', (req, res) => {
   });
 
   const sql = `
-    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.direccion
+    SELECT i.id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.direccion_json
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     WHERE i.estado != 'spam'
@@ -48,8 +48,20 @@ router.get('/', (req, res) => {
 
     Promise.all(rows.map(async incidencia => {
       const imagenes = await getImagenes(incidencia.id);
-      const direccion = incidencia.direccion ? incidencia.direccion.split(',').slice(0, 2).join(',') : 'Dirección no disponible';
       
+      let direccion = 'Dirección no disponible';
+      if (incidencia.direccion_json && typeof incidencia.direccion_json === 'string') {
+        try {
+          const dirObj = JSON.parse(incidencia.direccion_json);
+          direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+        } catch (e) {
+          console.error('Error al parsear direccion_json:', e);
+        }
+      } else if (incidencia.direccion_json && typeof incidencia.direccion_json === 'object') {
+        const dirObj = incidencia.direccion_json;
+        direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+      }
+
       let contenidoImagenes = '';
       imagenes.forEach(imagen => {
         contenidoImagenes += `<img src="${process.env.BASE_URL}/uploads/${imagen}" alt="${incidencia.tipo}">`;
@@ -110,6 +122,19 @@ router.get('/spam', (req, res) => {
     }
 
     rows.forEach(reporte => {
+      let direccion = 'Dirección no disponible';
+      if (reporte.direccion_json && typeof reporte.direccion_json === 'string') {
+        try {
+          const dirObj = JSON.parse(reporte.direccion_json);
+          direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+        } catch (e) {
+          console.error('Error al parsear direccion_json:', e);
+        }
+      } else if (reporte.direccion_json && typeof reporte.direccion_json === 'object') {
+        const dirObj = reporte.direccion_json;
+        direccion = `${dirObj.road || ''}${dirObj.house_number ? ` ${dirObj.house_number}` : ''}, ${dirObj.city || dirObj.town || dirObj.hamlet || dirObj.village || ''}`;
+      }
+
       feed.addItem({
         title: `Reporte de contenido inadecuado para incidencia ${reporte.incidencia_id}`,
         id: `${process.env.BASE_URL}/incidencia/${reporte.incidencia_id}`,
@@ -117,6 +142,7 @@ router.get('/spam', (req, res) => {
         description: `Reporte de contenido inadecuado para: ${reporte.incidencia_id}`,
         content: `
             <p>🕒 ${new Date(reporte.fecha_reporte).toLocaleString('es-ES')}</p>
+            <p>📍 ${direccion}</p>
             <p><strong>Importante:</strong> El contenido de esta incidencia puede mostrar contenido inadecuado u ofensivo.</p>
         `,
         date: new Date(reporte.fecha_reporte)

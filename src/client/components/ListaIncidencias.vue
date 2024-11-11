@@ -42,7 +42,7 @@
             <v-row no-gutters align="center" class="text-caption text--secondary mb-1 mt-0">
               <v-col cols="auto">
                 <v-icon small class="mr-1 mb-1">mdi-map-marker</v-icon>
-                {{ incidencia.direccion.split(',').slice(0, 2).join(',') }}
+                {{ incidencia.direccion_completa.road }}{{ incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : '' }}, {{ incidencia.direccion_completa.city || incidencia.direccion_completa.town || incidencia.direccion_completa.hamlet || incidencia.direccion_completa.village }}
               </v-col>
             </v-row>
             <v-row no-gutters class="text-caption mb-2 text--secondary descripcion-truncada">

@@ -135,7 +135,7 @@
                         </p>
                         <p class="text-caption mb-1">
                           <v-icon x-small class="mr-1">mdi-map-marker</v-icon>
-                          {{ incidencia.direccion.length > 20 ? incidencia.direccion.substring(0, 20) + '...' : incidencia.direccion }}
+                          {{ incidencia.direccion_completa.road }}{{ incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : '' }}
                         </p>
                         <p class="text-caption mb-1">
                           <v-icon x-small class="mr-1">mdi-calendar</v-icon>

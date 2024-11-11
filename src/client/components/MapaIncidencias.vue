@@ -327,7 +327,7 @@ export default {
                 </div>
               </div>
               <div class="popup-content">
-                <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion.split(',').slice(0, 2).join(',')}</span></div>
+                <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${incidencia.direccion_completa.road}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}</span></div>
                 <div class="popup-footer text-left mt-3 mb-3"><span><i class="mdi mdi-text"></i> ${incidencia.descripcion.length > 100 ? incidencia.descripcion.substring(0, 100) + '...' : incidencia.descripcion}</span></div>
                 <div class="popup-footer">
                   <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
