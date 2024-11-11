@@ -311,7 +311,7 @@ export default {
             
             // Obtener la dirección de forma segura
             const direccion = incidencia.direccion_completa 
-              ? `${incidencia.direccion_completa.road || ''}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`
+              ? `${incidencia.direccion_completa.road || incidencia.direccion_completa.neighbourhood || incidencia.direccion_completa.suburb}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`
               : 'Dirección no disponible';
             
             popupContent.innerHTML = `

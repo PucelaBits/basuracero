@@ -88,7 +88,7 @@
               <a :href="geoLink" target="_blank" rel="noopener noreferrer" @click="clickGeoLink" class="text-decoration-none">
                 <div class="d-flex align-center text-caption">
                   <v-icon small class="mr-2">mdi-map-marker</v-icon>
-                  <span>{{ incidencia.direccion_completa.road }}{{ incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : '' }}, {{ incidencia.direccion_completa.city || incidencia.direccion_completa.town || incidencia.direccion_completa.hamlet || incidencia.direccion_completa.village }}</span>
+                  <span>{{ incidencia.direccion_completa.road || incidencia.direccion_completa.neighbourhood || incidencia.direccion_completa.suburb }}{{ incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : '' }}, {{ incidencia.direccion_completa.city || incidencia.direccion_completa.town || incidencia.direccion_completa.hamlet || incidencia.direccion_completa.village }}</span>
                   <v-icon class="ml-1" style="font-size: 25px;">mdi-directions</v-icon>
                 </div>
               </a>
@@ -752,7 +752,7 @@ export default {
 
     const compartir = () => {
       const tipoIncidencia = props.incidencia.tipo;
-      const direccionCorta = `${props.incidencia.direccion_completa.road}${props.incidencia.direccion_completa.house_number ? ` ${props.incidencia.direccion_completa.house_number}` : ''}, ${props.incidencia.direccion_completa.city || props.incidencia.direccion_completa.town || props.incidencia.direccion_completa.hamlet || props.incidencia.direccion_completa.village}`;
+      const direccionCorta = `${props.incidencia.direccion_completa.road || props.incidencia.direccion_completa.neighbourhood || props.incidencia.direccion_completa.suburb}${props.incidencia.direccion_completa.house_number ? ` ${props.incidencia.direccion_completa.house_number}` : ''}, ${props.incidencia.direccion_completa.city || props.incidencia.direccion_completa.town || props.incidencia.direccion_completa.hamlet || props.incidencia.direccion_completa.village}`;
       const textoCompartir = `${tipoIncidencia} en ${direccionCorta}`.trim();
       const urlCompartir = window.location.href;
       const textoCompleto = `${textoCompartir}\n\n${urlCompartir}`;
