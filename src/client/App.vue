@@ -33,6 +33,12 @@
           </template>
           <v-list-item-title>Validar cercanos</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/pendientes">
+          <template v-slot:prepend>
+            <v-icon>mdi-eye-check</v-icon>
+          </template>
+          <v-list-item-title>Validar pendientes</v-list-item-title>
+        </v-list-item>
         <v-list-item @click="abrirRanking">
           <template v-slot:prepend>
             <v-icon>mdi-trophy</v-icon>
@@ -446,6 +452,7 @@
     <TusIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
     <RankingBarrios />
     <FavoritasIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
+    <PendientesValidar :incidencias="todasLasIncidencias" />
 
     <v-dialog v-model="mostrarConfirmacionImportar" max-width="400">
       <v-card>
@@ -492,6 +499,7 @@ import { useFavoritosStore } from './store/favoritosStore'
 import { useIncidenciasUsuarioStore } from './store/incidenciasUsuarioStore'
 import { useGestionDatos } from './composables/useGestionDatos';
 import MaratonGuide from './components/MaratonGuide.vue'
+import PendientesValidar from './components/PendientesValidar.vue'
 
 export default {
   name: 'App',
@@ -506,7 +514,8 @@ export default {
     TusIncidencias,
     RankingBarrios,
     FavoritasIncidencias,
-    MaratonGuide
+    MaratonGuide,
+    PendientesValidar
   },
   setup() {
     const incidencias = ref([])
@@ -978,7 +987,7 @@ export default {
       const currentRoute = router.currentRoute.value;
       const previousRoute = router.options.history.state.back;
 
-      if (previousRoute && ['IncidenciasCercanas', 'TusIncidencias', 'FavoritasIncidencias'].includes(router.resolve(previousRoute).name)) {
+      if (previousRoute && ['IncidenciasCercanas', 'TusIncidencias', 'FavoritasIncidencias', 'PendientesValidar'].includes(router.resolve(previousRoute).name)) {
         router.push(previousRoute);
       } else if (currentRoute.name !== 'Home') {
         router.push({ name: 'Home' });
@@ -1277,7 +1286,6 @@ export default {
     height: calc(100vh - 48px) !important;
     border-radius: 8px !important;
   }
-
   .v-toolbar__content {
     height: 48px !important;
   }
@@ -1573,3 +1581,4 @@ export default {
   margin: 4px 4px;
 }
 </style>
+
