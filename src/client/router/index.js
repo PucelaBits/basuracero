@@ -6,6 +6,7 @@ import TusIncidencias from '../components/TusIncidencias.vue'
 import RankingBarrios from '../components/RankingBarrios.vue'
 import FavoritasIncidencias from '../components/FavoritasIncidencias.vue'
 import MaratonGuide from '../components/MaratonGuide.vue'
+import PendientesValidar from '../components/PendientesValidar.vue'
 
 const routes = [
   {
@@ -82,6 +83,12 @@ const routes = [
     path: '/organizar-evento',
     name: 'OrganizarEvento',
     component: MaratonGuide
+  },
+  {
+    path: '/pendientes',
+    name: 'PendientesValidar',
+    component: PendientesValidar,
+    props: true
   },
 ]
 
