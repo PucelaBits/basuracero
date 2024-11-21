@@ -406,7 +406,7 @@ const confirmarSolucion = async () => {
           faldonOculto: true
         };
       }
-      mostrarMensaje(resultado.esAutor ? `Incidencia marcada como ${textoEstadoSolucionado.toLowerCase()}` : `Se añadió tu voto de ${textoEstadoSolucionado.toLowerCase()}`);
+      mostrarMensaje(resultado.esAutor ? `Incidencia marcada como ${textoEstadoSolucionado.value.toLowerCase()}` : `Se añadió tu voto de ${textoEstadoSolucionado.value.toLowerCase()}`);
     } else {
       const index = incidenciasFiltradas.value.findIndex(inc => inc.id === incidenciaSeleccionada.value.id);
       if (index !== -1) {
@@ -415,11 +415,11 @@ const confirmarSolucion = async () => {
           reportes_solucion: resultado.reportes_solucion
         };
       }
-      mostrarMensaje(`Se añadió tu voto de ${textoEstadoSolucionado.toLowerCase()}`);
+      mostrarMensaje(`Se añadió tu voto de ${textoEstadoSolucionado.value.toLowerCase()}`);
     }
   } catch (error) {
     console.error('Error en confirmarSolucion:', error);
-    mostrarError(error.response?.data?.error || `Error al marcar como ${textoEstadoSolucionado.toLowerCase()}`);
+    mostrarError(error.response?.data?.error || `Error al marcar como ${textoEstadoSolucionado.value.toLowerCase()}`);
   } finally {
     if (captchaWidget.value) {
       captchaWidget.value.reset();
