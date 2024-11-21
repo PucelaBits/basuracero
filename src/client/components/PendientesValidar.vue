@@ -417,6 +417,10 @@ const confirmarSolucion = async () => {
       }
       mostrarMensaje(`Se añadió tu voto de ${textoEstadoSolucionado.value.toLowerCase()}`);
     }
+
+    // Forzar la actualización del computed
+    props.incidencias = [...props.incidencias];
+
   } catch (error) {
     console.error('Error en confirmarSolucion:', error);
     mostrarError(error.response?.data?.error || `Error al marcar como ${textoEstadoSolucionado.value.toLowerCase()}`);
