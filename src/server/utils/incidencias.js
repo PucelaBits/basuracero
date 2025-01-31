@@ -45,21 +45,47 @@ function eliminarIncidencia(id, borrarImagenes) {
 function eliminarImagenesAsociadas(id, db) {
   return new Promise((resolve, reject) => {
     db.all('SELECT ruta_imagen FROM imagenes_incidencias WHERE incidencia_id = ?', [id], async (err, rows) => {
-      if (err) return reject(err);
-
-      for (const row of rows) {
-        const rutaCompleta = path.join(__dirname, '..', '..', '..', 'uploads', row.ruta_imagen);
-        try {
-          await fs.unlink(rutaCompleta);
-        } catch (error) {
-          console.error(`Error al eliminar la imagen ${rutaCompleta}:`, error);
-        }
+      if (err) {
+        console.error('Error al consultar imágenes:', err);
+        return reject(err);
       }
 
-      db.run('DELETE FROM imagenes_incidencias WHERE incidencia_id = ?', [id], (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
+      try {
+        // Process all image deletions
+        const deletePromises = rows.map(async (row) => {
+          const rutaCompleta = path.join(__dirname, '..', '..', '..', 'uploads', row.ruta_imagen);
+          try {
+            await fs.unlink(rutaCompleta);
+            return { success: true, path: rutaCompleta };
+          } catch (error) {
+            if (error.code !== 'ENOENT') { // Ignore if file doesn't exist
+              throw new Error(`Error al eliminar la imagen ${rutaCompleta}: ${error.message}`);
+            }
+            return { success: true, path: rutaCompleta, warning: 'File did not exist' };
+          }
+        });
+
+        // Wait for all deletions to complete
+        const results = await Promise.all(deletePromises);
+        
+        // Check if any deletions failed
+        const failures = results.filter(r => !r.success);
+        if (failures.length > 0) {
+          throw new Error(`Failed to delete ${failures.length} images`);
+        }
+
+        // If all files were deleted successfully, remove database records
+        db.run('DELETE FROM imagenes_incidencias WHERE incidencia_id = ?', [id], (dbErr) => {
+          if (dbErr) {
+            console.error('Error al eliminar registros de imágenes:', dbErr);
+            return reject(dbErr);
+          }
+          resolve(results);
+        });
+      } catch (error) {
+        console.error('Error en el proceso de eliminación de imágenes:', error);
+        reject(error);
+      }
     });
   });
 }
