@@ -16,8 +16,11 @@ export function useWhatsAppShare() {
   const enviarWhatsApp = (incidencia) => {
     if (!isEnabled.value) return;
 
-    const mensaje = `${incidencia.descripcion}\nDirección: ${incidencia.direccion_completa.road || incidencia.direccion_completa.neighbourhood || incidencia.direccion_completa.suburb}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`;
-    const mensajeEncoded = encodeURIComponent(mensaje);
+    const mensaje = `${incidencia.descripcion}\n Dirección: ${incidencia.direccion_completa.road || incidencia.direccion_completa.neighbourhood || incidencia.direccion_completa.suburb}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`;
+    const mensajeInit = 'Importante 1. Manda este mensaje para iniciar el bot. 2. Pulsa sobre el cuadro de escritura y da Pegar para completar la ubicación e incidencia.';
+
+
+    const mensajeEncoded = encodeURIComponent(mensajeInit);
     const url = `https://wa.me/${phoneNumber.value}?text=${mensajeEncoded}`;
     
     navigator.clipboard.writeText(mensaje)
