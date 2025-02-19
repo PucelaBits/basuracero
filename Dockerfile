@@ -6,6 +6,8 @@ RUN mkdir -p /app/data
 
 COPY package*.json ./
 
+RUN apt-get update && apt-get install -y python3
+
 RUN npm install
 
 COPY . .
