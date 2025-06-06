@@ -3,8 +3,18 @@ const router = express.Router();
 const { Feed } = require('feed');
 const db = require('../config/database');
 const dotenv = require('dotenv');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
+
+// Apply rate limiting to all requests
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+router.use(limiter);
 
 router.get('/', (req, res) => {
   const feed = new Feed({
