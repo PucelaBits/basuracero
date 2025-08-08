@@ -24,7 +24,7 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "@unhead/vue": "^1.11.7",
-    "axios": "^1.7.7",
+    "axios": "^1.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
@@ -33,7 +33,7 @@
     "friendly-challenge": "^0.9.18",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
-    "multer": "^2.0.1",
+    "multer": "^2.0.2",
     "papaparse": "^5.4.1",
     "sharp": "^0.33.5",
     "sqlite3": "^5.1.7",
