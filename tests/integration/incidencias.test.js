@@ -12,8 +12,31 @@ jest.mock('../../src/server/routes/incidencias', () => {
   
   const verificarCaptcha = jest.fn().mockResolvedValue(true);
 
+  // Función para validar nombres (similar a la del servidor)
+  const validarNombre = (nombre) => {
+    if (!nombre || typeof nombre !== 'string') {
+      return 'Este campo es obligatorio.';
+    }
+    const nombreTrimmed = nombre.trim();
+    if (nombreTrimmed.length === 0) {
+      return 'Este campo es obligatorio.';
+    }
+    if (nombreTrimmed.length > 20) {
+      return 'El nombre es demasiado largo. Máximo 20 caracteres.';
+    }
+    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrimmed)) {
+      return 'El nombre solo puede contener letras, números y espacios.';
+    }
+    return null;
+  };
+
   // Ruta para crear una nueva incidencia
   router.post('/', async (req, res) => {
+    const errorNombre = validarNombre(req.body.nombre);
+    if (errorNombre) {
+      return res.status(400).json({ error: errorNombre });
+    }
+    
     if (await verificarCaptcha(req.body['frc-captcha-solution'])) {
       res.status(201).json({ id: 1, codigoUnico: 'abc123' });
     } else {
@@ -207,7 +230,7 @@ describe('POST /api/incidencias con validación de nombre', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
-    expect(response.body.error).toContain('El nombre no es válido');
+    expect(response.body.error).toContain('nombre solo puede contener letras');
   });
 
   it('debería aceptar un nombre de usuario válido', async () => {

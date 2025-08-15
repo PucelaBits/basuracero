@@ -12,6 +12,7 @@ const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const { toCSV, toGeoJSON } = require('../utils/formatters');
+const { getAmigableErrorMessage, getSpecificErrorMessage } = require('../utils/errorMessages');
 
 const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
 const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
@@ -65,14 +66,17 @@ const reporteLimiter = rateLimit({
 // Función para validar el nombre
 function validarNombre(nombre) {
   if (!nombre || typeof nombre !== 'string') {
-    return 'El nombre es requerido y debe ser una cadena de texto';
+    return getSpecificErrorMessage('validation', 'required');
   }
   const nombreTrimmed = nombre.trim();
-  if (nombreTrimmed.length === 0 || nombreTrimmed.length > 20) {
-    return 'El nombre debe tener entre 1 y 20 caracteres';
+  if (nombreTrimmed.length === 0) {
+    return getSpecificErrorMessage('validation', 'required');
+  }
+  if (nombreTrimmed.length > 20) {
+    return 'El nombre es demasiado largo. Máximo 20 caracteres.';
   }
   if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrimmed)) {
-    return 'El nombre solo puede contener letras, números y espacios';
+    return getSpecificErrorMessage('validation', 'nameInvalid');
   }
   return null; // null significa que no hay error
 }
@@ -80,25 +84,25 @@ function validarNombre(nombre) {
 // Función de validación
 const validarIncidencia = (incidencia) => {
   const errores = [];
-  if (!incidencia.tipo_id) errores.push('El tipo de incidencia es requerido');
-  if (!incidencia.descripcion) errores.push('La descripción es requerida');
-  if (!incidencia.latitud) errores.push('La latitud es requerida');
-  if (!incidencia.longitud) errores.push('La longitud es requerida');
-  if (!incidencia.nombre) errores.push('El nombre es requerido');
+  if (!incidencia.tipo_id) errores.push('Por favor, selecciona el tipo de incidencia.');
+  if (!incidencia.descripcion) errores.push('Por favor, describe lo que has observado.');
+  if (!incidencia.latitud) errores.push('Por favor, selecciona la ubicación en el mapa.');
+  if (!incidencia.longitud) errores.push('Por favor, selecciona la ubicación en el mapa.');
+  if (!incidencia.nombre) errores.push('Por favor, introduce tu nombre.');
   
   // Validaciones adicionales
   if (incidencia.descripcion && incidencia.descripcion.length > 500) 
-    errores.push('La descripción no debe exceder los 500 caracteres');
+    errores.push('La descripción es demasiado larga. Por favor, resume en 500 caracteres o menos.');
   if (incidencia.nombre && incidencia.nombre.length > 100) 
-    errores.push('El nombre no debe exceder los 100 caracteres');
+    errores.push('El nombre es demasiado largo. Máximo 100 caracteres.');
   if (incidencia.latitud && (incidencia.latitud < -90 || incidencia.latitud > 90)) 
-    errores.push('La latitud debe estar entre -90 y 90');
+    errores.push(getSpecificErrorMessage('validation', 'invalidCoordinates'));
   if (incidencia.longitud && (incidencia.longitud < -180 || incidencia.longitud > 180)) 
-    errores.push('La longitud debe estar entre -180 y 180');
+    errores.push(getSpecificErrorMessage('validation', 'invalidCoordinates'));
 
   if (incidencia.latitud < CIUDAD_LAT_MIN || incidencia.latitud > CIUDAD_LAT_MAX ||
       incidencia.longitud < CIUDAD_LON_MIN || incidencia.longitud > CIUDAD_LON_MAX) {
-    errores.push('La ubicación está fuera de los límites de la ciudad');
+    errores.push(getSpecificErrorMessage('validation', 'outOfBounds'));
   }
 
   return errores;
@@ -129,7 +133,8 @@ router.get('/tipos', (req, res) => {
   
   db.all(sql, [], (err, rows) => {
     if (err) {
-      res.status(400).json({ error: err.message });
+      console.error('Error al obtener tipos de incidencias:', err);
+      res.status(500).json({ error: getAmigableErrorMessage(err, 'database') });
       return;
     }
     res.json(rows);
@@ -140,7 +145,8 @@ router.get('/tipos', (req, res) => {
 router.post('/', crearIncidenciaLimiter, (req, res) => {
   upload(req, res, async function (err) {
     if (err) {
-      return res.status(500).json({ error: 'Error al subir la imagen' });
+      console.error('Error al subir imagen:', err);
+      return res.status(500).json({ error: getSpecificErrorMessage('file', 'upload') });
     }
 
     const errorNombre = validarNombre(req.body.nombre);
@@ -156,14 +162,14 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
     }
 
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'Se requiere al menos una imagen' });
+      return res.status(400).json({ error: getSpecificErrorMessage('file', 'noImage') });
     }
 
     try {
       // Validar el captcha
       const captchaValido = await verificarCaptcha(captchaSolution);
       if (!captchaValido) {
-        return res.status(400).json({ error: 'Captcha inválido' });
+        return res.status(400).json({ error: getSpecificErrorMessage('captcha', 'invalid') });
       }
 
       const ip = obtenerIP(req);
@@ -202,7 +208,7 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
           if (err) {
             console.error('Error al insertar en la base de datos:', err);
             db.run('ROLLBACK');
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: getAmigableErrorMessage(err, 'database') });
           }
 
           const incidenciaId = this.lastID;
@@ -229,13 +235,13 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
             .catch(err => {
               console.error('Error al insertar imágenes:', err);
               db.run('ROLLBACK');
-              res.status(500).json({ error: 'Error al guardar las imágenes' });
+              res.status(500).json({ error: getSpecificErrorMessage('file', 'processingError') });
             });
         });
       });
     } catch (error) {
       console.error('Error al procesar la incidencia:', error);
-      res.status(500).json({ error: 'Error interno del servidor' });
+      res.status(500).json({ error: getAmigableErrorMessage(error, 'general') });
     }
   });
 });
@@ -609,7 +615,7 @@ router.get('/:id', (req, res) => {
     }
 
     if (!row) {
-      res.status(404).json({ error: 'Incidencia no encontrada' });
+      res.status(404).json({ error: getSpecificErrorMessage('incidencia', 'notFound') });
       return;
     }
 

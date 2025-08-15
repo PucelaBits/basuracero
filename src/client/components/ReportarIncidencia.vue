@@ -327,6 +327,14 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Notificación de errores mejorada -->
+    <NotificacionError
+      v-model="mostrarNotificacion"
+      :mensaje="notificacionMensaje"
+      :tipo="notificacionTipo"
+      :duracion="6000"
+    />
   </div>
 </template>
 
@@ -340,6 +348,8 @@ import DetalleIncidencia from './DetalleIncidencia.vue';
 import { enviarEventoMatomo } from '../utils/analytics';
 import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore'
 import MiniMapa from './MiniMapa.vue';
+import NotificacionError from './NotificacionError.vue';
+import { getClientErrorMessage, getLocationErrorMessage } from '../utils/errorHandler';
 
 const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
@@ -352,7 +362,8 @@ export default {
   name: 'ReportarIncidencia',
   components: {
     DetalleIncidencia,
-    MiniMapa
+    MiniMapa,
+    NotificacionError
   },
   props: {
     modelValue: Boolean,
@@ -386,6 +397,9 @@ export default {
     const friendlyCaptchaSitekey = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY)
     const mostrarDialogoError = ref(false)
     const mensajeError = ref('')
+    const mostrarNotificacion = ref(false)
+    const notificacionTipo = ref('error')
+    const notificacionMensaje = ref('')
     const obteniendoUbicacion = ref(false)
     const incidenciasCercanas = ref([])
     const mostrarDialogoIncidenciasCercanas = ref(false)
@@ -483,18 +497,19 @@ export default {
         const validacionResult = validarCoordenadas();
         if (validacionResult === true) {
           const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${incidencia.value.latitud}&lon=${incidencia.value.longitud}&zoom=18&addressdetails=1&accept-language=es`
-          try {
-            const response = await fetch(url)
-            const data = await response.json()
-            direccion.value = data.display_name
-            incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || ''
-            incidencia.value.direccion_json = JSON.stringify(data.address)
-          } catch (error) {
-            console.error('Error al obtener la dirección:', error)
-            direccion.value = 'No se pudo obtener la dirección'
-            incidencia.value.barrio = ''
-            incidencia.value.direccion_json = null
-          }
+      try {
+        const response = await fetch(url)
+        const data = await response.json()
+        direccion.value = data.display_name
+        incidencia.value.barrio = data.address.suburb || data.address.neighbourhood || data.address.city || data.address.town || data.address.hamlet || data.address.village || ''
+        incidencia.value.direccion_json = JSON.stringify(data.address)
+      } catch (error) {
+        console.error('Error al obtener la dirección:', error)
+        direccion.value = 'No se pudo obtener la dirección'
+        incidencia.value.barrio = ''
+        incidencia.value.direccion_json = null
+        // No mostramos error al usuario ya que esto es secundario
+      }
         } else {
           incidencia.value.barrio = ''
           incidencia.value.direccion_json = null
@@ -527,14 +542,15 @@ export default {
           },
           (error) => {
             console.error("Error al obtener la ubicación:", error.message);
-            mensajeError.value = "No se pudo obtener la ubicación actual. Por favor, intente de nuevo o ingrese las coordenadas en el mapa";
+            const mensajeAmigable = getLocationErrorMessage(error);
+            mensajeError.value = mensajeAmigable;
             mostrarDialogoError.value = true;
             obteniendoUbicacion.value = false;
           },
           opciones
         );
       } else {
-        mensajeError.value = "La geolocalización no está disponible en este navegador";
+        mensajeError.value = getLocationErrorMessage({ code: 'UNSUPPORTED' });
         mostrarDialogoError.value = true;
       }
     }
@@ -581,7 +597,10 @@ export default {
         });
       } catch (error) {
         console.error('Error al enviar incidencia:', error)
-        alert('Hubo un error al enviar la incidencia. Por favor, intente de nuevo.')
+        const mensajeAmigable = getClientErrorMessage(error);
+        notificacionMensaje.value = mensajeAmigable;
+        notificacionTipo.value = 'error';
+        mostrarNotificacion.value = true;
       } finally {
         enviando.value = false
       }
@@ -690,6 +709,9 @@ export default {
         reconocimientoVoz.onerror = (event) => {
           console.error('Error en el reconocimiento de voz:', event.error)
           reconocimientoVozActivo.value = false
+          notificacionMensaje.value = 'No se pudo activar el reconocimiento de voz. Por favor, escribe tu descripción.';
+          notificacionTipo.value = 'warning';
+          mostrarNotificacion.value = true;
         }
 
         reconocimientoVoz.start()
