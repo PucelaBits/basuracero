@@ -22,7 +22,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Configurar la ruta de la base de datos
-const dbPath = path.join(__dirname, '..', 'database.db');
+const dbPath = path.join(__dirname, '..', 'data', 'incidencias.sqlite');
 const sqlite3 = require('sqlite3').verbose();
 
 // Parsear argumentos de línea de comandos
