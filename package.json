@@ -17,6 +17,7 @@
     "rellenar-direcciones": "node scripts/rellenarDirecciones.js",
     "asignar-imagen": "node scripts/asignarImagen.js",
     "import-incidencias": "node scripts/importarIncidencias.js",
+    "solucionar-antiguas": "node scripts/solucionarAntiguas.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "migrate": "node scripts/runMigrations.js"

@@ -189,6 +189,29 @@ La aplicación estará disponible en `http://localhost:5050`.
 - `docker-compose exec basuracero-app npm run rellenar-direcciones`: Actualiza las direcciones de las incidencias que no tienen una dirección asignada.
 - `docker-compose exec basuracero-app npm run rellenar-barrios`: Actualiza los barrios de las incidencias que no tienen un barrio asignado.
 - `docker-compose exec basuracero-app npm run asignar-imagen ID RUTA_IMAGEN`: Asigna una imagen a una incidencia específica.
+- `docker-compose exec basuracero-app npm run solucionar-antiguas [-- opciones]`: Soluciona automáticamente incidencias antiguas con votos.
+
+#### Script para solucionar incidencias antiguas
+
+Este script permite marcar automáticamente como solucionadas las incidencias que cumplan ciertos criterios de antigüedad y votos de solución.
+
+**Uso básico:**
+```bash
+# Ejecutar con valores por defecto (90 días, 1 voto mínimo)
+docker-compose exec basuracero-app npm run solucionar-antiguas
+
+# Solo ver qué incidencias se solucionarían (sin hacer cambios)
+docker-compose exec basuracero-app npm run solucionar-antiguas -- --dry-run
+
+# Personalizar criterios
+docker-compose exec basuracero-app npm run solucionar-antiguas -- --dias 180 --votos 2
+```
+
+**Opciones disponibles:**
+- `--dias <numero>`: Número de días de antigüedad mínima (por defecto: 90)
+- `--votos <numero>`: Número mínimo de votos de solución (por defecto: 1)
+- `--dry-run`: Solo mostrar qué se haría sin ejecutar cambios
+- `--help`: Mostrar ayuda detallada
 
 ### Feeds RSS
 
@@ -370,6 +393,7 @@ Para ejecutar la aplicación localmente en modo de desarrollo, sigue estos pasos
 - `npm run incidencia remove ID`: Borra una incidencia por su ID.
 - `npm run incidencia edit-tipo ID TIPO_ID`: Cambia el tipo de una incidencia.
 - `npm run tipos`: Gestiona los tipos de incidencias (listar, añadir, editar, eliminar y reasignar).
+- `npm run solucionar-antiguas [-- opciones]`: Soluciona automáticamente incidencias antiguas con votos.
 
 ### Notas adicionales
 
