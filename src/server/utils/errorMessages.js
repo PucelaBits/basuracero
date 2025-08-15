@@ -19,7 +19,8 @@ const errorMessages = {
     invalidFormat: 'El formato introducido no es válido.',
     outOfBounds: 'La ubicación seleccionada está fuera de la zona permitida.',
     invalidCoordinates: 'Las coordenadas introducidas no son válidas.',
-    nameInvalid: 'El nombre solo puede contener letras, números y espacios.'
+    nameInvalid: 'El nombre solo puede contener letras, números y espacios.',
+    descriptionTooLong: 'La descripción es muy larga. Por favor, resume en máximo 500 caracteres.'
   },
   
   // Errores de archivos/imágenes

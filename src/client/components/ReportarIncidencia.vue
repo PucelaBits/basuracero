@@ -59,10 +59,16 @@
             <v-textarea
               v-model="incidencia.descripcion"
               label="Descripción"
-              :rules="[v => !!v || 'La descripción es necesaria']"
+              :rules="[
+                v => !!v || 'La descripción es necesaria',
+                v => !v || v.length <= 500 || 'La descripción es muy larga. Máximo 500 caracteres.'
+              ]"
+              counter="500"
+              maxlength="500"
               required
               rows="5"
               auto-grow
+              :error="incidencia.descripcion && incidencia.descripcion.length > 500"
             >
               <template v-slot:prepend>
                 <v-icon size="small">mdi-text</v-icon>

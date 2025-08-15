@@ -92,7 +92,7 @@ const validarIncidencia = (incidencia) => {
   
   // Validaciones adicionales
   if (incidencia.descripcion && incidencia.descripcion.length > 500) 
-    errores.push('La descripción es demasiado larga. Por favor, resume en 500 caracteres o menos.');
+    errores.push(getSpecificErrorMessage('validation', 'descriptionTooLong'));
   if (incidencia.nombre && incidencia.nombre.length > 100) 
     errores.push('El nombre es demasiado largo. Máximo 100 caracteres.');
   if (incidencia.latitud && (incidencia.latitud < -90 || incidencia.latitud > 90)) 
