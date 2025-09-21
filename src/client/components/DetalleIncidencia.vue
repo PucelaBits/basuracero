@@ -3,7 +3,7 @@
     <v-card class="detalle-incidencia">
       <div class="imagen-container">
         <v-carousel
-          v-if="incidencia.imagenes && incidencia.imagenes.length > 0"
+          v-if="incidencia.imagenes && incidencia.imagenes.length > 0 && incidencia.estado !== 'spam'"
           :show-arrows="incidencia.imagenes.length > 1"
           hide-delimiter-background
           height="270"
@@ -25,8 +25,13 @@
             </template>
           </v-carousel-item>
         </v-carousel>
-        <div v-else class="spam-placeholder" height="270">
-          <v-icon x-large color="grey">mdi-image-off</v-icon>
+        <div v-else class="spam-placeholder d-flex align-center justify-center" style="height: 270px; background-color: #f5f5f5;">
+          <div class="text-center">
+            <v-icon x-large color="grey" class="mb-2">{{ incidencia.estado === 'spam' ? 'mdi-alert' : 'mdi-image-off' }}</v-icon>
+            <div v-if="incidencia.estado === 'spam'" class="text-caption text--secondary">
+              Contenido oculto por reportes de la comunidad
+            </div>
+          </div>
         </div>
         
         <!-- Pastillas de tipo y estado -->

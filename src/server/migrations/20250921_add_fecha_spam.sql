@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE incidencias ADD COLUMN fecha_spam DATETIME;
+COMMIT;
