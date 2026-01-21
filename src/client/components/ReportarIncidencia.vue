@@ -399,6 +399,10 @@ export default {
     const direccion = ref('')
     const captchaContainer = ref(null)
     const captchaSolution = ref(null)
+    const isProduction = import.meta.env.PROD;
+    const captchaEnabled = isProduction 
+      ? import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED !== 'false'
+      : import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true';
     const captchaWidget = ref(null)
     const friendlyCaptchaSitekey = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY)
     const mostrarDialogoError = ref(false)
@@ -775,7 +779,7 @@ export default {
         verificarIncidenciasCercanas();
       }
 
-      if (import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true' && captchaContainer.value) {
+      if (captchaEnabled && captchaContainer.value) {
         captchaWidget.value = new WidgetInstance(captchaContainer.value, {
           startMode: "auto",
           sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,

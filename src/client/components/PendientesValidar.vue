@@ -261,7 +261,10 @@ const nombreUsuario = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
 const mensajeError = ref('')
-const captchaHabilitado = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true')
+const isProductionValue = import.meta.env.PROD;
+const captchaHabilitado = ref(isProductionValue 
+  ? import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED !== 'false'
+  : import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true')
 const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY
 
 const opcionesOrden = [

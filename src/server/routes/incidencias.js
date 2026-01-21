@@ -14,7 +14,10 @@ const crypto = require('crypto');
 const { toCSV, toGeoJSON } = require('../utils/formatters');
 const { getAmigableErrorMessage, getSpecificErrorMessage } = require('../utils/errorMessages');
 
-const friendlyCaptchaEnabled = process.env.friendlycaptcha_enabled === 'true';
+const isProduction = process.env.NODE_ENV === 'production';
+const friendlyCaptchaEnabled = isProduction
+  ? process.env.friendlycaptcha_enabled !== 'false'
+  : process.env.friendlycaptcha_enabled === 'true';
 const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
 const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(process.env.CIUDAD_LAT_MAX);

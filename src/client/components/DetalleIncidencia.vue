@@ -408,6 +408,11 @@ export default {
     const snackbarText = ref('');
     const añadirAFavoritas = ref(true);
 
+    const isProduction = import.meta.env.PROD;
+    const captchaEnabled = isProduction 
+      ? import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED !== 'false'
+      : import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true';
+
     const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
 
     const isIOS = computed(() => {
@@ -455,7 +460,7 @@ export default {
     watch(mostrarDialogoConfirmacion, async (newValue) => {
       if (newValue) {
         await nextTick(); // Esperar a que el DOM se actualice
-        if (import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true' && captchaContainer.value) {
+        if (captchaEnabled && captchaContainer.value) {
           console.log('Inicializando captcha...');
           captchaWidget.value = new WidgetInstance(captchaContainer.value, {
             sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
