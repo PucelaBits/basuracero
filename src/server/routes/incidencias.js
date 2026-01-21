@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const { toCSV, toGeoJSON } = require('../utils/formatters');
 const { getAmigableErrorMessage, getSpecificErrorMessage } = require('../utils/errorMessages');
 
+const friendlyCaptchaEnabled = process.env.friendlycaptcha_enabled === 'true';
 const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
 const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(process.env.CIUDAD_LAT_MAX);
@@ -25,8 +26,8 @@ const REPORTES_PARA_SOLUCIONAR_ANTIGUA = parseInt(process.env.REPORTES_PARA_SOLU
 
 // Asegurarse de que la carpeta uploads existe
 const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
-if (!fs.existsSync(uploadsDir)){
-    fs.mkdirSync(uploadsDir, { recursive: true });
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 // Configurar Multer para la subida de archivos
@@ -89,19 +90,19 @@ const validarIncidencia = (incidencia) => {
   if (!incidencia.latitud) errores.push('Por favor, selecciona la ubicación en el mapa.');
   if (!incidencia.longitud) errores.push('Por favor, selecciona la ubicación en el mapa.');
   if (!incidencia.nombre) errores.push('Por favor, introduce tu nombre.');
-  
+
   // Validaciones adicionales
-  if (incidencia.descripcion && incidencia.descripcion.length > 500) 
+  if (incidencia.descripcion && incidencia.descripcion.length > 500)
     errores.push(getSpecificErrorMessage('validation', 'descriptionTooLong'));
-  if (incidencia.nombre && incidencia.nombre.length > 100) 
+  if (incidencia.nombre && incidencia.nombre.length > 100)
     errores.push('El nombre es demasiado largo. Máximo 100 caracteres.');
-  if (incidencia.latitud && (incidencia.latitud < -90 || incidencia.latitud > 90)) 
+  if (incidencia.latitud && (incidencia.latitud < -90 || incidencia.latitud > 90))
     errores.push(getSpecificErrorMessage('validation', 'invalidCoordinates'));
-  if (incidencia.longitud && (incidencia.longitud < -180 || incidencia.longitud > 180)) 
+  if (incidencia.longitud && (incidencia.longitud < -180 || incidencia.longitud > 180))
     errores.push(getSpecificErrorMessage('validation', 'invalidCoordinates'));
 
   if (incidencia.latitud < CIUDAD_LAT_MIN || incidencia.latitud > CIUDAD_LAT_MAX ||
-      incidencia.longitud < CIUDAD_LON_MIN || incidencia.longitud > CIUDAD_LON_MAX) {
+    incidencia.longitud < CIUDAD_LON_MIN || incidencia.longitud > CIUDAD_LON_MAX) {
     errores.push(getSpecificErrorMessage('validation', 'outOfBounds'));
   }
 
@@ -130,7 +131,7 @@ async function verificarCaptcha(captchaSolution) {
 // Obtener tipos de incidencias
 router.get('/tipos', (req, res) => {
   const sql = `SELECT * FROM tipos_incidencias`;
-  
+
   db.all(sql, [], (err, rows) => {
     if (err) {
       console.error('Error al obtener tipos de incidencias:', err);
@@ -156,7 +157,7 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
 
     const { tipo_id, descripcion, latitud, longitud, direccion, 'frc-captcha-solution': captchaSolution } = req.body;
 
-    const errores = validarIncidencia({...req.body, nombre: req.body.nombre});
+    const errores = validarIncidencia({ ...req.body, nombre: req.body.nombre });
     if (errores.length > 0) {
       return res.status(400).json({ errores });
     }
@@ -167,9 +168,11 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
 
     try {
       // Validar el captcha
-      const captchaValido = await verificarCaptcha(captchaSolution);
-      if (!captchaValido) {
-        return res.status(400).json({ error: getSpecificErrorMessage('captcha', 'invalid') });
+      if (friendlyCaptchaEnabled) {
+        const captchaValido = await verificarCaptcha(captchaSolution);
+        if (!captchaValido) {
+          return res.status(400).json({ error: getSpecificErrorMessage('captcha', 'invalid') });
+        }
       }
 
       const ip = obtenerIP(req);
@@ -192,19 +195,19 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
           codigo_unico, 
           barrio
         ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?, ?)`;
-        
+
         db.run(sql, [
-          tipo_id, 
-          descripcion, 
-          latitud, 
-          longitud, 
-          req.body.nombre, 
+          tipo_id,
+          descripcion,
+          latitud,
+          longitud,
+          req.body.nombre,
           direccion,
           req.body.direccion_json,
-          ip, 
-          codigoUnico, 
+          ip,
+          codigoUnico,
           req.body.barrio
-        ], function(err) {
+        ], function (err) {
           if (err) {
             console.error('Error al insertar en la base de datos:', err);
             db.run('ROLLBACK');
@@ -217,7 +220,7 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
           const insertImagePromises = req.files.map(async file => {
             const filename = `${uuidv4()}.jpg`;
             const filepath = path.join(uploadsDir, filename);
-            
+
             await sharp(file.buffer)
               .rotate()
               .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
@@ -279,7 +282,7 @@ router.get('/', (req, res) => {
     ORDER BY i.fecha DESC
     LIMIT ? OFFSET ?
   `;
-  
+
   db.get(countSql, params, (err, row) => {
     if (err) {
       console.error('Error al obtener el total de incidencias:', err);
@@ -296,7 +299,7 @@ router.get('/', (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
         return;
       }
-      
+
       // Obtener las imágenes para cada incidencia
       const promises = rows.map(incidencia => {
         return new Promise((resolve, reject) => {
@@ -373,14 +376,14 @@ router.get('/todas', (req, res) => {
     ${whereClause}
     ORDER BY i.fecha DESC
   `;
-  
+
   db.all(sql, [], (err, rows) => {
     if (err) {
       console.error('Error al obtener todas las incidencias:', err);
       res.status(500).json({ error: 'Error interno del servidor' });
       return;
     }
-    
+
     // Obtener las imágenes para cada incidencia
     const promises = rows.map(incidencia => {
       return new Promise((resolve, reject) => {
@@ -452,7 +455,7 @@ router.get('/usuarios/ranking', (req, res) => {
   let minIncidencias = parseInt(req.query.minIncidencias) || 1;
   let minVotos = parseInt(req.query.minVotos) || 0;
   let periodo = req.query.periodo || 'total';
-  
+
   // Validación y sanitización
   if (isNaN(minIncidencias) || minIncidencias < 0) {
     minIncidencias = 1;
@@ -580,7 +583,7 @@ router.get('/usuarios/ranking', (req, res) => {
             return;
           }
 
-          res.json({ 
+          res.json({
             ranking,
             usuariosUnicos: rowUsuarios.usuarios_unicos,
             totalIncidencias: rowIncidencias.total_incidencias,
@@ -657,9 +660,11 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 
   try {
     // Validar el captcha
-    const captchaValido = await verificarCaptcha(captchaSolution);
-    if (!captchaValido) {
-      return res.status(400).json({ error: 'Captcha inválido' });
+    if (friendlyCaptchaEnabled) {
+      const captchaValido = await verificarCaptcha(captchaSolution);
+      if (!captchaValido) {
+        return res.status(400).json({ error: 'Captcha inválido' });
+      }
     }
 
     // Verificar si la incidencia existe
@@ -690,8 +695,8 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 
     // Insertar el reporte de solución
     await new Promise((resolve, reject) => {
-      db.run('INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario) VALUES (?, ?, datetime("now", "localtime"), ?)', 
-        [incidenciaId, ip, nombre], 
+      db.run('INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario) VALUES (?, ?, datetime("now", "localtime"), ?)',
+        [incidenciaId, ip, nombre],
         (err) => {
           if (err) {
             console.error('Error al insertar reporte de solución:', err);
@@ -699,7 +704,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
           } else {
             resolve();
           }
-      });
+        });
     });
 
     if (esAutor) {
@@ -719,7 +724,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
     } else {
       // Procesar reporte de solución sin código único
       const resultado = await procesarReporteSolucion(incidenciaId);
-      
+
       return res.json({
         solucionada: resultado.solucionada,
         reportes_solucion: resultado.reportes_solucion,
@@ -780,9 +785,11 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
 
   try {
     // Validar el captcha
-    const captchaValido = await verificarCaptcha(captchaSolution);
-    if (!captchaValido) {
-      return res.status(400).json({ error: 'Captcha inválido' });
+    if (friendlyCaptchaEnabled) {
+      const captchaValido = await verificarCaptcha(captchaSolution);
+      if (!captchaValido) {
+        return res.status(400).json({ error: 'Captcha inválido' });
+      }
     }
 
     // Verificar si el usuario ya ha reportado esta incidencia como inadecuada
@@ -834,7 +841,7 @@ router.get('/barrios/ranking', (req, res) => {
   let minIncidencias = parseInt(req.query.minIncidencias);
   let periodo = req.query.periodo || 'total';
   const incluirDetalles = req.query.incluirDetalles === 'true';
-  
+
   // Validación y sanitización
   if (isNaN(minIncidencias) || minIncidencias < 1) {
     minIncidencias = 1;
@@ -970,7 +977,7 @@ router.get('/barrios/ranking', (req, res) => {
             return;
           }
 
-          res.json({ 
+          res.json({
             ranking,
             barriosUnicos: rowBarrios.barrios_unicos,
             totalIncidencias: rowIncidencias.total_incidencias,
