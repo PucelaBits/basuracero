@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createHead } from '@unhead/vue'
+import { createHead } from '@unhead/vue/client'
 import App from './App.vue'
 import routes from './router/index' 
 import { createRouter, createWebHistory } from 'vue-router'
