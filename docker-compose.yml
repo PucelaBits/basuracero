@@ -4,7 +4,8 @@ services:
       context: .
       args:
         - PORT=${PORT:-5050}
-    network_mode: "host"
+    ports:
+      - "${PORT:-5050}:${PORT:-5050}"
     volumes:
       - ./uploads:/app/uploads
       - ./data:/app/data
