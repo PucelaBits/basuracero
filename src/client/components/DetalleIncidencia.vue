@@ -365,7 +365,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { WidgetInstance } from 'friendly-challenge';
 import { enviarEventoMatomo } from '../utils/analytics';
-import { useFavoritosStore } from '../store/favoritosStore'; // Añade esta línea
+import { useFavoritosStore } from '../store/favoritosStore';
 import { useHead } from '@unhead/vue';
 import { useWhatsAppShare } from '../composables/useWhatsAppShare';
 
@@ -570,69 +570,50 @@ export default {
 
     const map = ref(null);
 
-    const originalMetaTags = ref({
-      title: '',
-      ogTitle: '',
-      ogDescription: '',
-      ogImage: '',
-      twitterTitle: '',
-      twitterDescription: '',
-      twitterImage: ''
+    const detalleTitle = computed(() => `${appName} - Registro ${props.incidencia.id}`);
+    const detalleDescription = computed(() => {
+      return props.incidencia.descripcion || `Detalles de la incidencia en ${appName}`;
     });
+    const detalleImageUrl = computed(() => {
+      const imageSource = props.incidencia.imagenes?.[0]?.ruta_imagen || props.incidencia.imagen || '';
+      if (!imageSource) return '';
+      try {
+        return new URL(imageSource, window.location.origin).href;
+      } catch {
+        return imageSource;
+      }
+    });
+    const detalleCanonicalUrl = computed(() => window.location.href);
 
-    const actualizarMetadatos = () => {
-      // Guardar metaetiquetas originales
-      originalMetaTags.value.title = document.title;
-      originalMetaTags.value.ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
-      originalMetaTags.value.ogDescription = document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
-      originalMetaTags.value.ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
-      originalMetaTags.value.twitterTitle = document.querySelector('meta[name="twitter:title"]')?.getAttribute('content') || '';
-      originalMetaTags.value.twitterDescription = document.querySelector('meta[name="twitter:description"]')?.getAttribute('content') || '';
-      originalMetaTags.value.twitterImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content') || '';
-
-      // Actualizar título
-      document.title = `${appName} - Registro ${props.incidencia.id}`;
-      
-      // Construir la URL completa de la imagen
-      const fullImageUrl = new URL(props.incidencia.imagen, window.location.origin).href;
-
-      // Actualizar metaetiquetas para la vista previa de redes sociales
-      const updateMetaTag = (selector, attribute, content) => {
-        let metaTag = document.querySelector(selector);
-        if (metaTag) {
-          metaTag.setAttribute(attribute, content);
-        } else {
-          metaTag = document.createElement('meta');
-          metaTag.setAttribute(attribute, content);
-          document.head.appendChild(metaTag);
-        }
-      };
-
-      updateMetaTag('meta[property="og:title"]', 'content', `${appName} - Registro ${props.incidencia.id}`);
-      updateMetaTag('meta[property="og:description"]', 'content', props.incidencia.descripcion);
-      updateMetaTag('meta[property="og:image"]', 'content', fullImageUrl);
-      updateMetaTag('meta[name="twitter:title"]', 'content', `${appName} - Registro ${props.incidencia.id}`);
-      updateMetaTag('meta[name="twitter:description"]', 'content', props.incidencia.descripcion);
-      updateMetaTag('meta[name="twitter:image"]', 'content', fullImageUrl);
-    };
-
-    const restaurarMetadatos = () => {
-      document.title = originalMetaTags.value.title;
-
-      const restoreMetaTag = (selector, attribute, content) => {
-        const metaTag = document.querySelector(selector);
-        if (metaTag) {
-          metaTag.setAttribute(attribute, content);
-        }
-      };
-
-      restoreMetaTag('meta[property="og:title"]', 'content', originalMetaTags.value.ogTitle);
-      restoreMetaTag('meta[property="og:description"]', 'content', originalMetaTags.value.ogDescription);
-      restoreMetaTag('meta[property="og:image"]', 'content', originalMetaTags.value.ogImage);
-      restoreMetaTag('meta[name="twitter:title"]', 'content', originalMetaTags.value.twitterTitle);
-      restoreMetaTag('meta[name="twitter:description"]', 'content', originalMetaTags.value.twitterDescription);
-      restoreMetaTag('meta[name="twitter:image"]', 'content', originalMetaTags.value.twitterImage);
-    };
+    useHead(() => ({
+      title: detalleTitle.value,
+      meta: [
+        { name: 'description', content: detalleDescription.value },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: detalleCanonicalUrl.value },
+        { property: 'og:title', content: detalleTitle.value },
+        { property: 'og:description', content: detalleDescription.value },
+        { property: 'og:image', content: detalleImageUrl.value },
+        { property: 'og:image:alt', content: `Imagen de la incidencia ${props.incidencia.id}` },
+        { property: 'og:site_name', content: appName },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:url', content: detalleCanonicalUrl.value },
+        { name: 'twitter:title', content: detalleTitle.value },
+        { name: 'twitter:description', content: detalleDescription.value },
+        { name: 'twitter:image', content: detalleImageUrl.value },
+        { name: 'twitter:image:alt', content: `Imagen de la incidencia ${props.incidencia.id}` },
+        { name: 'apple-mobile-web-app-title', content: detalleTitle.value },
+        { name: 'application-name', content: detalleTitle.value },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:secure_url', content: detalleImageUrl.value },
+        { name: 'pinterest:media', content: detalleImageUrl.value },
+        { name: 'pinterest:description', content: detalleDescription.value },
+      ],
+      link: [
+        { rel: 'canonical', href: detalleCanonicalUrl.value }
+      ]
+    }));
 
     const cerrarDialogoExito = () => {
       mostrarDialogoExito.value = false;
@@ -663,56 +644,7 @@ export default {
       enviarEventoMatomo('Incidencia', isFavorite.value ? 'Añadir a favoritos' : 'Quitar de favoritos', `ID: ${props.incidencia.id}`);
     };
 
-    const updateMetaTags = () => {
-      const title = `${appName} - Incidencia ${props.incidencia.id}`;
-      const description = `${props.incidencia.tipo} en ${props.incidencia.direccion.split(',')[0]}, ${props.incidencia.direccion.split(',')[1]}` || `Detalles de la incidencia en ${appName}`;
-      const imageUrl = props.incidencia.imagenes && props.incidencia.imagenes.length > 0
-        ? new URL(props.incidencia.imagenes[0].ruta_imagen, window.location.origin).href
-        : '';
-      const url = window.location.href;
-
-      useHead({
-        title,
-        meta: [
-          { name: 'description', content: description },
-          // Open Graph / Facebook
-          { property: 'og:type', content: 'website' },
-          { property: 'og:url', content: url },
-          { property: 'og:title', content: title },
-          { property: 'og:description', content: description },
-          { property: 'og:image', content: imageUrl },
-          { property: 'og:image:alt', content: `Imagen de la incidencia ${props.incidencia.id}` },
-          { property: 'og:site_name', content: appName },
-          // Twitter
-          { name: 'twitter:card', content: 'summary_large_image' },
-          { name: 'twitter:url', content: url },
-          { name: 'twitter:title', content: title },
-          { name: 'twitter:description', content: description },
-          { name: 'twitter:image', content: imageUrl },
-          { name: 'twitter:image:alt', content: `Imagen de la incidencia ${props.incidencia.id}` },
-          // Para iOS
-          { name: 'apple-mobile-web-app-title', content: title },
-          // Para Android
-          { name: 'application-name', content: title },
-          // Para WhatsApp
-          { property: 'og:image:width', content: '1200' },
-          { property: 'og:image:height', content: '630' },
-          // Para LinkedIn
-          { property: 'og:image:secure_url', content: imageUrl },
-          // Para Pinterest
-          { name: 'pinterest:media', content: imageUrl },
-          { name: 'pinterest:description', content: description },
-        ],
-        link: [
-          { rel: 'canonical', href: url }
-        ]
-      });
-    };
-
-    watch(() => props.incidencia, updateMetaTags, { immediate: true, deep: true });
-
     onMounted(() => {
-      updateMetaTags();
       if (props.incidencia.latitud && props.incidencia.longitud) {
         map.value = L.map('mapa-detalle', {
           dragging: false,
@@ -738,15 +670,15 @@ export default {
         }).addTo(map.value);
       }
 
-      actualizarMetadatos();
-
       if (route.query.mostrarDialogoExito === 'true') {
         mostrarDialogoExito.value = true;
       }
 
       // Comprobar si la incidencia está en favoritos
       const favorites = JSON.parse(localStorage.getItem('favoriteIncidencias') || '[]');
-      isFavorite.value = favorites.includes(props.incidencia.id);
+      if (!isFavorite.value && favorites.includes(props.incidencia.id)) {
+        snackbarText.value = 'Añadida a favoritos';
+      }
 
       cargarNombreGuardado();
     });
@@ -757,7 +689,6 @@ export default {
         captchaWidget.value.reset();
         captchaWidget.value = null;
       }
-      restaurarMetadatos();
     });
 
     const compartir = () => {
