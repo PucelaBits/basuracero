@@ -296,6 +296,7 @@ import { useWhatsAppShare } from '@/composables/useWhatsAppShare'
 import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
 import { obtenerTiposIncidencias } from '@/utils/api'
+import { parseTipoId } from '@/utils/tipoRoutes'
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
@@ -352,6 +353,30 @@ export default {
 
     const tipoSeleccionado = ref([])
     const tiposIncidencias = ref([])
+    const prefiltroTipoDesdeRuta = computed(() => {
+      const tipoQuery = route.query.tipo
+
+      if (Array.isArray(tipoQuery)) {
+        return null
+      }
+
+      return parseTipoId(tipoQuery)
+    })
+
+    const aplicarPrefiltroTipoDesdeRuta = () => {
+      const tipoId = prefiltroTipoDesdeRuta.value
+
+      if (tipoId === null) {
+        return
+      }
+
+      const tipoExiste = tiposIncidencias.value.some(tipo => tipo.id === tipoId)
+      if (!tipoExiste) {
+        return
+      }
+
+      tipoSeleccionado.value = [tipoId]
+    }
 
     const distanciaMaxima = ref(parseInt(import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', 10));
 
@@ -376,6 +401,8 @@ export default {
             if (b.nombre.match(/^Otros?$/i)) return -1;
             return a.nombre.localeCompare(b.nombre, 'es');
           });
+
+        aplicarPrefiltroTipoDesdeRuta()
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }
@@ -694,6 +721,10 @@ export default {
     watch(() => route.name, (newRouteName) => {
       dialogVisible.value = newRouteName === 'IncidenciasCercanas';
     });
+
+    watch(() => route.query.tipo, () => {
+      aplicarPrefiltroTipoDesdeRuta()
+    })
 
     watch(dialogVisible, (newValue) => {
       if (newValue) {

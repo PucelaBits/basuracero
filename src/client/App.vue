@@ -1124,6 +1124,16 @@ export default {
     const mostrarAvisoIncidenciasAntiguas = ref(true);
 
     const irACercanas = () => {
+      if (categoriaSeleccionada.value) {
+        router.push({
+          name: 'IncidenciasCercanas',
+          query: {
+            tipo: String(categoriaSeleccionada.value.id)
+          }
+        });
+        return;
+      }
+
       router.push('/cercanas');
     };
 
