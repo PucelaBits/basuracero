@@ -39,6 +39,12 @@
           </template>
           <v-list-item-title>Validar pendientes</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/tipos" active-class="primary--text">
+          <template v-slot:prepend>
+            <v-icon>mdi-tag-multiple-outline</v-icon>
+          </template>
+          <v-list-item-title>Tipos</v-list-item-title>
+        </v-list-item>
         <v-list-item @click="abrirRanking">
           <template v-slot:prepend>
             <v-icon>mdi-trophy</v-icon>
@@ -467,6 +473,7 @@
     </v-dialog>
 
     <RankingUsuarios />
+    <TiposIncidencias />
     <IncidenciasCercanas :incidencias="todasLasIncidencias" />
     <TusIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
     <RankingBarrios />
@@ -509,6 +516,7 @@ import MapaIncidencias from './components/MapaIncidencias.vue'
 import ImageModal from './components/ImageModal.vue'
 import DetalleIncidencia from './components/DetalleIncidencia.vue'
 import RankingUsuarios from './components/RankingUsuarios.vue'
+import TiposIncidencias from './components/TiposIncidencias.vue'
 import IncidenciasCercanas from './components/IncidenciasCercanas.vue'
 import TusIncidencias from './components/TusIncidencias.vue'
 // Importar el método para obtener los tipos de incidencias
@@ -521,7 +529,7 @@ import { useIncidenciasUsuarioStore } from './store/incidenciasUsuarioStore'
 import { useGestionDatos } from './composables/useGestionDatos';
 import MaratonGuide from './components/MaratonGuide.vue'
 import PendientesValidar from './components/PendientesValidar.vue'
-import { buildCategoryMeta, buildTipoRoute, parseTipoId } from './utils/tipoRoutes'
+import { buildCategoryMeta, buildTipoRoute, parseTipoId, sortTiposByConfiguredOrder } from './utils/tipoRoutes'
 
 export default {
   name: 'App',
@@ -532,6 +540,7 @@ export default {
     ImageModal,
     DetalleIncidencia,
     RankingUsuarios,
+    TiposIncidencias,
     IncidenciasCercanas,
     TusIncidencias,
     RankingBarrios,
@@ -606,13 +615,11 @@ export default {
               icono: tipoInicial?.icono || 'mdi-circle'
             }
           })
-          .sort((a, b) => {
-            // Si alguno es "Otros" u "Otras", va al final
-            if (a.nombre.match(/^Otros?$/i)) return 1;
-            if (b.nombre.match(/^Otros?$/i)) return -1;
-            // Ordenar el resto alfabéticamente
-            return a.nombre.localeCompare(b.nombre, 'es');
-          });
+
+        tiposIncidencias.value = sortTiposByConfiguredOrder(
+          tiposIncidencias.value,
+          TIPOS_INCIDENCIAS_INICIALES
+        )
 
         if (isCategoryRoute.value) {
           sincronizarRutaCategoria()
@@ -1066,8 +1073,13 @@ export default {
 
       const currentRoute = router.currentRoute.value;
       const previousRoute = router.options.history.state.back;
+      const resolvedPreviousRoute = previousRoute ? router.resolve(previousRoute) : null;
+      const canReturnToPreviousRoute = resolvedPreviousRoute
+        && resolvedPreviousRoute.name
+        && resolvedPreviousRoute.name !== 'DetalleIncidencia'
+        && resolvedPreviousRoute.fullPath !== currentRoute.fullPath;
 
-      if (previousRoute && ['IncidenciasCercanas', 'TusIncidencias', 'FavoritasIncidencias', 'PendientesValidar'].includes(router.resolve(previousRoute).name)) {
+      if (canReturnToPreviousRoute) {
         router.push(previousRoute);
       } else if (currentRoute.name !== 'Home') {
         router.push({ name: 'Home' });

@@ -63,6 +63,11 @@ const routes = [
     component: RankingUsuarios
   },
   {
+    path: '/tipos',
+    name: 'TiposIncidencias',
+    component: App
+  },
+  {
     path: '/cercanas',
     name: 'IncidenciasCercanas',
     component: IncidenciasCercanas

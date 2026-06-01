@@ -36,20 +36,6 @@ if (!fs.existsSync(uploadsDir)) {
 // Configurar Multer para la subida de archivos
 const upload = multer({ storage: multer.memoryStorage() }).array('imagenes', 2);
 
-// Configurar el limitador de tasa
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 200, // límite de 200 solicitudes por ventana por IP
-  standardHeaders: true, // Devuelve info de rate limit en los headers `RateLimit-*`
-  legacyHeaders: false, // Deshabilita los headers `X-RateLimit-*`
-  keyGenerator: (req) => {
-    return req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-  }
-});
-
-// Aplicar el limitador a todas las rutas
-router.use(limiter);
-
 // Limitadores específicos para rutas sensibles
 const crearIncidenciaLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
@@ -157,6 +143,56 @@ router.get('/tipos', (req, res) => {
       return;
     }
     res.json(rows);
+  });
+});
+
+router.get('/tipos/resumen', (req, res) => {
+  const sql = `
+    SELECT
+      t.id,
+      t.nombre,
+      SUM(CASE WHEN i.estado = 'activa' THEN 1 ELSE 0 END) as incidencias_activas,
+      SUM(CASE WHEN i.estado = 'solucionada' THEN 1 ELSE 0 END) as incidencias_solucionadas
+    FROM tipos_incidencias t
+    LEFT JOIN incidencias i
+      ON i.tipo_id = t.id
+      AND i.estado != 'spam'
+    GROUP BY t.id, t.nombre
+    HAVING incidencias_activas > 0 OR incidencias_solucionadas > 0
+    ORDER BY t.nombre COLLATE NOCASE ASC
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      console.error('Error al obtener el resumen de tipos de incidencias:', err);
+      res.status(500).json({ error: getAmigableErrorMessage(err, 'database') });
+      return;
+    }
+
+    const resumen = rows.map(row => ({
+      id: row.id,
+      nombre: row.nombre,
+      incidenciasActivas: row.incidencias_activas || 0,
+      incidenciasSolucionadas: row.incidencias_solucionadas || 0
+    }));
+
+    const totales = resumen.reduce((acc, tipo) => {
+      acc.tipos += 1;
+      acc.incidenciasActivas += tipo.incidenciasActivas;
+      acc.incidenciasSolucionadas += tipo.incidenciasSolucionadas;
+      return acc;
+    }, {
+      tipos: 0,
+      incidenciasActivas: 0,
+      incidenciasSolucionadas: 0
+    });
+
+    res.json({
+      tipos: resumen,
+      tiposUnicos: totales.tipos,
+      incidenciasActivas: totales.incidenciasActivas,
+      incidenciasSolucionadas: totales.incidenciasSolucionadas
+    });
   });
 });
 
