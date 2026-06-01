@@ -158,6 +158,7 @@ export default {
     let tempMarker = null
     let userMarker = null
     let userCircle = null
+    let pendingMarkerRefresh = false
     const isSearchActive = ref(false)
     const searchQuery = ref('')
     const searchResults = ref([])
@@ -244,6 +245,12 @@ export default {
         map.on('click', () => {
           map.closePopup();
         });
+
+        map.on('popupclose', () => {
+          if (pendingMarkerRefresh) {
+            updateMarkers({ force: true });
+          }
+        });
       }
     }
 
@@ -282,8 +289,29 @@ export default {
       }, 100);
     }
 
-    const updateMarkers = () => {
+    const hasOpenPopups = () => {
+      if (!map) {
+        return false;
+      }
+
+      let hasPopups = false;
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Popup && map.hasLayer(layer)) {
+          hasPopups = true;
+        }
+      });
+      return hasPopups;
+    };
+
+    const updateMarkers = ({ force = false } = {}) => {
       if (map) {
+        if (!force && props.esCercanas && hasOpenPopups()) {
+          pendingMarkerRefresh = true;
+          return;
+        }
+
+        pendingMarkerRefresh = false;
+
         // Guardar referencia a los popups abiertos
         const openPopups = new Map();
         map.eachLayer((layer) => {
@@ -615,15 +643,7 @@ export default {
     }
 
     // Mantener una sola implementación de hayPopupsAbiertos
-    const hayPopupsAbiertos = () => {
-      let hayPopups = false;
-      map.eachLayer((layer) => {
-        if (layer instanceof L.Popup) {
-          hayPopups = true;
-        }
-      });
-      return hayPopups;
-    };
+    const hayPopupsAbiertos = () => hasOpenPopups();
 
     onMounted(() => {
       initMap()
@@ -692,17 +712,6 @@ export default {
         map.setZoom(newZoom)
       }
     })
-
-    // Función auxiliar para verificar si hay popups abiertos
-    const hasOpenPopups = () => {
-      let hasPopups = false;
-      map.eachLayer((layer) => {
-        if (layer instanceof L.Popup && map.hasLayer(layer)) {
-          hasPopups = true;
-        }
-      });
-      return hasPopups;
-    };
 
     return {
       mapContainer,
@@ -1154,10 +1163,6 @@ export default {
   height: 60vh;
 }
 </style>
-
-
-
-
 
 
 
