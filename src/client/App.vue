@@ -2,9 +2,9 @@
   <v-app>
     <v-app-bar app :color="theme.colors.primary" dark elevation="4" density="compact" @click="scrollToTop" class="clickable-header">
       <v-container class="d-flex align-center pa-0">
-        <v-avatar size="26" rounded="circle" class="avatar-logo">
-          <img :src="appLogoPath" alt="Favicon" class="favicon">
-        </v-avatar>
+        <div class="avatar-logo" aria-hidden="true">
+          <img :src="appLogoPath" alt="Logo de la aplicación" class="favicon" @error="restaurarLogoPorDefecto">
+        </div>
         <div class="flex-grow-1 text-center">
           <v-toolbar-title class="text-h6 font-weight-bold titulo">{{ appName }}</v-toolbar-title>
           <span class="subtitulo text-caption d-block">{{ appSubtitle }}</span>
@@ -242,7 +242,26 @@
               </v-col>
             </v-row>
 
+            <section
+              v-if="categoriaSeleccionada"
+              class="mb-4 filtro-categoria-banda"
+              aria-label="Filtro de categoría activo"
+            >
+              <div class="filtro-categoria-contenido">
+                <div class="filtro-categoria-copy">
+                  <span class="filtro-categoria-eyebrow">Mostrando solo</span>
+                  <div class="filtro-categoria-resumen">
+                    <strong class="filtro-categoria-nombre">{{ categoriaSeleccionada.nombre }}</strong>
+                  </div>
+                </div>
+                <RouterLink to="/" class="ver-todas-link">
+                  Volver al mapa completo
+                </RouterLink>
+              </div>
+            </section>
+
             <v-select
+              v-if="!isCategoryRoute"
               v-model="tipoSeleccionado"
               :items="tiposIncidencias"
               item-value="id"
@@ -479,8 +498,10 @@
 </template>
 <script>
 import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useTheme } from 'vuetify'
 import axios from 'axios'
+import { RouterLink } from 'vue-router'
 import { useRoute, useRouter } from 'vue-router'
 import ReportarIncidencia from './components/ReportarIncidencia.vue'
 import ListaIncidencias from './components/ListaIncidencias.vue'
@@ -500,6 +521,7 @@ import { useIncidenciasUsuarioStore } from './store/incidenciasUsuarioStore'
 import { useGestionDatos } from './composables/useGestionDatos';
 import MaratonGuide from './components/MaratonGuide.vue'
 import PendientesValidar from './components/PendientesValidar.vue'
+import { buildCategoryMeta, buildTipoRoute, parseTipoId } from './utils/tipoRoutes'
 
 export default {
   name: 'App',
@@ -515,7 +537,8 @@ export default {
     RankingBarrios,
     FavoritasIncidencias,
     MaratonGuide,
-    PendientesValidar
+    PendientesValidar,
+    RouterLink
   },
   setup() {
     const incidencias = ref([])
@@ -539,6 +562,9 @@ export default {
     const totalIncidencias = ref(0)
     const tipoSeleccionado = ref([])
     const tiposIncidencias = ref([])
+    const isCategoryRoute = computed(() => route.name === 'TipoCategoria')
+    const routeCategoryId = computed(() => parseTipoId(route.params.id))
+    const baseUrl = computed(() => import.meta.env.VITE_BASE_URL || window.location.origin)
 
     const textoTotalIncidencias = computed(() => {
       if (incluirSolucionadas.value) {
@@ -549,6 +575,25 @@ export default {
     })
 
     const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
+    const categoriaSeleccionada = computed(() => {
+      if (!isCategoryRoute.value || routeCategoryId.value === null) {
+        return null
+      }
+
+      return tiposIncidencias.value.find(tipo => tipo.id === routeCategoryId.value) || null
+    })
+    const activeTipoIds = computed(() => {
+      if (categoriaSeleccionada.value) {
+        return [categoriaSeleccionada.value.id]
+      }
+
+      return Array.isArray(tipoSeleccionado.value)
+        ? tipoSeleccionado.value
+          .map(tipo => parseTipoId(tipo))
+          .filter(tipo => tipo !== null)
+        : []
+    })
+    const activeTipoParam = computed(() => activeTipoIds.value.join(','))
 
     const obtenerTipos = async () => {
       try {
@@ -569,14 +614,27 @@ export default {
             return a.nombre.localeCompare(b.nombre, 'es');
           });
 
-        // Procesar los tipos de la URL después de cargar los tipos disponibles
-        procesarTiposDeURL()
+        if (isCategoryRoute.value) {
+          sincronizarRutaCategoria()
+        } else {
+          procesarTiposDeURL()
+        }
+        await ajustarScrollParaRutaCategoria()
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }
     }
 
     const cargaInicial = ref(true);
+
+    const ajustarScrollParaRutaCategoria = async () => {
+      if (!isCategoryRoute.value) {
+        return
+      }
+
+      await nextTick()
+      scrollToTop()
+    }
 
     const manejarIncidencias = (incidencias) => {
       return incidencias.map(incidencia => ({
@@ -592,6 +650,9 @@ export default {
           limit: itemsPerPage,
           incluirSolucionadas: incluirSolucionadas.value,
         };
+        if (activeTipoParam.value) {
+          params.tipo = activeTipoParam.value;
+        }
         
         if (forzarActualizacion || cargaInicial.value) {
           params._ = Date.now();
@@ -623,8 +684,10 @@ export default {
       try {
         const params = {
           incluirSolucionadas: true,
-          tipo: tipoSeleccionado.value === 'Todas' ? null : tipoSeleccionado.value,
         };
+        if (activeTipoParam.value) {
+          params.tipo = activeTipoParam.value;
+        }
         
         if (forzarActualizacion) {
           params._ = Date.now();
@@ -716,9 +779,9 @@ export default {
 
     const compartir = async () => {
       const contenido = {
-        title: import.meta.env.VITE_APP_NAME,
-        text: import.meta.env.VITE_APP_DESCRIPTION,
-        url: window.location.href
+        title: pageMeta.value.title,
+        text: pageMeta.value.description,
+        url: pageMeta.value.url
       };
 
       try {
@@ -885,8 +948,7 @@ export default {
       mostrarBanner.value = bannerVisto !== 'true'
       
       await obtenerTipos()
-      obtenerIncidencias(1, true)
-      obtenerTodasLasIncidencias(true)
+      await obtenerIncidencias(1, true)
       
       // Verificar actualizaciones cada 30 segundos
       intervalId = setInterval(verificarActualizaciones, 30000);
@@ -916,10 +978,28 @@ export default {
     });
 
     watch(() => route.params.id, (newId) => {
-      if (newId) {
+      if (route.name === 'DetalleIncidencia' && newId) {
         abrirDetalleIncidenciaPorId(newId)
       }
     })
+
+    watch(
+      () => [route.name, route.params.id, route.params.slug],
+      async () => {
+        if (tiposIncidencias.value.length === 0) {
+          return
+        }
+
+        if (isCategoryRoute.value) {
+          sincronizarRutaCategoria()
+        } else {
+          procesarTiposDeURL()
+        }
+
+        await obtenerIncidencias(1, true)
+        await ajustarScrollParaRutaCategoria()
+      }
+    )
 
     const actualizarLista = () => {
       obtenerIncidencias()
@@ -1093,6 +1173,38 @@ export default {
     const appName = ref(import.meta.env.VITE_APP_NAME || 'Basura Cero')
     const appSubtitle = ref(import.meta.env.VITE_APP_SUBTITLE || 'Pucela')
     const appDescription = ref(import.meta.env.VITE_APP_DESCRIPTION || 'Sistema colaborativo de incidencias urbanas en Valladolid')
+    const pageMeta = computed(() => {
+      if (categoriaSeleccionada.value) {
+        return buildCategoryMeta({
+          appName: appName.value,
+          appDescription: appDescription.value,
+          baseUrl: baseUrl.value,
+          tipo: categoriaSeleccionada.value
+        })
+      }
+
+      return {
+        title: `${appName.value} - ${appDescription.value}`,
+        description: appDescription.value,
+        url: window.location.href
+      }
+    })
+
+    useHead(() => ({
+      title: pageMeta.value.title,
+      meta: [
+        { name: 'description', content: pageMeta.value.description },
+        { property: 'og:title', content: pageMeta.value.title },
+        { property: 'og:description', content: pageMeta.value.description },
+        { property: 'og:url', content: pageMeta.value.url },
+        { name: 'twitter:title', content: pageMeta.value.title },
+        { name: 'twitter:description', content: pageMeta.value.description },
+        { name: 'twitter:url', content: pageMeta.value.url }
+      ],
+      link: [
+        { rel: 'canonical', href: pageMeta.value.url }
+      ]
+    }))
 
     const socialLinks = ref(JSON.parse(import.meta.env.VITE_APP_SOCIAL_LINKS || '[]'))
 
@@ -1101,9 +1213,51 @@ export default {
       socialLinks.value.find(link => link.name.toLowerCase() === 'comunidad')
     )
 
-    const appLogoPath = ref(import.meta.env.VITE_APP_LOGO_PATH || '/img/default/logo.png')
+    const defaultAppLogoPath = '/img/default/logo.png'
+    const appLogoPath = ref(import.meta.env.VITE_APP_LOGO_PATH || defaultAppLogoPath)
+
+    const restaurarLogoPorDefecto = (event) => {
+      if (appLogoPath.value !== defaultAppLogoPath) {
+        appLogoPath.value = defaultAppLogoPath
+        return
+      }
+
+      if (event?.target) {
+        event.target.style.display = 'none'
+      }
+    }
+
+    const sincronizarRutaCategoria = () => {
+      if (!isCategoryRoute.value) {
+        return
+      }
+
+      if (routeCategoryId.value === null) {
+        tipoSeleccionado.value = []
+        router.replace({ name: 'Home' })
+        return
+      }
+
+      const tipo = tiposIncidencias.value.find(item => item.id === routeCategoryId.value)
+      if (!tipo) {
+        tipoSeleccionado.value = []
+        router.replace({ name: 'Home' })
+        return
+      }
+
+      tipoSeleccionado.value = [tipo.id]
+
+      const canonicalRoute = buildTipoRoute(tipo.id, tipo.nombre)
+      if (route.params.slug !== canonicalRoute.params.slug) {
+        router.replace(canonicalRoute)
+      }
+    }
 
     const seleccionarTodos = () => {
+      if (isCategoryRoute.value) {
+        return
+      }
+
       if (tipoSeleccionado.value.length === tiposIncidencias.value.length) {
         tipoSeleccionado.value = []
       } else {
@@ -1124,8 +1278,13 @@ export default {
 
     const procesarTiposDeURL = () => {
       try {
+        if (isCategoryRoute.value) return
+
         const tiposQuery = route.query.tipos
-        if (!tiposQuery) return
+        if (!tiposQuery) {
+          tipoSeleccionado.value = []
+          return
+        }
         
         // Validar que sea un string
         if (typeof tiposQuery !== 'string') return
@@ -1198,6 +1357,7 @@ export default {
       incidenciaCreada,
       totalIncidencias,
       textoTotalIncidencias,
+      categoriaSeleccionada,
       incluirSolucionadas,
       obtenerIncidencias,
       abrirDetalleIncidencia,
@@ -1212,6 +1372,7 @@ export default {
       seleccionarEnMapa,
       tipoSeleccionado,
       tiposIncidencias,
+      isCategoryRoute,
       obtenerIncidencias,
       scrollToTop,
       mostrarAviso,
@@ -1261,6 +1422,7 @@ export default {
       socialLinks,
       comunidadLink,
       appLogoPath,
+      restaurarLogoPorDefecto,
       diasParaConsiderarAntigua,
       seleccionarTodos,
       sidebarLinks,
@@ -1312,8 +1474,10 @@ export default {
 }
 
 .favicon {
-  width: 100% !important; 
-  height: auto !important;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
 }
 
 .mensaje-exito {
@@ -1419,10 +1583,15 @@ export default {
 }
 
 .avatar-logo {
-  height: 25px !important;
+  align-items: center;
+  display: inline-flex;
+  height: 30px !important;
+  justify-content: center;
   flex-shrink: 0;
-  margin-right: 26px; /* Añade margen derecho igual al ancho del avatar */
-  margin-left: 15px;
+  margin-left: 16px;
+  margin-right: 20px;
+  overflow: hidden;
+  width: 30px !important;
 }
 
 /* Clase personalizada para centrar el contenido */
@@ -1516,6 +1685,93 @@ export default {
   background-color: white;
 }
 
+.ver-todas-link {
+  align-items: center;
+  background: rgba(103, 83, 164, 0.08);
+  border: 1px solid rgba(103, 83, 164, 0.16);
+  border-radius: 999px;
+  color: rgb(var(--v-theme-secondary));
+  display: inline-flex;
+  font-size: 0.95rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.ver-todas-link:hover {
+  background: rgba(103, 83, 164, 0.14);
+  border-color: rgba(103, 83, 164, 0.24);
+  box-shadow: 0 6px 18px rgba(103, 83, 164, 0.08);
+  transform: translateY(-1px);
+}
+
+.filtro-categoria-banda {
+  background: linear-gradient(180deg, rgba(103, 83, 164, 0.04), rgba(103, 83, 164, 0.08));
+  border: 1px solid rgba(103, 83, 164, 0.12);
+  border-radius: 20px;
+  padding: 18px 20px;
+}
+
+.filtro-categoria-contenido {
+  align-items: center;
+  column-gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 12px;
+}
+
+.filtro-categoria-copy {
+  display: flex;
+  flex-direction: column;
+  row-gap: 6px;
+}
+
+.filtro-categoria-eyebrow {
+  color: rgba(44, 35, 71, 0.6);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filtro-categoria-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.filtro-categoria-nombre {
+  color: rgb(var(--v-theme-secondary));
+  font-size: 1.14rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .filtro-categoria-banda {
+    padding: 16px;
+  }
+
+  .filtro-categoria-contenido {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .filtro-categoria-resumen {
+    align-items: flex-start;
+    flex-direction: column;
+    row-gap: 2px;
+  }
+
+  .ver-todas-link {
+    width: 100%;
+  }
+}
+
 .desktop-container {
   max-width: 1200px !important;
   margin: 0 auto !important;
@@ -1581,4 +1837,3 @@ export default {
   margin: 4px 4px;
 }
 </style>
-

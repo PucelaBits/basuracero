@@ -36,10 +36,14 @@
         
         <!-- Pastillas de tipo y estado -->
         <div class="pastillas-container">
-          <span class="popup-chip" :title="incidenciaConIcono.tipo">
-            <v-icon size="small" class="mr-1">{{ incidenciaConIcono.icono }}</v-icon>
-            {{ truncateText(incidencia.tipo, 30) }}
-          </span>
+          <TipoLink
+            class="popup-chip"
+            :tipo-id="incidencia.tipo_id"
+            :tipo="incidencia.tipo"
+            :icono="incidenciaConIcono.icono"
+            :max-length="30"
+            @navigate="cerrarParaNavegacion"
+          />
           <!-- Botón de favoritos -->
           <v-btn
             icon
@@ -368,11 +372,15 @@ import { enviarEventoMatomo } from '../utils/analytics';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { useHead } from '@unhead/vue';
 import { useWhatsAppShare } from '../composables/useWhatsAppShare';
+import TipoLink from './TipoLink.vue';
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
 export default {
   name: 'DetalleIncidencia',
+  components: {
+    TipoLink
+  },
   props: {
     incidencia: {
       type: Object,
@@ -445,6 +453,10 @@ export default {
       emit('cerrar');
     };
 
+    const cerrarParaNavegacion = () => {
+      dialog.value = false;
+    };
+
     watch(() => props.modelValue, (newValue) => {
       dialog.value = newValue;
     });
@@ -453,7 +465,6 @@ export default {
       emit('update:modelValue', newValue);
       if (!newValue) {
         dialog.value = false;
-  router.go(-1);
       }
     });
 
@@ -570,7 +581,16 @@ export default {
 
     const map = ref(null);
 
-    const detalleTitle = computed(() => `${appName} - Registro ${props.incidencia.id}`);
+    const detalleDireccion = computed(() => {
+      const direccionBase = `${props.incidencia.direccion_completa?.road || props.incidencia.direccion_completa?.neighbourhood || props.incidencia.direccion_completa?.suburb || ''}${props.incidencia.direccion_completa?.house_number ? ` ${props.incidencia.direccion_completa.house_number}` : ''}`.trim();
+      const municipio = props.incidencia.direccion_completa?.city || props.incidencia.direccion_completa?.town || props.incidencia.direccion_completa?.hamlet || props.incidencia.direccion_completa?.village || '';
+      return [direccionBase, municipio].filter(Boolean).join(', ');
+    });
+    const detalleTitle = computed(() => {
+      return detalleDireccion.value
+        ? `${props.incidencia.tipo} en ${detalleDireccion.value} | ${appName}`
+        : `${props.incidencia.tipo} | ${appName}`;
+    });
     const detalleDescription = computed(() => {
       return props.incidencia.descripcion || `Detalles de la incidencia en ${appName}`;
     });
@@ -832,6 +852,7 @@ export default {
     return {
       dialog,
       cerrar,
+      cerrarParaNavegacion,
       abrirImagenCompleta,
       formatDate,
       confirmarSolucion,

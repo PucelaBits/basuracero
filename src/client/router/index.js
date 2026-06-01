@@ -15,6 +15,11 @@ const routes = [
     component: App
   },
   {
+    path: '/tipo/:id/:slug?',
+    name: 'TipoCategoria',
+    component: App
+  },
+  {
     path: '/i/:id',
     name: 'DetalleIncidencia',
     component: DetalleIncidencia,

@@ -840,6 +840,7 @@ export default {
 .popup-chip {
   background-color: white;
   color: #392763;
+  display: inline-block;
   padding: 2px 8px;
   border-radius: 16px;
   font-size: 12px;
@@ -850,6 +851,7 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 
 .estado-pastilla {
   padding: 2px 8px;
@@ -1152,9 +1154,6 @@ export default {
   height: 60vh;
 }
 </style>
-
-
-
 
 
 

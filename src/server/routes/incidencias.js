@@ -67,6 +67,21 @@ const reporteLimiter = rateLimit({
   }
 });
 
+function parseTiposQuery(tipoQuery) {
+  const rawValues = Array.isArray(tipoQuery)
+    ? tipoQuery
+    : typeof tipoQuery === 'string'
+      ? tipoQuery.split(',')
+      : tipoQuery != null
+        ? [tipoQuery]
+        : [];
+
+  return rawValues
+    .flatMap(value => String(value).split(','))
+    .map(value => Number.parseInt(value, 10))
+    .filter(value => Number.isInteger(value) && value > 0);
+}
+
 // Función para validar el nombre
 function validarNombre(nombre) {
   if (!nombre || typeof nombre !== 'string') {
@@ -259,7 +274,7 @@ router.get('/', (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
-  const tipo = parseInt(req.query.tipo);
+  const tipos = parseTiposQuery(req.query.tipo);
 
   let whereClause = 'WHERE i.estado != ?';
   let params = ['spam'];
@@ -267,9 +282,9 @@ router.get('/', (req, res) => {
     whereClause += ' AND i.estado = ?';
     params.push('activa');
   }
-  if (tipo && !isNaN(tipo)) {
-    whereClause += ' AND i.tipo_id = ?';
-    params.push(tipo);
+  if (tipos.length > 0) {
+    whereClause += ` AND i.tipo_id IN (${tipos.map(() => '?').join(', ')})`;
+    params.push(...tipos);
   }
 
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
@@ -362,10 +377,16 @@ router.get('/', (req, res) => {
 router.get('/todas', (req, res) => {
   const format = req.query.format?.toLowerCase();
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
+  const tipos = parseTiposQuery(req.query.tipo);
 
   let whereClause = 'WHERE i.estado != "spam"';
+  let params = [];
   if (!incluirSolucionadas) {
     whereClause += ' AND i.estado = "activa"';
+  }
+  if (tipos.length > 0) {
+    whereClause += ` AND i.tipo_id IN (${tipos.map(() => '?').join(', ')})`;
+    params.push(...tipos);
   }
 
   const sql = `
@@ -380,7 +401,7 @@ router.get('/todas', (req, res) => {
     ORDER BY i.fecha DESC
   `;
 
-  db.all(sql, [], (err, rows) => {
+  db.all(sql, params, (err, rows) => {
     if (err) {
       console.error('Error al obtener todas las incidencias:', err);
       res.status(500).json({ error: 'Error interno del servidor' });
@@ -901,13 +922,14 @@ router.get('/barrios/ranking', (req, res) => {
       const sqlTiposIncidencias = `
         SELECT 
           COALESCE(i.barrio, 'Sin barrio') as nombre,
+          i.tipo_id as tipo_id,
           t.nombre as tipo,
           COUNT(*) as total,
           SUM(CASE WHEN i.estado = 'solucionada' THEN 1 ELSE 0 END) as solucionadas
         FROM incidencias i
         JOIN tipos_incidencias t ON i.tipo_id = t.id
         WHERE i.estado != 'spam' AND i.fecha >= ? AND i.fecha <= ?
-        GROUP BY COALESCE(i.barrio, 'Sin barrio'), t.nombre
+        GROUP BY COALESCE(i.barrio, 'Sin barrio'), i.tipo_id, t.nombre
       `;
 
       db.all(sqlTiposIncidencias, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowsTipos) => {
@@ -922,6 +944,7 @@ router.get('/barrios/ranking', (req, res) => {
             acc[row.nombre] = [];
           }
           acc[row.nombre].push({
+            tipo_id: row.tipo_id,
             tipo: row.tipo,
             total: row.total,
             solucionadas: row.solucionadas

@@ -1,0 +1,177 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e5] [cursor=pointer]:
+      - generic [ref=e7]:
+        - img "Favicon" [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e12]: Basura Cero
+          - generic [ref=e13]: Pucela
+        - button [ref=e14]:
+          - generic [ref=e16]: 󰍜
+    - navigation [ref=e17]:
+      - list [ref=e19]:
+        - link "Validar cercanos" [ref=e20] [cursor=pointer]:
+          - /url: /cercanas
+          - generic [ref=e22]: 󰍒
+          - generic [ref=e24]: Validar cercanos
+        - link "Validar pendientes" [ref=e25] [cursor=pointer]:
+          - /url: /pendientes
+          - generic [ref=e27]: 󰴄
+          - generic [ref=e29]: Validar pendientes
+        - listitem [ref=e30] [cursor=pointer]:
+          - generic [ref=e32]: 󰔸
+          - generic [ref=e34]: Ranking de usuarios
+        - link "Ranking de zonas" [ref=e35] [cursor=pointer]:
+          - /url: /ranking/barrios
+          - generic [ref=e37]: 󰷔
+          - generic [ref=e39]: Ranking de zonas
+        - link "Organiza un evento" [ref=e40] [cursor=pointer]:
+          - /url: /organizar-evento
+          - generic [ref=e42]: 󰧓
+          - generic [ref=e44]: Organiza un evento
+        - link "Comunidad" [ref=e45] [cursor=pointer]:
+          - /url: https://t.me/basuraceroapp
+          - generic [ref=e47]: 󰡉
+          - generic [ref=e49]: Comunidad
+        - listitem [ref=e50] [cursor=pointer]:
+          - generic [ref=e52]: 󰒗
+          - generic [ref=e54]: Compartir
+      - list [ref=e56]:
+        - listitem [ref=e57]:
+          - generic [ref=e59] [cursor=pointer]:
+            - generic [ref=e60]: 󰆼
+            - generic [ref=e61]: Tus datos
+    - main [ref=e62]:
+      - generic [ref=e63]:
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - generic:
+              - generic:
+                - button "󱰢" [ref=e150] [cursor=pointer]
+                - button "󱰢" [ref=e153] [cursor=pointer]
+                - button "󱰢" [ref=e156] [cursor=pointer]
+            - generic:
+              - generic [ref=e67]:
+                - button "Zoom in" [ref=e68] [cursor=pointer]: +
+                - button "Zoom out" [ref=e69] [cursor=pointer]: −
+              - generic [ref=e70]:
+                - link "Leaflet" [ref=e71] [cursor=pointer]:
+                  - /url: https://leafletjs.com
+                - text: "| ©"
+                - link "OpenStreetMap" [ref=e76] [cursor=pointer]:
+                  - /url: https://www.openstreetmap.org/copyright
+                - text: contributors ©
+                - link "CARTO" [ref=e77] [cursor=pointer]:
+                  - /url: https://carto.com/attributions
+          - button [ref=e79] [cursor=pointer]:
+            - generic [ref=e80]: 󰍉
+          - button [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]: 󰍎
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]: 󱔗
+              - generic [ref=e88]: "3"
+            - generic [ref=e89]:
+              - generic [ref=e90]: 󰗠
+              - generic [ref=e91]: "0"
+            - generic [ref=e92]:
+              - generic [ref=e93]: 󰡉
+              - generic [ref=e94]: "2"
+          - alert [ref=e95]:
+            - generic [ref=e96]:
+              - text: "Mostrando solo:"
+              - strong [ref=e97]: Mobiliario urbano dañado
+          - generic [ref=e100]:
+            - button "Activas" [ref=e101] [cursor=pointer]:
+              - generic [ref=e102]: Activas
+            - button "Todas" [ref=e103] [cursor=pointer]:
+              - generic [ref=e104]: Todas
+        - generic [ref=e162]:
+          - generic [ref=e163]:
+            - generic [ref=e165]: 󰥕
+            - generic [ref=e167]:
+              - text: Hay
+              - strong [ref=e168]: "3"
+              - text: activos
+              - text: más antiguos de 14 días
+          - button "Ayuda a validar tu zona" [ref=e171] [cursor=pointer]:
+            - generic [ref=e172]:
+              - generic [ref=e173]: 󰍒
+              - text: Ayuda a validar tu zona
+        - generic [ref=e105]:
+          - generic [ref=e174]:
+            - generic [ref=e176] [cursor=pointer]:
+              - link "Mobiliario urbano dañado" [ref=e183]:
+                - /url: /tipo/4/mobiliario-urbano-danado
+                - generic [ref=e184]: 󱰢
+                - generic [ref=e185]: Mobiliario urbano dañado
+              - generic [ref=e186]:
+                - generic [ref=e188]
+                - generic [ref=e191]
+                - separator [ref=e193]
+                - generic [ref=e194]
+            - generic [ref=e200] [cursor=pointer]:
+              - link "Mobiliario urbano dañado" [ref=e207]:
+                - /url: /tipo/4/mobiliario-urbano-danado
+                - generic [ref=e208]: 󱰢
+                - generic [ref=e209]: Mobiliario urbano dañado
+              - generic [ref=e210]:
+                - generic [ref=e212]
+                - generic [ref=e215]
+                - separator [ref=e217]
+                - generic [ref=e218]
+            - generic [ref=e224] [cursor=pointer]:
+              - link "Mobiliario urbano dañado" [ref=e231]:
+                - /url: /tipo/4/mobiliario-urbano-danado
+                - generic [ref=e232]: 󱰢
+                - generic [ref=e233]: Mobiliario urbano dañado
+              - generic [ref=e234]:
+                - generic [ref=e236]
+                - generic [ref=e239]
+                - separator [ref=e241]
+                - generic [ref=e242]
+          - navigation "Pagination Navigation" [ref=e106]:
+            - list [ref=e107]:
+              - listitem [ref=e108]:
+                - button "Previous page" [disabled]
+              - listitem [ref=e247]:
+                - button "Page 1, Current page" [disabled]
+              - listitem [ref=e109]:
+                - button "Next page" [disabled]
+    - button [ref=e110] [cursor=pointer]:
+      - generic [ref=e112]: 󰐕
+    - contentinfo [ref=e113]:
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e117]: 󰡉
+          - generic [ref=e118]: Servicio creado por vecinos voluntarios, independiente de cualquier organismo
+        - link "Comunidad" [ref=e120] [cursor=pointer]:
+          - /url: https://t.me/basuraceroapp
+        - link "Twitter" [ref=e122] [cursor=pointer]:
+          - /url: https://x.com/basuraceroapp
+        - link "Contacto" [ref=e124] [cursor=pointer]:
+          - /url: mailto:basuracero@pucelabits.org
+        - link "Licencia contenido" [ref=e126] [cursor=pointer]:
+          - /url: https://creativecommons.org/licenses/by-sa/4.0/
+        - link "Código" [ref=e128] [cursor=pointer]:
+          - /url: https://github.com/PucelaBits/basuracero
+  - generic:
+    - dialog:
+      - generic [ref=e132]:
+        - 'img "Logo {{ appName }}" [ref=e134]'
+        - heading "Basura Cero" [level=1] [ref=e135]
+        - paragraph [ref=e136]: Proyecto vecinal colaborativo para visibilizar incidencias no solucionadas en Valladolid
+        - heading "¿Cómo ayudar?" [level=2] [ref=e137]
+        - generic [ref=e138]:
+          - generic [ref=e139]:
+            - generic [ref=e140]: 󰄀
+            - generic [ref=e141]: Detecta el lugar
+          - generic [ref=e142]:
+            - generic [ref=e143]: 󰐗
+            - generic [ref=e144]: Crea un registro
+          - generic [ref=e145]:
+            - generic [ref=e146]: 󰗠
+            - generic [ref=e147]: Verifica solucionados
+        - button "Empezar a colaborar" [ref=e148] [cursor=pointer]:
+          - generic [ref=e149]: Empezar a colaborar

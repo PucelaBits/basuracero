@@ -80,8 +80,12 @@
                       <v-list>
                         <v-list-item v-for="tipo in barrio.tiposIncidencias" :key="tipo.tipo" dense>
                           <v-list-item-title class="text-caption mr-1">
-                            <v-icon size="small" color="grey" class="mr-1">{{ obtenerIconoTipo(tipo.tipo) }}</v-icon>
-                            {{ tipo.tipo }}
+                            <TipoLink
+                              :tipo-id="tipo.tipo_id"
+                              :tipo="tipo.tipo"
+                              :icono="obtenerIconoTipo(tipo.tipo)"
+                              icon-size="small"
+                            />
                           </v-list-item-title>
                           <template v-slot:append>
                             <v-chip
@@ -126,11 +130,15 @@
   import { ref, onMounted, watch, computed } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
   import axios from 'axios';
+  import TipoLink from './TipoLink.vue';
   
   const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
   
   export default {
     name: 'RankingBarrios',
+    components: {
+      TipoLink
+    },
     setup() {
       const router = useRouter();
       const route = useRoute();
