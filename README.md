@@ -175,11 +175,34 @@ Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos
 3. Sigue las instrucciones en la sección [Configuración](#configuración).
 
 4. Construye y ejecuta el contenedor Docker:
-   ```
-   docker compose up --build
+   ```bash
+   docker compose up -d --build
    ```
 
 La aplicación estará disponible en `http://localhost:5050`.
+
+### Despliegue cuando hay cambios
+
+Cuando haya cambios de código o configuración, usa:
+
+```bash
+docker compose up -d --build
+```
+
+Si quieres asegurarte de que el servicio se recrea de verdad, especialmente tras cambios de frontend, imagen o variables de entorno, usa:
+
+```bash
+docker compose rm -s -f basuracero-app
+docker compose up -d --build basuracero-app
+```
+
+Después del despliegue, comprueba el estado del servicio:
+
+```bash
+docker compose ps
+```
+
+Verifica que el contenedor aparece como `Up` y que su tiempo de creación es reciente. Si hay dudas, no confíes solo en recargar el navegador: confirma primero que el servicio se ha reemplazado realmente.
 
 ### Scripts de mantenimiento
 
@@ -224,136 +247,17 @@ Puedes usar esos feeds para integraciones con otras aplicaciones, como un bot de
 
 ### Dominio personalizado
 
-Puedes hacer accesible la web desde un proxy con Nginx usando un dominio personalizado.
+Puedes publicar la aplicación detrás de Nginx usando un dominio propio. Hay un ejemplo genérico en [`docs/examples/nginx.conf.example`](docs/examples/nginx.conf.example), con terminación TLS en `443` y redirección de `80` a HTTPS.
 
-Ejemplo que incluye el cache de diferentes rutas y asume que has creado un certificado SSL con [certbot de Let's Encrypt](https://certbot.eff.org/).
+Estrategia de caché recomendada:
 
-```
-server {
-    listen 443 ssl;
-    server_name basuracero.pucelabits.org;
-    access_log /var/log/nginx/basuracero.pucelabits.org.access.log;
-    error_log /var/log/nginx/basuracero.pucelabits.org.error.log;
+- `index.html`: sin caché agresiva
+- `sw.js`: sin caché agresiva
+- `manifest.json`: sin caché agresiva
+- `/api/incidencias/tipos`: sin caché agresiva
+- `/assets/*.js` y `/assets/*.css`: caché larga con `immutable`, porque Vite los genera con hash en el nombre
 
-    ssl_certificate      /etc/letsencrypt/live/basuracero.pucelabits.org/fullchain.pem;
-    ssl_certificate_key  /etc/letsencrypt/live/basuracero.pucelabits.org/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/basuracero.pucelabits.org/chain.pem;
-
-    ssl_session_timeout 1d;
-    ssl_protocols TLSv1.2;
-    ssl_prefer_server_ciphers off;
-
-    # HSTS (ngx_http_headers_module is required) (15768000 seconds = 6 months)
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-    add_header X-Content-Type-Options 'nosniff';
-    add_header X-Frame-Options 'SAMEORIGIN';
-    add_header X-XSS-Protection '1; mode=block';
-    # OCSP Stapling ---
-    # fetch OCSP records from URL in ssl_certificate and cache them
-    ssl_stapling on;
-    ssl_stapling_verify on;
-
-    ## verify chain of trust of OCSP response using Root CA and Intermediate certs
-    resolver 208.67.222.222 208.67.220.220;
-
-
-    # Agrega el encabezado CORS para todas las ubicaciones
-    add_header 'Access-Control-Allow-Origin' '*';
-
-    # Archivos estáticos incluyendo assets
-    location ~* ^/(assets/.*\.(js|css|png|jpg|jpeg|gif|ico|svg)|.*\.(js|css|png|jpg|jpeg|gif|ico|svg))$ {
-        proxy_pass http://localhost:5050;
-        expires 30d;
-        add_header Cache-Control "public, max-age=2592000, immutable";
-        proxy_cache my_cache;
-        proxy_cache_valid 200 30d;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-    }
-
-    # Manejo específico para index.html (sin cache)
-    location = /index.html {
-        proxy_pass http://localhost:5050;
-        expires -1;
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-    }
-
-    # Tipos de incidencias
-    location /api/incidencias/tipos {
-        proxy_pass http://localhost:5050;
-        proxy_cache my_cache;
-        proxy_cache_valid 200 1h;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-    }
-
-    # Obtener todas las incidencias
-    location /api/incidencias/todas {
-        proxy_pass http://localhost:5050;
-        proxy_cache my_cache;
-        proxy_cache_valid 200 1m;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-    }
-
-    # Obtener incidencias paginadas (con bypass de caché)
-    location /api/incidencias {
-        proxy_pass http://localhost:5050;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache my_cache;
-        proxy_cache_valid 200 1m;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-        proxy_cache_bypass $query_string;
-        proxy_no_cache $query_string;
-    }
-
-    # Ranking de usuarios
-    location /api/incidencias/usuarios/ranking {
-        proxy_pass http://localhost:5050;
-        proxy_cache my_cache;
-        proxy_cache_valid 200 1h;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-    }
-
-    # Ranking de barrios
-    location /api/incidencias/barrios/ranking {
-        proxy_pass http://localhost:5050;
-        proxy_cache my_cache;
-        proxy_cache_valid 200 1h;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-    }
-
-    # Archivos estáticos en uploads
-    location /uploads/ {
-        proxy_pass http://localhost:5050;
-        proxy_cache my_cache;
-        proxy_cache_valid 200 24h;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-    }
-
-    # Configuración general para otras rutas
-    location / {
-        proxy_pass http://localhost:5050;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Intenta servir el archivo directamente, si no, pasa la solicitud a la aplicación
-        try_files $uri $uri/ @app;
-    }
-
-    location @app {
-        proxy_pass http://localhost:5050;
-    }
-}
-```
+Si adaptas el ejemplo a tu infraestructura, revisa también certificados, logs y cabeceras de proxy según tu entorno.
 
 ## Ejecución local para desarrollo
 

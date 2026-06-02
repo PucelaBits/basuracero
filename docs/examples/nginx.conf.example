@@ -1,0 +1,80 @@
+server {
+    listen 80;
+    server_name example.org;
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name example.org;
+
+    ssl_certificate /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    # Ajusta este upstream al puerto publicado por Docker Compose.
+    set $basuracero_upstream http://127.0.0.1:5050;
+
+    # Assets versionados por Vite: pueden cachearse fuerte porque incluyen hash.
+    location ~* ^/assets/.*\.(js|css)$ {
+        proxy_pass $basuracero_upstream;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000, immutable" always;
+    }
+
+    # Otros estáticos que no cambian con tanta frecuencia.
+    location ~* ^/(uploads/.*|.*\.(png|jpg|jpeg|gif|ico|svg|webp))$ {
+        proxy_pass $basuracero_upstream;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800" always;
+    }
+
+    # El service worker y el manifest no deben cachearse largo:
+    # si se quedan pegados, el navegador puede seguir sirviendo una versión vieja.
+    location = /sw.js {
+        proxy_pass $basuracero_upstream;
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    location = /manifest.json {
+        proxy_pass $basuracero_upstream;
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    location = /index.html {
+        proxy_pass $basuracero_upstream;
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    # Tipos y otros endpoints sensibles a cambios frecuentes.
+    location = /api/incidencias/tipos {
+        proxy_pass $basuracero_upstream;
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    # Resto de API: sin caché agresiva por defecto.
+    location /api/ {
+        proxy_pass $basuracero_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    # SPA: cualquier otra ruta debe servir la app sin quedarse cacheada.
+    location / {
+        proxy_pass $basuracero_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+}
