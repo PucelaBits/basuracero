@@ -144,6 +144,10 @@ export default {
       type: Boolean,
       default: false
     },
+    agrupadoPortada: {
+      type: Boolean,
+      default: false
+    },
     zoomForzado: {
       type: Number,
       default: null
@@ -200,9 +204,25 @@ export default {
         }).addTo(map)
 
         // Inicializar el grupo de clusters con opciones ajustadas
+        const clusterRadiusForZoom = (zoom) => {
+          if (!props.agrupadoPortada) {
+            return 20;
+          }
+
+          if (zoom <= 13) {
+            return 34;
+          }
+
+          if (zoom === 14) {
+            return 28;
+          }
+
+          return 20;
+        };
+
         markerClusterGroup = L.markerClusterGroup({
           disableClusteringAtZoom: 15,
-          maxClusterRadius: 20,
+          maxClusterRadius: clusterRadiusForZoom,
           spiderfyOnMaxZoom: false,
           chunkedLoading: true,
           zoomToBoundsOnClick: true,
@@ -1163,7 +1183,6 @@ export default {
   height: 60vh;
 }
 </style>
-
 
 
 

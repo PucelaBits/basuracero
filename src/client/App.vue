@@ -125,6 +125,7 @@
             :incidencias="todasLasIncidencias" 
             :incluirSolucionadas="incluirSolucionadas"
             :tipoSeleccionado="tipoSeleccionado"
+            :agrupadoPortada="true"
             :seguirUsuario="false"
             @ubicacion-seleccionada="actualizarUbicacion"
             @abrir-formulario="mostrarFormulario = true"
