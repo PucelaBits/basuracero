@@ -296,7 +296,7 @@ import { useWhatsAppShare } from '@/composables/useWhatsAppShare'
 import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
 import { obtenerTiposIncidencias } from '@/utils/api'
-import { parseTipoId } from '@/utils/tipoRoutes'
+import { parseTipoId, sortTiposByConfiguredOrder } from '@/utils/tipoRoutes'
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
@@ -388,19 +388,14 @@ export default {
     const obtenerTipos = async () => {
       try {
         const response = await obtenerTiposIncidencias()
-        tiposIncidencias.value = response.data
+        tiposIncidencias.value = sortTiposByConfiguredOrder(response.data
           .map(tipo => {
             const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)
             return {
               ...tipo,
               icono: tipoInicial?.icono || 'mdi-circle'
             }
-          })
-          .sort((a, b) => {
-            if (a.nombre.match(/^Otros?$/i)) return 1;
-            if (b.nombre.match(/^Otros?$/i)) return -1;
-            return a.nombre.localeCompare(b.nombre, 'es');
-          });
+          }))
 
         aplicarPrefiltroTipoDesdeRuta()
       } catch (error) {

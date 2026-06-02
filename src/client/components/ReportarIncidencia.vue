@@ -356,7 +356,7 @@ import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore'
 import MiniMapa from './MiniMapa.vue';
 import NotificacionError from './NotificacionError.vue';
 import { getClientErrorMessage, getLocationErrorMessage } from '../utils/errorHandler';
-import { parseTipoId } from '../utils/tipoRoutes';
+import { parseTipoId, sortTiposByConfiguredOrder } from '../utils/tipoRoutes';
 
 const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
@@ -499,20 +499,11 @@ export default {
     const obtenerTiposIncidencias = async () => {
       try {
         const response = await axios.get('/api/incidencias/tipos')
-        const tiposOrdenados = response.data
+        tiposIncidencias.value = sortTiposByConfiguredOrder(response.data
           .map(tipo => ({
             ...tipo,
             icono: TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)?.icono || 'mdi-circle'
-          }))
-          .sort((a, b) => {
-            // Si alguno es "Otros" u "Otras", va al final
-            if (a.nombre.match(/^Otros?$/i)) return 1;
-            if (b.nombre.match(/^Otros?$/i)) return -1;
-            // Ordenar el resto alfabéticamente
-            return a.nombre.localeCompare(b.nombre, 'es');
-          });
-        
-        tiposIncidencias.value = tiposOrdenados;
+          })))
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
       }

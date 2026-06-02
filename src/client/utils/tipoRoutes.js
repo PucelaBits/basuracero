@@ -7,41 +7,17 @@ export function slugifyTipo(value) {
     .replace(/^-+|-+$/g, '')
 }
 
-function normalizeOrderValue(value) {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) ? parsed : null
-}
-
 function isOtrosTipo(nombre) {
   return /^Otros?$/i.test(String(nombre || '').trim())
 }
 
-export function sortTiposByConfiguredOrder(tipos, tiposIniciales = []) {
-  const orderMap = new Map()
-
-  tiposIniciales.forEach((tipoInicial, index) => {
-    const configuredOrder = normalizeOrderValue(tipoInicial?.orden ?? tipoInicial?.order)
-    orderMap.set(tipoInicial?.tipo, configuredOrder ?? index)
-  })
-
+export function sortTiposByConfiguredOrder(tipos) {
   return [...tipos].sort((a, b) => {
     const aIsOtros = isOtrosTipo(a?.nombre)
     const bIsOtros = isOtrosTipo(b?.nombre)
 
     if (aIsOtros && !bIsOtros) return 1
     if (!aIsOtros && bIsOtros) return -1
-
-    const aOrder = orderMap.get(a?.nombre)
-    const bOrder = orderMap.get(b?.nombre)
-    const aHasOrder = aOrder !== undefined
-    const bHasOrder = bOrder !== undefined
-
-    if (aHasOrder && bHasOrder && aOrder !== bOrder) {
-      return aOrder - bOrder
-    }
-
-    if (aHasOrder && !bHasOrder) return -1
-    if (!aHasOrder && bHasOrder) return 1
 
     return String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es')
   })

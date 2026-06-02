@@ -134,7 +134,16 @@ async function verificarCaptcha(captchaSolution) {
 
 // Obtener tipos de incidencias
 router.get('/tipos', (req, res) => {
-  const sql = `SELECT * FROM tipos_incidencias`;
+  const sql = `
+    SELECT *
+    FROM tipos_incidencias
+    ORDER BY
+      CASE
+        WHEN LOWER(TRIM(nombre)) IN ('otro', 'otros') THEN 1
+        ELSE 0
+      END,
+      nombre COLLATE NOCASE ASC
+  `;
 
   db.all(sql, [], (err, rows) => {
     if (err) {
