@@ -349,13 +349,14 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import axios from 'axios'
 import { WidgetInstance } from 'friendly-challenge'
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import DetalleIncidencia from './DetalleIncidencia.vue';
 import { enviarEventoMatomo } from '../utils/analytics';
 import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore'
 import MiniMapa from './MiniMapa.vue';
 import NotificacionError from './NotificacionError.vue';
 import { getClientErrorMessage, getLocationErrorMessage } from '../utils/errorHandler';
+import { parseTipoId } from '../utils/tipoRoutes';
 
 const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
 const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
@@ -392,7 +393,22 @@ export default {
     const dialog = ref(props.modelValue)
     const form = ref(null)
     const formValido = ref(false)
-    const incidencia = ref({ ...props.datosFormulario, imagenes: [] })
+    const route = useRoute()
+    const getTipoIdDesdeRuta = () => (
+      route.name === 'TipoCategoria' ? parseTipoId(route.params.id) ?? '' : ''
+    )
+    const createInitialIncidencia = () => ({
+      tipo_id: getTipoIdDesdeRuta(),
+      descripcion: '',
+      latitud: null,
+      longitud: null,
+      imagenes: [],
+      nombre: '',
+      ...props.datosFormulario,
+      tipo_id: props.datosFormulario?.tipo_id || getTipoIdDesdeRuta(),
+      imagenes: Array.isArray(props.datosFormulario?.imagenes) ? props.datosFormulario.imagenes : []
+    })
+    const incidencia = ref(createInitialIncidencia())
     const tiposIncidencias = ref([])
     const previewUrls = ref([])
     const enviando = ref(false)
@@ -617,14 +633,7 @@ export default {
     }
 
     const resetForm = () => {
-      incidencia.value = {
-        tipo_id: '',
-        descripcion: '',
-        latitud: null,
-        longitud: null,
-        imagenes: [],
-        nombre: ''
-      }
+      incidencia.value = createInitialIncidencia()
       previewUrls.value = []
       direccion.value = ''
       aceptaLicencia.value = false
@@ -749,6 +758,17 @@ export default {
 
     watch(dialog, (newVal) => {
       emit('update:modelValue', newVal)
+    })
+
+    watch(dialog, (isOpen) => {
+      if (!isOpen) {
+        return
+      }
+
+      const tipoIdDesdeRuta = getTipoIdDesdeRuta()
+      if (tipoIdDesdeRuta && !incidencia.value.tipo_id) {
+        incidencia.value.tipo_id = tipoIdDesdeRuta
+      }
     })
 
     watch(() => props.ubicacionSeleccionada, (newUbicacion) => {
