@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:22-slim AS build
 
 WORKDIR /app
 
@@ -14,6 +14,13 @@ RUN npm rebuild sqlite3 --build-from-source
 COPY . .
 
 RUN npm run build
+RUN npm prune --omit=dev
+
+FROM node:22-slim
+
+WORKDIR /app
+
+COPY --from=build /app /app
 
 # 5050 como valor por defecto
 ARG PORT=5050
@@ -23,4 +30,4 @@ EXPOSE ${PORT}
 ENV TZ=Europe/Madrid
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-CMD ["node", "src/server/server.js"]
+CMD ["npm", "start"]

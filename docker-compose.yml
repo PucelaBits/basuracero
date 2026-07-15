@@ -9,12 +9,19 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./data:/app/data
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - TZ=Europe/Madrid
       - PORT=${PORT:-5050}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - ADMIN_BOOTSTRAP_USERNAME=${ADMIN_BOOTSTRAP_USERNAME:-admin}
+      - ADMIN_BOOTSTRAP_PASSWORD=${ADMIN_BOOTSTRAP_PASSWORD:-}
+      - TRUST_PROXY=${TRUST_PROXY:-false}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:' + process.env.PORT, (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:' + process.env.PORT + '/api/incidencias/ultima-actualizacion', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3

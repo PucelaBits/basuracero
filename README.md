@@ -152,6 +152,7 @@ Permite tener un botón en las incidencias para enviar la descripción y ubicaci
 
 - `VITE_WHATSAPP_SHARE_ENABLED`: Activa o desactiva la funcionalidad de compartir por WhatsApp (true/false)
 - `VITE_WHATSAPP_SHARE_PHONE`: Número de teléfono al que se enviará el mensaje (formato: 34666666666)
+- `VITE_WHATSAPP_REQUIRE_ACTIVATION`: Si es `true`, abre primero el mensaje para iniciar el bot y copia la incidencia; si es `false`, prepara la incidencia directamente en WhatsApp.
 - `VITE_WHATSAPP_SHARE_BUTTON_TEXT`: Texto del botón de compartir
 - `VITE_WHATSAPP_SHARE_DIALOG_TITLE`: Título del diálogo de confirmación
 - `VITE_WHATSAPP_SHARE_DIALOG_TEXT`: Texto principal del diálogo
@@ -162,6 +163,33 @@ Permite tener un botón en las incidencias para enviar la descripción y ubicaci
 - `VITE_TEXTO_ESTADO_SOLUCIONADO`: Texto para el estado de solucionado (por defecto "Solucionada")
 
 ## Ejecución en producción con Docker
+
+El panel administrativo vive en `/admin`, pero su activación depende del tipo de instalación:
+
+- **Instalación nueva:** se activa por defecto antes de crear SQLite. Define `SESSION_SECRET` y `ADMIN_BOOTSTRAP_PASSWORD` en `.env` antes del primer arranque. Retira la contraseña bootstrap después de cambiarla.
+- **Instalación existente:** actualizar y reiniciar conserva el panel desactivado. La web pública continúa funcionando sin cambios. Para activarlo de forma voluntaria ejecuta:
+
+  ```bash
+  ./scripts/enable_admin.sh
+  ```
+
+  El asistente detiene el servicio, crea un backup en `backups/`, genera `SESSION_SECRET` si falta, aplica las migraciones, crea el primer administrador mediante un contenedor efímero y vuelve a levantar la aplicación. Las credenciales temporales se muestran una sola vez en la terminal, no en la web pública ni en los logs persistentes.
+
+Consulta la [guía verificada de activación, backup, migración, despliegue y rollback](docs/production-admin.md) antes de actualizar una instancia existente.
+
+### Configuración desde el panel
+
+Con el panel activo, `/admin/configuracion` permite cambiar sin reconstruir la imagen:
+
+- nombre, subtítulo y descripción pública;
+- rutas del logotipo y favicon;
+- colores principal, secundario, fondo y estados;
+- instrucciones mostradas al reportar una incidencia;
+- área geográfica permitida mediante un rectángulo en el mapa;
+- protección CAPTCHA y analítica;
+- reporte por WhatsApp, teléfono de destino y envío directo o mediante inicio de bot.
+
+Los valores se guardan en SQLite (`app_settings`) y prevalecen sobre `.env`. El cliente los carga mediante `/api/config`, y también se aplican al manifest, metadatos HTML y RSS. Los secretos del panel, el proxy, la ruta de la base de datos y otros parámetros operativos continúan gestionándose en el entorno de despliegue.
 
 Para ejecutar la aplicación en producción utilizando Docker, sigue estos pasos:
 
@@ -188,6 +216,8 @@ Cuando haya cambios de código o configuración, usa:
 ```bash
 docker compose up -d --build
 ```
+
+En una instalación antigua este comando no activa por sí solo el panel administrativo. La activación es explícita y persistente mediante `./scripts/enable_admin.sh`.
 
 Si quieres asegurarte de que el servicio se recrea de verdad, especialmente tras cambios de frontend, imagen o variables de entorno, usa:
 

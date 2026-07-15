@@ -5,3 +5,10 @@ dist
 npm-debug.log
 uploads
 data
+.env
+.env.*
+!.env.sample
+.npmrc
+backups
+/*-desktop.png
+/*-mobile.png
