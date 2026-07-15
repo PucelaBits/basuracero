@@ -10,7 +10,10 @@ import * as directives from 'vuetify/directives'
 import '@mdi/font/css/materialdesignicons.css'
 import 'leaflet/dist/leaflet.css'
 import { initializeAnalytics } from './utils/analytics';
+import { loadRuntimeConfig } from './utils/runtimeConfig'
 
+async function bootstrap() {
+const runtimeConfig = await loadRuntimeConfig()
 const vuetify = createVuetify({
   components,
   directives,
@@ -23,13 +26,13 @@ const vuetify = createVuetify({
       myCustomTheme: {
         dark: false,
         colors: {
-          primary: import.meta.env.VITE_APP_PRIMARY_COLOR,
-          secondary: import.meta.env.VITE_APP_SECONDARY_COLOR,
-          success: import.meta.env.VITE_APP_SUCCESS_COLOR,
-          error: import.meta.env.VITE_APP_ERROR_COLOR,
-          warning: import.meta.env.VITE_APP_WARNING_COLOR,
-          info: import.meta.env.VITE_APP_INFO_COLOR,
-          background: import.meta.env.VITE_APP_BACKGROUND_COLOR,
+          primary: runtimeConfig.APP_PRIMARY_COLOR,
+          secondary: runtimeConfig.APP_SECONDARY_COLOR,
+          success: runtimeConfig.APP_SUCCESS_COLOR,
+          error: runtimeConfig.APP_ERROR_COLOR,
+          warning: runtimeConfig.APP_WARNING_COLOR,
+          info: runtimeConfig.APP_INFO_COLOR,
+          background: runtimeConfig.APP_BACKGROUND_COLOR,
         }
       }
     }
@@ -52,3 +55,6 @@ app.use(head)
 initializeAnalytics();
 
 app.mount('#app')
+}
+
+bootstrap()

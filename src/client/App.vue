@@ -531,6 +531,7 @@ import { useGestionDatos } from './composables/useGestionDatos';
 import MaratonGuide from './components/MaratonGuide.vue'
 import PendientesValidar from './components/PendientesValidar.vue'
 import { buildCategoryMeta, buildTipoRoute, parseTipoId, sortTiposByConfiguredOrder } from './utils/tipoRoutes'
+import { getRuntimeConfig } from './utils/runtimeConfig'
 
 export default {
   name: 'App',
@@ -551,6 +552,7 @@ export default {
     RouterLink
   },
   setup() {
+    const runtimeConfig = getRuntimeConfig()
     const incidencias = ref([])
     const todasLasIncidencias = ref([])
     const ubicacionSeleccionada = ref({})
@@ -613,7 +615,7 @@ export default {
             const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)
             return {
               ...tipo,
-              icono: tipoInicial?.icono || 'mdi-circle'
+              icono: tipo.icono || tipoInicial?.icono || 'mdi-circle'
             }
           })
 
@@ -1193,9 +1195,9 @@ export default {
     };
 
     // Definir las variables de entorno como refs o computed
-    const appName = ref(import.meta.env.VITE_APP_NAME || 'Basura Cero')
-    const appSubtitle = ref(import.meta.env.VITE_APP_SUBTITLE || 'Pucela')
-    const appDescription = ref(import.meta.env.VITE_APP_DESCRIPTION || 'Sistema colaborativo de incidencias urbanas en Valladolid')
+    const appName = ref(runtimeConfig.APP_NAME)
+    const appSubtitle = ref(runtimeConfig.APP_SUBTITLE)
+    const appDescription = ref(runtimeConfig.APP_DESCRIPTION)
     const pageMeta = computed(() => {
       if (categoriaSeleccionada.value) {
         return buildCategoryMeta({
@@ -1225,7 +1227,8 @@ export default {
         { name: 'twitter:url', content: pageMeta.value.url }
       ],
       link: [
-        { rel: 'canonical', href: pageMeta.value.url }
+        { rel: 'canonical', href: pageMeta.value.url },
+        { rel: 'icon', href: runtimeConfig.APP_FAVICON_PATH }
       ]
     }))
 
@@ -1237,7 +1240,7 @@ export default {
     )
 
     const defaultAppLogoPath = '/img/default/logo.png'
-    const appLogoPath = ref(import.meta.env.VITE_APP_LOGO_PATH || defaultAppLogoPath)
+    const appLogoPath = ref(runtimeConfig.APP_LOGO_PATH || defaultAppLogoPath)
 
     const restaurarLogoPorDefecto = (event) => {
       if (appLogoPath.value !== defaultAppLogoPath) {
@@ -1396,7 +1399,6 @@ export default {
       tipoSeleccionado,
       tiposIncidencias,
       isCategoryRoute,
-      obtenerIncidencias,
       scrollToTop,
       mostrarAviso,
       instalarPWA,

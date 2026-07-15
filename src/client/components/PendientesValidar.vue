@@ -95,7 +95,7 @@
                   <v-col cols="8">
                     <v-card-text class="pl-2 pb-2 pt-1">
                       <p class="text-caption mb-1" :title="incidencia.tipo">
-                        <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
+                        <v-icon x-small class="mr-1">{{ incidencia.icono || obtenerIconoTipo(incidencia.tipo) }}</v-icon>
                         {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                       </p>
                       <p class="text-caption mb-1">
@@ -238,6 +238,7 @@ import { useResolverIncidencia } from '@/composables/useResolverIncidencia'
 import { useWhatsAppShare } from '@/composables/useWhatsAppShare'
 import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
+import { getRuntimeConfig } from '@/utils/runtimeConfig'
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
 const router = useRouter()
@@ -261,11 +262,9 @@ const nombreUsuario = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
 const mensajeError = ref('')
-const isProductionValue = import.meta.env.PROD;
-const captchaHabilitado = ref(isProductionValue 
-  ? import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED !== 'false'
-  : import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true')
-const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY
+const runtimeConfig = getRuntimeConfig()
+const captchaHabilitado = ref(runtimeConfig.FRIENDLYCAPTCHA_ENABLED === 'true')
+const friendlyCaptchaSiteKey = runtimeConfig.FRIENDLYCAPTCHA_SITEKEY
 
 const opcionesOrden = [
   { title: 'Más votos primero', value: 'votos_desc' },

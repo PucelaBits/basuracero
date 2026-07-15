@@ -26,6 +26,7 @@ import L from 'leaflet'
 import 'leaflet.markercluster' // Asegúrate de importar el plugin
 import { useRouter } from 'vue-router'
 import { enviarEventoMatomo } from '../utils/analytics'
+import { getRuntimeConfig } from '../utils/runtimeConfig'
 
 // Extensión para animación suave de marcadores
 L.Marker.include({
@@ -155,6 +156,7 @@ export default {
   },
   emits: ['ubicacion-seleccionada', 'abrir-formulario', 'incidencia-seleccionada', 'solicitar-actualizacion-ubicacion', 'verificar-estado'],
   setup(props, { emit }) {
+    const runtimeConfig = getRuntimeConfig()
     const router = useRouter();
     const mapContainer = ref(null)
     let map = null
@@ -184,8 +186,23 @@ export default {
     };
 
     const truncateText = (text, maxLength) => {
-      if (text.length <= maxLength) return text;
-      return text.slice(0, maxLength) + '...';
+      const value = String(text || '')
+      if (value.length <= maxLength) return value;
+      return value.slice(0, maxLength) + '...';
+    };
+
+    const escapeHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const safeImagePath = (value) => {
+      const imagePath = String(value || '')
+      return /^\/uploads\/[a-z0-9_./-]+$/i.test(imagePath) && !imagePath.includes('..')
+        ? imagePath
+        : ''
     };
 
     const initMap = () => {
@@ -194,9 +211,9 @@ export default {
           closePopupOnClick: false,
           closePopupOnMove: false
         }).setView([
-          import.meta.env.VITE_MAPA_CENTRO_LAT,
-          import.meta.env.VITE_MAPA_CENTRO_LON
-        ], props.zoomForzado || import.meta.env.VITE_MAPA_ZOOM_INICIAL)
+          Number(runtimeConfig.MAPA_CENTRO_LAT),
+          Number(runtimeConfig.MAPA_CENTRO_LON)
+        ], props.zoomForzado || Number(runtimeConfig.MAPA_ZOOM_INICIAL))
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
@@ -361,11 +378,18 @@ export default {
             const direccion = incidencia.direccion_completa 
               ? `${incidencia.direccion_completa.road || incidencia.direccion_completa.neighbourhood || incidencia.direccion_completa.suburb}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`
               : 'Dirección no disponible';
+            const imagePath = safeImagePath(incidencia.imagenes?.[0]?.ruta_imagen)
+            const tipo = escapeHtml(incidencia.tipo)
+            const descripcion = escapeHtml(truncateText(incidencia.descripcion, 100))
+            const nombre = escapeHtml(incidencia.nombre)
+            const safeDireccion = escapeHtml(direccion)
+            const fecha = escapeHtml(formatDate(incidencia.fecha, true))
+            const incidenciaId = Number.parseInt(incidencia.id, 10)
             
             popupContent.innerHTML = `
               <div class="popup-header">
                 <div class="popup-image-container">
-                  <img src="${incidencia.imagenes && incidencia.imagenes.length > 0 ? incidencia.imagenes[0].ruta_imagen : ''}" alt="${incidencia.tipo}" class="popup-image">
+                  <img src="${escapeHtml(imagePath)}" alt="${tipo}" class="popup-image">
                   ${incidencia.imagenes && incidencia.imagenes.length > 1 ? `
                     <div class="popup-image-controls">
                       <button class="popup-image-prev"><i class="mdi mdi-chevron-left"></i></button>
@@ -375,28 +399,28 @@ export default {
                 </div>
                 <div class="popup-chips">
                   ${incidencia.estado === 'solucionada' ? `<span class="estado-pastilla solucionada"><i class="mdi mdi-check-circle"></i></span>` : ''}
-                  <span class="popup-chip" title="${incidencia.tipo}">${truncateText(incidencia.tipo, 32)}</span>
+                  <span class="popup-chip" title="${tipo}">${escapeHtml(truncateText(incidencia.tipo, 32))}</span>
                 </div>
               </div>
               <div class="popup-content">
-                <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${direccion}</span></div>
-                <div class="popup-footer text-left mt-3 mb-3"><span><i class="mdi mdi-text"></i> ${incidencia.descripcion.length > 100 ? incidencia.descripcion.substring(0, 100) + '...' : incidencia.descripcion}</span></div>
+                <div class="popup-direccion popup-footer text-left"><span><i class="mdi mdi-map-marker"></i> ${safeDireccion}</span></div>
+                <div class="popup-footer text-left mt-3 mb-3"><span><i class="mdi mdi-text"></i> ${descripcion}</span></div>
                 <div class="popup-footer">
-                  <span><i class="mdi mdi-account"></i> ${incidencia.nombre}</span>
-                  <span><i class="mdi mdi-calendar"></i> ${formatDate(incidencia.fecha, true)}</span>
+                  <span><i class="mdi mdi-account"></i> ${nombre}</span>
+                  <span><i class="mdi mdi-calendar"></i> ${fecha}</span>
                 </div>
               </div>
               ${props.esCercanas && !incidencia.ocultarVerificacion ? `
                 <div class="popup-verification">
                   <p>¿Está ya solucionada?</p>
                   <div class="verification-buttons">
-                    <button class="verify-btn verify-yes" data-incidencia-id="${incidencia.id}" data-estado="solucionada">
+                    <button class="verify-btn verify-yes" data-incidencia-id="${incidenciaId}" data-estado="solucionada">
                       <i class="mdi mdi-check"></i> Sí
                     </button>
-                    <button class="verify-btn verify-no" data-incidencia-id="${incidencia.id}" data-estado="activa">
+                    <button class="verify-btn verify-no" data-incidencia-id="${incidenciaId}" data-estado="activa">
                       <i class="mdi mdi-close"></i> No
                     </button>
-                    <button class="verify-btn verify-unknown" data-incidencia-id="${incidencia.id}" data-estado="desconocido">
+                    <button class="verify-btn verify-unknown" data-incidencia-id="${incidenciaId}" data-estado="desconocido">
                       <i class="mdi mdi-help"></i> No sé
                     </button>
                   </div>
@@ -405,7 +429,7 @@ export default {
             `
 
             const marker = L.marker([incidencia.latitud, incidencia.longitud], {
-              icon: createCustomIcon(incidencia.estado, incidencia.tipo)
+              icon: createCustomIcon(incidencia.estado, incidencia.tipo, incidencia.icono)
             }).bindPopup(popupContent, { 
               maxWidth: 250, 
               minWidth: 250,
@@ -428,13 +452,13 @@ export default {
               prevButton.addEventListener('click', (e) => {
                 e.stopPropagation()
                 currentImageIndex = (currentImageIndex - 1 + incidencia.imagenes.length) % incidencia.imagenes.length
-                popupImageElement.src = incidencia.imagenes[currentImageIndex].ruta_imagen
+                popupImageElement.src = safeImagePath(incidencia.imagenes[currentImageIndex].ruta_imagen)
               })
 
               nextButton.addEventListener('click', (e) => {
                 e.stopPropagation()
                 currentImageIndex = (currentImageIndex + 1) % incidencia.imagenes.length
-                popupImageElement.src = incidencia.imagenes[currentImageIndex].ruta_imagen
+                popupImageElement.src = safeImagePath(incidencia.imagenes[currentImageIndex].ruta_imagen)
               })
             }
 
@@ -468,11 +492,11 @@ export default {
 
     const tiposIncidencias = ref(JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]'));
 
-    const createCustomIcon = (estado, tipo) => {
+    const createCustomIcon = (estado, tipo, iconoActual = null) => {
       const color = estado === 'activa' ? '#c30b82' : '#27ae60';
       const tipoIncidencia = tiposIncidencias.value.find(t => t.tipo === tipo);
       // Si no hay icono definido, usamos un círculo
-      const icono = tipoIncidencia?.icono || 'mdi-circle';
+      const icono = iconoActual || tipoIncidencia?.icono || 'mdi-circle';
       
       return L.divIcon({
         className: 'custom-div-icon',
@@ -1183,8 +1207,5 @@ export default {
   height: 60vh;
 }
 </style>
-
-
-
 
 

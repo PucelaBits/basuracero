@@ -279,6 +279,7 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useWhatsAppShare } from '../composables/useWhatsAppShare'
+import { getRuntimeConfig } from '../utils/runtimeConfig'
 
 export default {
   name: 'MaratonGuide',
@@ -295,7 +296,7 @@ export default {
     const communityUrl = ref(communityLink?.url || null)
 
     const baseUrl = (import.meta.env.VITE_BASE_URL || window.location.origin).replace(/^https?:\/\/|\/+$/g, '')
-    const appName = import.meta.env.VITE_APP_NAME || 'Basura Cero'
+    const appName = getRuntimeConfig().APP_NAME || 'Basura Cero'
 
     const cerrar = () => {
       dialogVisible.value = false

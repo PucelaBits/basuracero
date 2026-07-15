@@ -373,6 +373,7 @@ import { useFavoritosStore } from '../store/favoritosStore';
 import { useHead } from '@unhead/vue';
 import { useWhatsAppShare } from '../composables/useWhatsAppShare';
 import TipoLink from './TipoLink.vue';
+import { getRuntimeConfig } from '../utils/runtimeConfig';
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
@@ -393,7 +394,8 @@ export default {
   },
   emits: ['update:modelValue', 'cerrar'],
   setup(props, { emit }) {
-    const appName = import.meta.env.VITE_APP_NAME || 'Basura Cero';
+    const runtimeConfig = getRuntimeConfig();
+    const appName = runtimeConfig.APP_NAME;
     const router = useRouter();
     const route = useRoute();
     const dialog = ref(props.modelValue);
@@ -416,12 +418,9 @@ export default {
     const snackbarText = ref('');
     const añadirAFavoritas = ref(true);
 
-    const isProduction = import.meta.env.PROD;
-    const captchaEnabled = isProduction 
-      ? import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED !== 'false'
-      : import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true';
+    const captchaEnabled = runtimeConfig.FRIENDLYCAPTCHA_ENABLED === 'true';
 
-    const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY;
+    const friendlyCaptchaSiteKey = runtimeConfig.FRIENDLYCAPTCHA_SITEKEY;
 
     const isIOS = computed(() => {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -474,7 +473,7 @@ export default {
         if (captchaEnabled && captchaContainer.value) {
           console.log('Inicializando captcha...');
           captchaWidget.value = new WidgetInstance(captchaContainer.value, {
-            sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
+            sitekey: friendlyCaptchaSiteKey,
             doneCallback: (solution) => {
               captchaSolution.value = solution;
             },
@@ -809,10 +808,10 @@ export default {
     watch(mostrarDialogoReporteInadecuado, async (newValue) => {
       if (newValue) {
         await nextTick();
-        if (import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true' && captchaContainerInadecuado.value) {
+        if (captchaEnabled && captchaContainerInadecuado.value) {
           console.log('Inicializando captcha para reporte inadecuado...');
           captchaWidgetInadecuado.value = new WidgetInstance(captchaContainerInadecuado.value, {
-            sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
+            sitekey: friendlyCaptchaSiteKey,
             doneCallback: (solution) => {
               captchaSolutionInadecuado.value = solution;
             },
@@ -837,7 +836,7 @@ export default {
       const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === props.incidencia.tipo)
       return {
         ...props.incidencia,
-        icono: tipoInicial?.icono || 'mdi-circle'
+        icono: props.incidencia.icono || tipoInicial?.icono || 'mdi-circle'
       }
     })
 

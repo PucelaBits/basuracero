@@ -146,7 +146,7 @@
                   <v-col cols="8">
                     <v-card-text class="pa-2">
                       <p class="text-caption mb-1" :title="incidencia.tipo">
-                        <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
+                        <v-icon x-small class="mr-1">{{ incidencia.icono || obtenerIconoTipo(incidencia.tipo) }}</v-icon>
                         {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                       </p>
                       <p class="text-caption mb-1">
@@ -297,6 +297,7 @@ import { useFavoritosStore } from '@/store/favoritosStore'
 import { WidgetInstance } from 'friendly-challenge'
 import { obtenerTiposIncidencias } from '@/utils/api'
 import { parseTipoId, sortTiposByConfiguredOrder } from '@/utils/tipoRoutes'
+import { getRuntimeConfig } from '@/utils/runtimeConfig'
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
@@ -310,6 +311,7 @@ export default {
     }
   },
   setup(props) {
+    const runtimeConfig = getRuntimeConfig()
     const router = useRouter()
     const route = useRoute()
     
@@ -338,9 +340,9 @@ export default {
     const captchaSolution = ref(null)
     const captchaWidget = ref(null)
     const incidenciaSeleccionada = ref(null)
-    const captchaHabilitado = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true')
+    const captchaHabilitado = ref(runtimeConfig.FRIENDLYCAPTCHA_ENABLED === 'true')
 
-    const friendlyCaptchaSiteKey = import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY
+    const friendlyCaptchaSiteKey = runtimeConfig.FRIENDLYCAPTCHA_SITEKEY
 
     const faldonesOcultos = ref(new Set())
 
@@ -393,7 +395,7 @@ export default {
             const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)
             return {
               ...tipo,
-              icono: tipoInicial?.icono || 'mdi-circle'
+              icono: tipo.icono || tipoInicial?.icono || 'mdi-circle'
             }
           }))
 
@@ -746,6 +748,10 @@ export default {
     };
 
     const obtenerIconoTipo = (tipo) => {
+      const tipoActual = tiposIncidencias.value.find(t => t.nombre === tipo)
+      if (tipoActual?.icono) {
+        return tipoActual.icono
+      }
       const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo)
       return tipoInicial?.icono || 'mdi-tag-outline'
     }

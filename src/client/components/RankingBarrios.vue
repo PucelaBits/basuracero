@@ -83,7 +83,7 @@
                             <TipoLink
                               :tipo-id="tipo.tipo_id"
                               :tipo="tipo.tipo"
-                              :icono="obtenerIconoTipo(tipo.tipo)"
+                              :icono="tipo.icono || obtenerIconoTipo(tipo.tipo)"
                               icon-size="small"
                             />
                           </v-list-item-title>
@@ -226,6 +226,12 @@
       };
   
       const obtenerIconoTipo = (tipo) => {
+        const tipoActual = barrios.value
+          .flatMap((barrio) => Array.isArray(barrio.tiposIncidencias) ? barrio.tiposIncidencias : [])
+          .find((item) => item.tipo === tipo)
+        if (tipoActual?.icono) {
+          return tipoActual.icono
+        }
         const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo)
         return tipoInicial?.icono || 'mdi-tag-outline'
       }

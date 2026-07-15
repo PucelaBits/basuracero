@@ -151,7 +151,7 @@ export default {
         const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === incidencia.tipo)
         return {
           ...incidencia,
-          icono: tipoInicial?.icono || 'mdi-circle'
+          icono: incidencia.icono || tipoInicial?.icono || 'mdi-circle'
         }
       });
 

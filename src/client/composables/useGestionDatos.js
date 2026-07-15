@@ -1,6 +1,6 @@
-import { ref } from 'vue';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { useIncidenciasUsuarioStore } from '../store/incidenciasUsuarioStore';
+import { getRuntimeConfig } from '../utils/runtimeConfig';
 
 export function useGestionDatos() {
   const { favoritos, añadirFavorito, quitarFavorito } = useFavoritosStore();
@@ -19,7 +19,7 @@ export function useGestionDatos() {
 
     const a = document.createElement('a');
     a.href = url;
-    const nombreApp = import.meta.env.VITE_APP_NAME || 'basura_cero';
+    const nombreApp = getRuntimeConfig().APP_NAME || 'basura_cero';
     const nombreArchivo = `${nombreApp.toLowerCase().replace(/\s+/g, '_')}_datos.json`;
     a.download = nombreArchivo;
     document.body.appendChild(a);

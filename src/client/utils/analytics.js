@@ -1,6 +1,8 @@
+import { getRuntimeConfig } from './runtimeConfig'
+
 // Inicialización de Analytics
 export const initializeAnalytics = () => {
-  const providers = import.meta.env.VITE_ANALYTICS_PROVIDER?.split(',') || [];
+  const providers = getRuntimeConfig().ANALYTICS_PROVIDER?.split(',') || [];
 
   // Inicializar Matomo
   if (providers.includes('matomo')) {
@@ -15,14 +17,15 @@ export const initializeAnalytics = () => {
 
 // Inicialización de Matomo
 const initializeMatomo = () => {
-  console.log('Initializing Matomo');
+  const config = getRuntimeConfig()
+  if (!config.MATOMO_URL || !config.MATOMO_SITE_ID) return
   window._paq = window._paq || [];
   window._paq.push(['trackPageView']);
   window._paq.push(['enableLinkTracking']);
   
-  const u = import.meta.env.VITE_MATOMO_URL;
+  const u = config.MATOMO_URL.endsWith('/') ? config.MATOMO_URL : `${config.MATOMO_URL}/`;
   window._paq.push(['setTrackerUrl', u + 'matomo.php']);
-  window._paq.push(['setSiteId', import.meta.env.VITE_MATOMO_SITE_ID]);
+  window._paq.push(['setSiteId', config.MATOMO_SITE_ID]);
   
   const d = document;
   const g = d.createElement('script');
@@ -34,8 +37,8 @@ const initializeMatomo = () => {
 
 // Inicialización de Google Analytics
 const initializeGoogleAnalytics = () => {
-  console.log('Initializing Google Analytics');
-  const gaId = import.meta.env.VITE_GA_ID;
+  const gaId = getRuntimeConfig().GA_ID;
+  if (!gaId) return
   
   const script = document.createElement('script');
   script.async = true;
@@ -52,7 +55,7 @@ const initializeGoogleAnalytics = () => {
 
 // Enviar eventos
 export const enviarEvento = (categoria, accion, nombre = null, valor = null) => {
-  const providers = import.meta.env.VITE_ANALYTICS_PROVIDER?.split(',') || [];
+  const providers = getRuntimeConfig().ANALYTICS_PROVIDER?.split(',') || [];
 
   // Enviar a Matomo
   if (providers.includes('matomo') && window._paq) {

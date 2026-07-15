@@ -102,7 +102,7 @@
                       <!-- Columna del texto -->
                       <div class="texto-container">
                         <p class="text-caption mb-1" :title="incidencia.tipo">
-                          <v-icon x-small class="mr-1">{{ obtenerIconoTipo(incidencia.tipo) }}</v-icon>
+                          <v-icon x-small class="mr-1">{{ incidencia.icono || obtenerIconoTipo(incidencia.tipo) }}</v-icon>
                           {{ incidencia.tipo.length > 22 ? incidencia.tipo.substring(0, 22) + '...' : incidencia.tipo }}
                         </p>
                         <p class="text-caption mb-1">

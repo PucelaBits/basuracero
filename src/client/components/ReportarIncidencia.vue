@@ -19,7 +19,7 @@
                 <v-icon>mdi-information</v-icon>
               </v-col>
               <v-col cols="10" class="pl-2">
-                <span class="text-caption" v-html="instruccionesRegistro"></span>
+                <span class="text-caption">{{ instruccionesRegistro }}</span>
               </v-col>
             </v-row>
           </v-alert>
@@ -357,11 +357,7 @@ import MiniMapa from './MiniMapa.vue';
 import NotificacionError from './NotificacionError.vue';
 import { getClientErrorMessage, getLocationErrorMessage } from '../utils/errorHandler';
 import { parseTipoId, sortTiposByConfiguredOrder } from '../utils/tipoRoutes';
-
-const CIUDAD_LAT_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MIN);
-const CIUDAD_LAT_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LAT_MAX);
-const CIUDAD_LON_MIN = parseFloat(import.meta.env.VITE_CIUDAD_LON_MIN);
-const CIUDAD_LON_MAX = parseFloat(import.meta.env.VITE_CIUDAD_LON_MAX);
+import { getRuntimeConfig } from '../utils/runtimeConfig';
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
@@ -389,6 +385,11 @@ export default {
   },
   emits: ['update:modelValue', 'incidencia-creada', 'seleccionar-en-mapa', 'actualizar-datos', 'incidencia-seleccionada'],
   setup(props, { emit }) {
+    const runtimeConfig = getRuntimeConfig()
+    const CIUDAD_LAT_MIN = Number(runtimeConfig.CIUDAD_LAT_MIN)
+    const CIUDAD_LAT_MAX = Number(runtimeConfig.CIUDAD_LAT_MAX)
+    const CIUDAD_LON_MIN = Number(runtimeConfig.CIUDAD_LON_MIN)
+    const CIUDAD_LON_MAX = Number(runtimeConfig.CIUDAD_LON_MAX)
     const { smAndDown, xs } = useDisplay()
     const dialog = ref(props.modelValue)
     const form = ref(null)
@@ -398,11 +399,9 @@ export default {
       route.name === 'TipoCategoria' ? parseTipoId(route.params.id) ?? '' : ''
     )
     const createInitialIncidencia = () => ({
-      tipo_id: getTipoIdDesdeRuta(),
       descripcion: '',
       latitud: null,
       longitud: null,
-      imagenes: [],
       nombre: '',
       ...props.datosFormulario,
       tipo_id: props.datosFormulario?.tipo_id || getTipoIdDesdeRuta(),
@@ -415,12 +414,9 @@ export default {
     const direccion = ref('')
     const captchaContainer = ref(null)
     const captchaSolution = ref(null)
-    const isProduction = import.meta.env.PROD;
-    const captchaEnabled = isProduction 
-      ? import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED !== 'false'
-      : import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED === 'true';
+    const captchaEnabled = runtimeConfig.FRIENDLYCAPTCHA_ENABLED === 'true';
     const captchaWidget = ref(null)
-    const friendlyCaptchaSitekey = ref(import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY)
+    const friendlyCaptchaSitekey = ref(runtimeConfig.FRIENDLYCAPTCHA_SITEKEY)
     const mostrarDialogoError = ref(false)
     const mensajeError = ref('')
     const mostrarNotificacion = ref(false)
@@ -438,7 +434,7 @@ export default {
     const fileInput = ref(null)
     const aceptaLicencia = ref(false)
     const { incidenciasUsuario, añadirIncidenciaUsuario } = useIncidenciasUsuarioStore()
-    const instruccionesRegistro = ref(import.meta.env.VITE_INSTRUCCIONES_REGISTRO || '')
+    const instruccionesRegistro = ref(getRuntimeConfig().VITE_INSTRUCCIONES_REGISTRO || '')
 
     const validarCoordenadas = () => {
       if (!incidencia.value.latitud || !incidencia.value.longitud) {
@@ -502,7 +498,7 @@ export default {
         tiposIncidencias.value = sortTiposByConfiguredOrder(response.data
           .map(tipo => ({
             ...tipo,
-            icono: TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)?.icono || 'mdi-circle'
+            icono: tipo.icono || TIPOS_INCIDENCIAS_INICIALES.find(t => t.tipo === tipo.nombre)?.icono || 'mdi-circle'
           })))
       } catch (error) {
         console.error('Error al obtener tipos de incidencias:', error)
@@ -793,7 +789,7 @@ export default {
       if (captchaEnabled && captchaContainer.value) {
         captchaWidget.value = new WidgetInstance(captchaContainer.value, {
           startMode: "auto",
-          sitekey: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY,
+          sitekey: friendlyCaptchaSitekey.value,
           doneCallback: (solution) => {
             captchaSolution.value = solution;
           },

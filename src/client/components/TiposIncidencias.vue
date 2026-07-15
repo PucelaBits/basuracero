@@ -39,7 +39,7 @@
           >
             <template v-slot:prepend>
               <v-avatar size="38" class="tipo-avatar">
-                <v-icon color="white">{{ obtenerIconoTipo(tipo.nombre) }}</v-icon>
+                <v-icon color="white">{{ tipo.icono || obtenerIconoTipo(tipo.nombre) }}</v-icon>
               </v-avatar>
             </template>
             <v-list-item-title class="text-subtitle-2 tipo-title">
@@ -121,6 +121,10 @@ export default {
     }
 
     const obtenerIconoTipo = (tipo) => {
+      const tipoActual = tipos.value.find(item => item.nombre === tipo)
+      if (tipoActual?.icono) {
+        return tipoActual.icono
+      }
       const tipoInicial = TIPOS_INCIDENCIAS_INICIALES.find(item => item.tipo === tipo)
       return tipoInicial?.icono || 'mdi-tag-outline'
     }
