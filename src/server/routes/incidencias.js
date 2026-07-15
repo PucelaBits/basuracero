@@ -6,51 +6,56 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
 const { obtenerIP } = require('../utils/ip');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const { toCSV, toGeoJSON } = require('../utils/formatters');
 const { getAmigableErrorMessage, getSpecificErrorMessage } = require('../utils/errorMessages');
+const { run: runAsync } = require('../utils/dbAsync');
+const { getCachedAppSettings } = require('../admin/settings');
 
-const isProduction = process.env.NODE_ENV === 'production';
-const friendlyCaptchaEnabled = isProduction
-  ? process.env.friendlycaptcha_enabled !== 'false'
-  : process.env.friendlycaptcha_enabled === 'true';
-const friendlyCaptchaSecret = process.env.friendlycaptcha_secret;
-const CIUDAD_LAT_MIN = parseFloat(process.env.CIUDAD_LAT_MIN);
-const CIUDAD_LAT_MAX = parseFloat(process.env.CIUDAD_LAT_MAX);
-const CIUDAD_LON_MIN = parseFloat(process.env.CIUDAD_LON_MIN);
-const CIUDAD_LON_MAX = parseFloat(process.env.CIUDAD_LON_MAX);
 const REPORTES_PARA_SOLUCIONAR = parseInt(process.env.REPORTES_PARA_SOLUCIONAR) || 3;
 const DIAS_PARA_CONSIDERAR_ANTIGUA = parseInt(process.env.DIAS_PARA_CONSIDERAR_ANTIGUA) || 14;
 const REPORTES_PARA_SOLUCIONAR_ANTIGUA = parseInt(process.env.REPORTES_PARA_SOLUCIONAR_ANTIGUA) || 2;
 
 // Asegurarse de que la carpeta uploads existe
-const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads');
+const uploadsDir = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.join(__dirname, '..', '..', '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 // Configurar Multer para la subida de archivos
-const upload = multer({ storage: multer.memoryStorage() }).array('imagenes', 2);
+const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 2,
+    fields: 20,
+    fieldSize: 64 * 1024,
+    parts: 24
+  },
+  fileFilter: (_req, file, callback) => {
+    if (!allowedImageMimeTypes.has(String(file.mimetype || '').toLowerCase())) {
+      callback(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
+      return;
+    }
+    callback(null, true);
+  }
+}).array('imagenes', 2);
 
 // Limitadores específicos para rutas sensibles
 const crearIncidenciaLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 20, // máximo 20 incidencias por hora por IP
-  keyGenerator: (req) => {
-    return req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-  }
+  max: 20 // máximo 20 incidencias por hora por IP; express-rate-limit usa req.ip
 });
 
 const reporteLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 50, // máximo 50 reportes por hora por IP
-  keyGenerator: (req) => {
-    return req.headers['x-real-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-  }
+  max: 50 // máximo 50 reportes por hora por IP; express-rate-limit usa req.ip
 });
 
 function parseTiposQuery(tipoQuery) {
@@ -88,6 +93,7 @@ function validarNombre(nombre) {
 
 // Función de validación
 const validarIncidencia = (incidencia) => {
+  const settings = getCachedAppSettings();
   const errores = [];
   if (!incidencia.tipo_id) errores.push('Por favor, selecciona el tipo de incidencia.');
   if (!incidencia.descripcion) errores.push('Por favor, describe lo que has observado.');
@@ -105,8 +111,8 @@ const validarIncidencia = (incidencia) => {
   if (incidencia.longitud && (incidencia.longitud < -180 || incidencia.longitud > 180))
     errores.push(getSpecificErrorMessage('validation', 'invalidCoordinates'));
 
-  if (incidencia.latitud < CIUDAD_LAT_MIN || incidencia.latitud > CIUDAD_LAT_MAX ||
-    incidencia.longitud < CIUDAD_LON_MIN || incidencia.longitud > CIUDAD_LON_MAX) {
+  if (incidencia.latitud < Number(settings.CIUDAD_LAT_MIN) || incidencia.latitud > Number(settings.CIUDAD_LAT_MAX) ||
+    incidencia.longitud < Number(settings.CIUDAD_LON_MIN) || incidencia.longitud > Number(settings.CIUDAD_LON_MAX)) {
     errores.push(getSpecificErrorMessage('validation', 'outOfBounds'));
   }
 
@@ -119,10 +125,11 @@ function generarCodigoUnico() {
 
 // Función para verificar el captcha
 async function verificarCaptcha(captchaSolution) {
+  const settings = getCachedAppSettings();
   try {
     const captchaResponse = await axios.post('https://api.friendlycaptcha.com/api/v1/siteverify', {
       solution: captchaSolution,
-      secret: process.env.friendlycaptcha_secret
+      secret: settings.FRIENDLYCAPTCHA_SECRET
     });
 
     return captchaResponse.data.success;
@@ -130,6 +137,10 @@ async function verificarCaptcha(captchaSolution) {
     console.error('Error al verificar el captcha:', error);
     return false;
   }
+}
+
+function isFriendlyCaptchaEnabled() {
+  return getCachedAppSettings().FRIENDLYCAPTCHA_ENABLED === 'true';
 }
 
 // Obtener tipos de incidencias
@@ -160,13 +171,14 @@ router.get('/tipos/resumen', (req, res) => {
     SELECT
       t.id,
       t.nombre,
+      t.icono,
       SUM(CASE WHEN i.estado = 'activa' THEN 1 ELSE 0 END) as incidencias_activas,
       SUM(CASE WHEN i.estado = 'solucionada' THEN 1 ELSE 0 END) as incidencias_solucionadas
     FROM tipos_incidencias t
     LEFT JOIN incidencias i
       ON i.tipo_id = t.id
       AND i.estado != 'spam'
-    GROUP BY t.id, t.nombre
+    GROUP BY t.id, t.nombre, t.icono
     HAVING incidencias_activas > 0 OR incidencias_solucionadas > 0
     ORDER BY t.nombre COLLATE NOCASE ASC
   `;
@@ -181,6 +193,7 @@ router.get('/tipos/resumen', (req, res) => {
     const resumen = rows.map(row => ({
       id: row.id,
       nombre: row.nombre,
+      icono: row.icono || 'mdi-circle',
       incidenciasActivas: row.incidencias_activas || 0,
       incidenciasSolucionadas: row.incidencias_solucionadas || 0
     }));
@@ -209,8 +222,13 @@ router.get('/tipos/resumen', (req, res) => {
 router.post('/', crearIncidenciaLimiter, (req, res) => {
   upload(req, res, async function (err) {
     if (err) {
-      console.error('Error al subir imagen:', err);
-      return res.status(500).json({ error: getSpecificErrorMessage('file', 'upload') });
+      if (!(err instanceof multer.MulterError)) {
+        console.error('Error al subir imagen:', err);
+      }
+      const status = err instanceof multer.MulterError
+        ? err.code === 'LIMIT_FILE_SIZE' ? 413 : 400
+        : 500;
+      return res.status(status).json({ error: getSpecificErrorMessage('file', 'upload') });
     }
 
     const errorNombre = validarNombre(req.body.nombre);
@@ -231,7 +249,7 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
 
     try {
       // Validar el captcha
-      if (friendlyCaptchaEnabled) {
+      if (isFriendlyCaptchaEnabled()) {
         const captchaValido = await verificarCaptcha(captchaSolution);
         if (!captchaValido) {
           return res.status(400).json({ error: getSpecificErrorMessage('captcha', 'invalid') });
@@ -278,10 +296,11 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
           }
 
           const incidenciaId = this.lastID;
+          const writtenFiles = [];
 
           // Procesar y guardar las imágenes
           const insertImagePromises = req.files.map(async file => {
-            const filename = `${uuidv4()}.jpg`;
+            const filename = `${crypto.randomUUID()}.jpg`;
             const filepath = path.join(uploadsDir, filename);
 
             await sharp(file.buffer)
@@ -290,18 +309,30 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
               .jpeg({ quality: 80 })
               .toFile(filepath);
 
-            return db.run('INSERT INTO imagenes_incidencias (incidencia_id, ruta_imagen) VALUES (?, ?)', [incidenciaId, filename]);
+            writtenFiles.push(filepath);
+            return runAsync(
+              'INSERT INTO imagenes_incidencias (incidencia_id, ruta_imagen) VALUES (?, ?)',
+              [incidenciaId, filename]
+            );
           });
 
           Promise.all(insertImagePromises)
             .then(() => {
-              db.run('COMMIT');
-              res.json({ id: incidenciaId, codigoUnico: codigoUnico });
+              db.run('COMMIT', (commitError) => {
+                if (commitError) {
+                  console.error('Error al confirmar la incidencia:', commitError);
+                  res.status(500).json({ error: getSpecificErrorMessage('file', 'processingError') });
+                  return;
+                }
+                res.json({ id: incidenciaId, codigoUnico: codigoUnico });
+              });
             })
-            .catch(err => {
+            .catch(async (err) => {
               console.error('Error al insertar imágenes:', err);
-              db.run('ROLLBACK');
-              res.status(500).json({ error: getSpecificErrorMessage('file', 'processingError') });
+              db.run('ROLLBACK', async () => {
+                await Promise.all(writtenFiles.map((filePath) => fs.promises.unlink(filePath).catch(() => {})));
+                res.status(500).json({ error: getSpecificErrorMessage('file', 'processingError') });
+              });
             });
         });
       });
@@ -334,7 +365,7 @@ router.get('/', (req, res) => {
 
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
   const dataSql = `
-    SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+    SELECT i.id, i.tipo_id, t.nombre as tipo, t.icono as icono, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
            i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
@@ -435,7 +466,7 @@ router.get('/todas', (req, res) => {
   }
 
   const sql = `
-    SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+    SELECT i.id, i.tipo_id, t.nombre as tipo, t.icono as icono, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
            i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
@@ -669,7 +700,7 @@ router.get('/:id', (req, res) => {
   const incidenciaId = req.params.id;
 
   const sql = `
-    SELECT i.id, i.tipo_id, t.nombre as tipo, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
+    SELECT i.id, i.tipo_id, t.nombre as tipo, t.icono as icono, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,
            COALESCE(i.direccion, '') as direccion,
            i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
@@ -729,7 +760,7 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 
   try {
     // Validar el captcha
-    if (friendlyCaptchaEnabled) {
+    if (isFriendlyCaptchaEnabled()) {
       const captchaValido = await verificarCaptcha(captchaSolution);
       if (!captchaValido) {
         return res.status(400).json({ error: 'Captcha inválido' });
@@ -854,7 +885,7 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
 
   try {
     // Validar el captcha
-    if (friendlyCaptchaEnabled) {
+    if (isFriendlyCaptchaEnabled()) {
       const captchaValido = await verificarCaptcha(captchaSolution);
       if (!captchaValido) {
         return res.status(400).json({ error: 'Captcha inválido' });
@@ -969,12 +1000,13 @@ router.get('/barrios/ranking', (req, res) => {
           COALESCE(i.barrio, 'Sin barrio') as nombre,
           i.tipo_id as tipo_id,
           t.nombre as tipo,
+          t.icono as icono,
           COUNT(*) as total,
           SUM(CASE WHEN i.estado = 'solucionada' THEN 1 ELSE 0 END) as solucionadas
         FROM incidencias i
         JOIN tipos_incidencias t ON i.tipo_id = t.id
         WHERE i.estado != 'spam' AND i.fecha >= ? AND i.fecha <= ?
-        GROUP BY COALESCE(i.barrio, 'Sin barrio'), i.tipo_id, t.nombre
+        GROUP BY COALESCE(i.barrio, 'Sin barrio'), i.tipo_id, t.nombre, t.icono
       `;
 
       db.all(sqlTiposIncidencias, [fechaInicio.toISOString(), fechaFin.toISOString()], (err, rowsTipos) => {

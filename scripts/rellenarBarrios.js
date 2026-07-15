@@ -19,7 +19,7 @@ async function obtenerBarrio(lat, lon) {
         contactEmail = emailMatch[1];
       }
     }
-  } catch (error) {
+  } catch (_error) {
     console.warn('No se pudo obtener el email de configuración, usando valor por defecto');
   }
 

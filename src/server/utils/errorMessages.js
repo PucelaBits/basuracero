@@ -78,7 +78,7 @@ const errorMessages = {
  * @param {string} context - El contexto donde ocurrió el error (opcional)
  * @returns {string} Mensaje amigable para el usuario
  */
-function getAmigableErrorMessage(error, context = 'general') {
+function getAmigableErrorMessage(error, _context = 'general') {
   // Si ya es un mensaje amigable, lo devolvemos tal como está
   if (typeof error === 'string' && !isTechy(error)) {
     return error;

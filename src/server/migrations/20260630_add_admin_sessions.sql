@@ -1,0 +1,9 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  sid TEXT PRIMARY KEY,
+  expired INTEGER NOT NULL,
+  sess TEXT NOT NULL
+);
+
+COMMIT;

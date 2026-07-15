@@ -1,9 +1,8 @@
 const db = require('../src/server/config/database');
 const Papa = require('papaparse');
 const fs = require('fs').promises;
-const path = require('path');
 const readline = require('readline');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 require('dotenv').config();
 
 // Validación de campos
@@ -65,7 +64,7 @@ async function importarIncidencias(rutaCsv, nombreReportador) {
     // Verificar que el archivo existe
     try {
       await fs.access(rutaCsv);
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`El archivo ${rutaCsv} no existe o no es accesible`);
     }
 
@@ -140,7 +139,7 @@ async function importarIncidencias(rutaCsv, nombreReportador) {
         const total = resultado.data.length;
 
         resultado.data.forEach((registro) => {
-          const codigoUnico = uuidv4();
+          const codigoUnico = crypto.randomUUID();
           
           stmt.run(
             [

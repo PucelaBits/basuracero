@@ -4,6 +4,7 @@ const { Feed } = require('feed');
 const db = require('../config/database');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
+const { getAppSettings } = require('../admin/settings');
 
 dotenv.config();
 
@@ -16,16 +17,23 @@ const limiter = rateLimit({
 });
 router.use(limiter);
 
-router.get('/', (req, res) => {
+router.get('/', async (_req, res, next) => {
+  let settings;
+  try {
+    settings = await getAppSettings();
+  } catch (error) {
+    next(error);
+    return;
+  }
   const feed = new Feed({
-    title: process.env.APP_NAME + " - Últimas Incidencias",
-    description: "Las últimas incidencias reportadas en " + process.env.APP_NAME,
+    title: settings.APP_NAME + " - Últimas Incidencias",
+    description: "Las últimas incidencias reportadas en " + settings.APP_NAME,
     id: `${process.env.BASE_URL}/`,
     link: `${process.env.BASE_URL}/`,
     language: "es",
-    image: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
-    favicon: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
-    copyright: process.env.APP_NAME
+    image: `${process.env.BASE_URL}${settings.APP_FAVICON_PATH}`,
+    favicon: `${process.env.BASE_URL}${settings.APP_FAVICON_PATH}`,
+    copyright: settings.APP_NAME
   });
 
   const sql = `
@@ -103,16 +111,23 @@ router.get('/', (req, res) => {
 });
 
 // Modificar la ruta del feed RSS de spam
-router.get('/spam', (req, res) => {
+router.get('/spam', async (_req, res, next) => {
+  let settings;
+  try {
+    settings = await getAppSettings();
+  } catch (error) {
+    next(error);
+    return;
+  }
   const feed = new Feed({
-    title: `${process.env.APP_NAME} - Últimos reportes de contenido inadecuado`,
-    description: `Los últimos reportes de contenido inadecuado en ${process.env.APP_NAME}`,
+    title: `${settings.APP_NAME} - Últimos reportes de contenido inadecuado`,
+    description: `Los últimos reportes de contenido inadecuado en ${settings.APP_NAME}`,
     id: `${process.env.BASE_URL}/`,
     link: `${process.env.BASE_URL}/`,
     language: "es",
-    image: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
-    favicon: `${process.env.BASE_URL}${process.env.APP_FAVICON_PATH}`,
-    copyright: process.env.APP_NAME
+    image: `${process.env.BASE_URL}${settings.APP_FAVICON_PATH}`,
+    favicon: `${process.env.BASE_URL}${settings.APP_FAVICON_PATH}`,
+    copyright: settings.APP_NAME
   });
 
   const sql = `

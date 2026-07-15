@@ -17,7 +17,7 @@ function buildTipoPath(tipoId, tipoNombre) {
   return slug ? `/tipo/${id}/${slug}` : `/tipo/${id}`
 }
 
-function buildCategoryMeta({ appName, appDescription, baseUrl, tipo }) {
+function buildCategoryMeta({ appName, baseUrl, tipo }) {
   const categoryPath = buildTipoPath(tipo.id, tipo.nombre)
   const categoryName = tipo.nombre
   const title = `${categoryName} | ${appName}`
