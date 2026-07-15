@@ -10,7 +10,7 @@ jest.mock('../../src/server/routes/incidencias', () => {
   const express = require('express');
   const multer = require('multer');
   const router = express.Router();
-  const { getAmigableErrorMessage, getSpecificErrorMessage } = require('../../src/server/utils/errorMessages');
+  const { getSpecificErrorMessage } = require('../../src/server/utils/errorMessages');
   
   // Configurar multer para tests
   const upload = multer({ storage: multer.memoryStorage() }).array('imagenes', 2);
