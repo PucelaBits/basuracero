@@ -340,6 +340,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
     const originHeader = req.get('origin');
     const refererHeader = req.get('referer');
+    const hasSourceHeader = Boolean(originHeader || refererHeader);
     let requestOrigin = null;
 
     try {
@@ -352,7 +353,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       requestOrigin = null;
     }
 
-    if (requestOrigin !== allowedOrigin) {
+    if (hasSourceHeader && requestOrigin !== allowedOrigin) {
       res.status(403).send(buildForbiddenPage({
         currentAdmin: req.currentAdmin,
         csrfToken: req.session?.csrfToken || '',

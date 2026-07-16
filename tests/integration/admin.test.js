@@ -1109,6 +1109,26 @@ describe('Panel admin', () => {
     await loadFreshApp();
   });
 
+  it('acepta un POST sin cabeceras de origen cuando el token CSRF es valido', async () => {
+    await loadFreshApp({ nodeEnv: 'production' });
+    const loginPage = await agent.get('/admin/login').set('X-Forwarded-Proto', 'https');
+    const cookie = getSessionCookie(loginPage)?.split(';')[0];
+    const response = await request(app)
+      .post('/admin/login')
+      .set('X-Forwarded-Proto', 'https')
+      .set('Cookie', cookie)
+      .type('form')
+      .send({
+        username: 'admin',
+        password: 'credencial-incorrecta',
+        _csrf: extractCsrfToken(loginPage.text)
+      });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/admin/login?error=1');
+    await loadFreshApp();
+  });
+
   it('exige un SESSION_SECRET robusto en produccion', () => {
     const previousEnv = process.env.NODE_ENV;
     const previousSecret = process.env.SESSION_SECRET;
