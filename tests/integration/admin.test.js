@@ -381,7 +381,7 @@ describe('Panel admin', () => {
     expect(page.text).toContain('id="whatsapp-dependent-fields" hidden');
     expect(page.text).toContain("dependentFields.hidden = !enabled");
     expect(page.text).not.toContain('<h2>Apariencia</h2>');
-    expect((page.text.match(/data-settings-save aria-label/g) || []).length).toBe(5);
+    expect((page.text.match(/data-settings-save aria-label/g) || []).length).toBe(6);
     expect(page.text).not.toContain('Guardar configuración');
     expect(page.text).toContain('Reporte por WhatsApp');
     expect(page.text).toContain('Votos mínimos para considerar una incidencia como solucionada');
@@ -400,6 +400,8 @@ describe('Panel admin', () => {
     expect(page.text).toContain('rel="noopener noreferrer"');
     expect(page.text).not.toContain('Ruta del logotipo');
     expect(page.text).not.toContain('SESSION_SECRET');
+    expect(page.text).toContain('Canal de actualizaciones');
+    expect(page.text).toContain('Estable (recomendado)');
 
     const response = await agent
       .post('/admin/configuracion')
@@ -448,7 +450,8 @@ describe('Panel admin', () => {
         MAPA_ZOOM_INICIAL: '13',
         SEARCH_REGION_LIMIT_ENABLED: 'true',
         SEARCH_REGION_QUERY: '+Valladolid+España',
-        DISTANCIA_MAXIMA_CERCANAS: '1500'
+        DISTANCIA_MAXIMA_CERCANAS: '1500',
+        UPDATE_CHANNEL: 'stable'
       });
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe('/admin/configuracion?saved=1');
@@ -472,6 +475,22 @@ describe('Panel admin', () => {
     expect(savedSettings.REPORTES_PARA_SOLUCIONAR).toBe('4');
     expect(savedSettings.DIAS_PARA_CONSIDERAR_ANTIGUA).toBe('30');
     expect(savedSettings.REPORTES_PARA_SOLUCIONAR_ANTIGUA).toBe('2');
+    expect(savedSettings.UPDATE_CHANNEL).toBe('stable');
+    expect(fs.readFileSync(path.join(path.dirname(process.env.SQLITE_DB_PATH), 'update-channel'), 'utf8').trim()).toBe('stable');
+
+    const updateChannelResponse = await agent
+      .post('/admin/configuracion')
+      .set('accept', 'application/json')
+      .set('x-csrf-token', extractCsrfToken(page.text))
+      .type('form')
+      .send({
+        _csrf: extractCsrfToken(page.text),
+        _section: 'updates',
+        UPDATE_CHANNEL: 'beta'
+      });
+    expect(updateChannelResponse.status).toBe(200);
+    expect((await settingsService.getAppSettings()).UPDATE_CHANNEL).toBe('beta');
+    expect(fs.readFileSync(path.join(path.dirname(process.env.SQLITE_DB_PATH), 'update-channel'), 'utf8').trim()).toBe('beta');
 
     const partialResponse = await agent
       .post('/admin/configuracion')

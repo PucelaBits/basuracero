@@ -67,32 +67,20 @@ Antes del primer arranque edita únicamente los valores operativos esenciales de
 
 ```dotenv
 BASE_URL=https://incidencias.ejemplo.org
-SESSION_SECRET=GENERA_UN_VALOR_ALEATORIO_DE_32_CARACTERES_O_MAS
 ADMIN_BOOTSTRAP_USERNAME=admin
-ADMIN_BOOTSTRAP_PASSWORD=UNA_CONTRASENA_TEMPORAL_SEGURA
 TRUST_PROXY=1
-```
-
-Puedes generar el secreto con:
-
-```bash
-openssl rand -hex 32
 ```
 
 Usa `TRUST_PROXY=1` solo cuando haya un único proxy inverso de confianza delante de la aplicación. Si Node recibe tráfico directamente, conserva `TRUST_PROXY=false`.
 
-Arranca el servicio:
+Instala y arranca el servicio:
 
 ```bash
-docker compose up -d --build
+./scripts/install.sh
 docker compose ps
 ```
 
-La instalación local queda disponible por defecto en `http://localhost:5050`. En producción, entra en `/admin`, cambia la contraseña temporal y elimina `ADMIN_BOOTSTRAP_PASSWORD` de `.env`. Después recrea el servicio para que esa contraseña deje de formar parte de su entorno:
-
-```bash
-docker compose up -d --force-recreate basuracero-app
-```
+El asistente genera automáticamente `SESSION_SECRET`, crea el primer administrador en un contenedor efímero y muestra su contraseña temporal una sola vez. Después limpia la credencial de bootstrap y arranca el servicio definitivo sin ella. La instalación local queda disponible por defecto en `http://localhost:5050`; entra en `/admin` y cambia la contraseña temporal cuando se solicite. No es necesario volver a editar `.env` ni recrear el servicio.
 
 ## Actualizar una instalación existente
 
@@ -106,6 +94,25 @@ git pull --ff-only origin main
 El asistente crea un backup, prepara el secreto, aplica las migraciones, crea el primer administrador si hace falta y vuelve a levantar el servicio. No borres `data/`, `uploads/` ni `.env`.
 
 Sigue la [guía paso a paso para instalaciones Docker existentes](docs/upgrade-existing-docker.md).
+
+## Actualizaciones posteriores
+
+Para instalar nuevas versiones en una instancia ya preparada:
+
+```bash
+./scripts/upgrade.sh
+```
+
+El asistente comprueba que no haya cambios locales, descarga `main` mediante un avance rápido de Git, detiene el servicio, guarda una copia de SQLite, `uploads/` y `.env`, reconstruye la imagen y espera a que el contenedor quede saludable. Si ya estás en la última revisión, termina sin reconstruir nada.
+
+El panel ofrece dos canales en **Configuración → Actualizaciones**:
+
+- **Estable (recomendado):** consulta como máximo cada seis horas el archivo [`release.json`](release.json). Solo avisa cuando su versión es superior a la instalada y `upgrade.sh` instala la etiqueta Git `vMAJOR.MINOR.PATCH` correspondiente, sin arrastrar commits posteriores.
+- **Beta:** compara la revisión instalada con la punta de `main`. Avisa ante cualquier commit nuevo y `upgrade.sh` instala el último avance rápido de la rama.
+
+En ambos casos el administrador ve en el panel el título y las novedades disponibles antes de ejecutar el comando.
+
+`release.json` es la fuente de verdad para las versiones distribuibles. Cuando una tanda de cambios esté estable, incrementa su versión `major.minor.patch`, actualiza `ref`, `publishedAt`, `title`, `notes` y el enlace de publicación, confirma el cambio y crea sobre ese mismo commit la etiqueta indicada en `ref` —por ejemplo, `v1.1.0`—. Publica el commit y la etiqueta juntos. Esta comprobación es informativa: una caída de GitHub no afecta al panel y el proceso web nunca recibe permisos para controlar Git o Docker.
 
 ## Qué continúa gestionándose en el servidor
 

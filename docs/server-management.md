@@ -53,10 +53,12 @@ Estos valores no se muestran en el panel:
 | `SESSION_SECRET` | Firma de las sesiones administrativas; mínimo 32 caracteres en producción. |
 | `ADMIN_ENABLED` | Sobrescritura explícita de la activación del panel. Normalmente se usa el marcador de `data/`. |
 | `ADMIN_BOOTSTRAP_USERNAME` | Usuario que se crea si todavía no existe un administrador activo. |
-| `ADMIN_BOOTSTRAP_PASSWORD` | Contraseña temporal de bootstrap; debe retirarse tras el primer acceso. |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Contraseña temporal para bootstrap manual. `scripts/install.sh` la gestiona y retira automáticamente. |
 | `TRUST_PROXY` | Número de proxies inversos de confianza. Usa `1` solo detrás de un único proxy. |
 | `CORS_ORIGINS` | Orígenes adicionales autorizados, separados por comas. |
 | `ADMIN_SESSION_MAX_AGE_MS` | Duración máxima de inactividad de la sesión administrativa. |
+| `APP_UPDATE_REPOSITORY` | Repositorio público consultado por el aviso de actualizaciones. Por defecto `PucelaBits/basuracero`. |
+| `APP_UPDATE_BRANCH` | Rama consultada por el aviso. Por defecto `main`. |
 | `SQLITE_DB_PATH` | Ruta alternativa de la base SQLite. |
 | `UPLOADS_DIR` | Ruta alternativa del directorio de archivos subidos. |
 
@@ -161,7 +163,19 @@ Para ejecutar manualmente las migraciones y el bootstrap en un entorno ya prepar
 npm run admin:bootstrap
 ```
 
-`ADMIN_BOOTSTRAP_PASSWORD` solo se utiliza si no existe ningún administrador activo. Retírala del entorno al terminar.
+`ADMIN_BOOTSTRAP_PASSWORD` solo se utiliza si no existe ningún administrador activo. En instalaciones Docker nuevas usa `scripts/install.sh`, que la pasa únicamente al contenedor efímero y la retira automáticamente; si haces el bootstrap manualmente, elimínala del entorno al terminar.
+
+## Actualizar la aplicación
+
+Desde la raíz de una instalación Docker ejecuta:
+
+```bash
+./scripts/upgrade.sh
+```
+
+El script descarga la rama configurada, admite únicamente un avance rápido, realiza un backup coherente con el servicio detenido, reconstruye la imagen y espera al healthcheck. Usa `UPGRADE_REMOTE` o `UPGRADE_BRANCH` únicamente si la instalación sigue deliberadamente otro remoto o rama. El aviso del dashboard es informativo y nunca ejecuta comandos del sistema.
+
+La versión distribuible y sus novedades viven en `release.json`. En el canal estable, el panel solo avisa ante una versión `major.minor.patch` superior y el script instala su etiqueta `vMAJOR.MINOR.PATCH`; esto permite acumular commits sin publicarlos y evita incorporar trabajo posterior a una entrega. En beta, el panel y el script siguen la punta de la rama. La preferencia se gestiona en **Configuración → Actualizaciones** y se refleja en `data/update-channel`.
 
 ## Consultas de diagnóstico
 

@@ -10,6 +10,28 @@ La equivalencia entre el panel, `.env` y los comandos disponibles está en [Admi
 - Una **instalación existente** que actualiza desde una versión anterior mantiene `/admin` desactivado aunque las migraciones sean compatibles. La API y la web pública siguen funcionando y no se exige `SESSION_SECRET` mientras el panel permanezca desactivado.
 - `ADMIN_ENABLED=true|false` permite una sobrescritura explícita para entornos gestionados, pero el mecanismo recomendado en Docker es el marcador persistente.
 
+### Instalación Docker nueva
+
+Después de copiar `.env.sample` a `.env` y revisar `BASE_URL` y `TRUST_PROXY`, ejecuta:
+
+```bash
+./scripts/install.sh
+```
+
+El asistente genera `SESSION_SECRET` y una contraseña temporal, ejecuta el bootstrap en un contenedor efímero, limpia la credencial de `.env` y arranca el servicio definitivo sin ella. La contraseña se muestra una sola vez en la terminal y debe cambiarse al entrar en `/admin`; no hace falta editar de nuevo `.env` ni recrear el servicio.
+
+`scripts/install.sh` guarda `data/.installation-complete` al terminar y rechaza una segunda ejecución cuando encuentra ese marcador. Un intento interrumpido antes de completarse puede ejecutarse de nuevo. Para versiones posteriores usa:
+
+```bash
+./scripts/upgrade.sh
+```
+
+El upgrade solo acepta avances rápidos sobre `main`, rechaza cambios locales versionados, crea un backup antes de modificar el servicio y verifica su salud al terminar. Una ejecución interrumpida deja un marcador de reintento para que el mismo comando vuelva a desplegar la revisión actual.
+
+El canal **estable**, recomendado y predeterminado, compara el `release.json` incluido en la imagen con el publicado en la rama configurada. Solo admite versiones `major.minor.patch` cuya referencia sea `vMAJOR.MINOR.PATCH`; `upgrade.sh` instala esa etiqueta exacta, evitando commits posteriores. El título y `notes` se muestran en el aviso, así que no incrementes la versión ni publiques la etiqueta hasta que la entrega esté lista para producción.
+
+El canal **beta** es opt-in desde `/admin/configuracion`. Compara el SHA incluido al construir la imagen con la punta de la rama y avisa ante cualquier cambio; el upgrade instala esa rama mediante avance rápido. La selección se guarda en SQLite y se refleja en `data/update-channel` para que el script de servidor respete la misma preferencia.
+
 ### Activar una instalación Docker existente
 
 Desde la raíz del repositorio actualizado ejecuta:
@@ -48,8 +70,8 @@ No se muestran ni modifican desde el panel `SESSION_SECRET`, credenciales bootst
 2. Copia `data/incidencias.sqlite`, `uploads/` y el `.env` vigente a un destino fuera del servidor.
 3. Verifica la copia con `sqlite3 backup.sqlite "PRAGMA integrity_check;"`; debe responder `ok`.
 4. Restringe `.env`, SQLite y los backups al usuario del servicio (`chmod 600 .env data/incidencias.sqlite` y directorios de backup con modo `700`). El asistente de activación aplica una `umask` restrictiva.
-5. Si es una instalación nueva, genera `SESSION_SECRET` con `openssl rand -hex 32`. En una actualización opt-in lo hace `enable_admin.sh`. No reutilices secretos entre entornos.
-6. En una instalación nueva define temporalmente `ADMIN_BOOTSTRAP_PASSWORD` con al menos 12 caracteres y un máximo de 72 bytes. Elimínala del entorno tras el primer acceso y cambio de clave. En una actualización opt-in el asistente la pasa únicamente al contenedor efímero.
+5. En una instalación nueva, `scripts/install.sh` genera `SESSION_SECRET`; `enable_admin.sh` hace lo mismo al activar una instalación existente. En despliegues gestionados, genera un valor distinto por entorno con al menos 32 caracteres. No reutilices secretos entre entornos.
+6. Los asistentes generan una contraseña bootstrap segura y la pasan únicamente al contenedor efímero. En un despliegue manual, `ADMIN_BOOTSTRAP_PASSWORD` debe tener al menos 12 caracteres y un máximo de 72 bytes, y no debe permanecer en el entorno del servicio definitivo.
 7. Configura `BASE_URL` con el origen HTTPS publico. Mantén `TRUST_PROXY=false` si Node recibe trafico directo; usa `TRUST_PROXY=1` solo detras de un unico proxy de confianza.
 
 ### Proxy inverso y cookies seguras

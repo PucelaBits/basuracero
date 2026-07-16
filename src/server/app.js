@@ -11,6 +11,7 @@ const { isAdminEnabled } = require('./admin/activation');
 const { bootstrapAdminIfNeeded } = require('./admin/service');
 const { getAppSettings } = require('./admin/settings');
 const { getSessionSecret, mountAdmin } = require('./admin/panel');
+const { getUpdateStatus } = require('./admin/updateChecker');
 
 const DIST_INDEX_PATH = path.join(__dirname, '..', '..', 'dist', 'index.html');
 
@@ -139,13 +140,16 @@ function buildIncidenciaMeta(incidencia, baseUrl, appName) {
 
 async function createApp({ logger = console } = {}) {
   await db.ready;
-  await getAppSettings({ refresh: true });
+  const initialSettings = await getAppSettings({ refresh: true });
   const adminEnabled = isAdminEnabled();
   if (adminEnabled) {
     if (process.env.NODE_ENV === 'production') {
       getSessionSecret(logger);
     }
     await bootstrapAdminIfNeeded(logger);
+    if (process.env.NODE_ENV === 'production' && /^[a-f0-9]{40}$/i.test(process.env.APP_GIT_SHA || '')) {
+      getUpdateStatus({ logger, channel: initialSettings.UPDATE_CHANNEL }).catch(() => {});
+    }
   }
 
   const app = express();

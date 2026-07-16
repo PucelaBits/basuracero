@@ -1796,6 +1796,73 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           justify-content: space-between;
           gap: 12px;
         }
+        .dashboard-update {
+          display: grid;
+          grid-template-columns: 44px minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 14px;
+          padding: 16px 18px;
+          border: 1px solid #d9d4c7;
+          border-radius: 16px;
+          background: #faf8f2;
+          color: var(--ink);
+        }
+        .dashboard-update-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: #ebe6da;
+          color: #625b4d;
+          font-size: 22px;
+        }
+        .dashboard-update-copy {
+          display: grid;
+          gap: 3px;
+          min-width: 0;
+        }
+        .dashboard-update-copy p {
+          margin: 0;
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .dashboard-update-notes {
+          display: grid;
+          gap: 4px;
+          margin: 8px 0 4px;
+          padding-left: 18px;
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .dashboard-update-command {
+          margin-top: 6px !important;
+        }
+        .dashboard-update-copy code {
+          color: var(--ink);
+          font-size: 13px;
+          font-weight: 700;
+        }
+        .dashboard-update-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 44px;
+          padding: 0 14px;
+          border: 1px solid #c9c2b2;
+          border-radius: 12px;
+          color: var(--ink);
+          font-size: 14px;
+          font-weight: 700;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .dashboard-update-link:hover {
+          background: #f1ede4;
+        }
         .dashboard-kpis {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2470,6 +2537,13 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             flex-direction: column;
           }
           .dashboard-header-top .button-link {
+            width: 100%;
+          }
+          .dashboard-update {
+            grid-template-columns: 44px minmax(0, 1fr);
+          }
+          .dashboard-update-link {
+            grid-column: 1 / -1;
             width: 100%;
           }
           .dashboard-kpi:nth-child(2n) {
@@ -3265,8 +3339,15 @@ function renderChangePasswordPage({ currentAdmin, notice, minLength, csrfToken }
   });
 }
 
-function renderDashboardPage({ currentAdmin, notice, dashboard, csrfToken }) {
+function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, csrfToken }) {
   const { stats, recentWithPhoto, byTipo } = dashboard;
+  const updateRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
+  const updateHeading = updateStatus?.channel === 'beta'
+    ? `Actualización beta ${updateRelease?.version || ''} disponible`
+    : `Versión ${updateRelease?.version || ''} disponible`;
+  const updateNotes = updateRelease?.notes?.length
+    ? `<ul class="dashboard-update-notes">${updateRelease.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
+    : '';
   const recentRows = recentWithPhoto.length
     ? recentWithPhoto.map((item) => `
       <tr>
@@ -3317,6 +3398,19 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, csrfToken }) {
               <a class="button-link" href="/admin/incidencias?estado=activa">Revisar incidencias</a>
             </div>
           </section>
+
+          ${updateRelease ? `
+            <section class="dashboard-update" role="status" aria-label="Actualizacion disponible">
+              <div class="dashboard-update-icon" aria-hidden="true"><i class="mdi mdi-update"></i></div>
+              <div class="dashboard-update-copy">
+                <strong>${escapeHtml(updateHeading)}</strong>
+                ${updateRelease.title ? `<p>${escapeHtml(updateRelease.title)}</p>` : ''}
+                ${updateNotes}
+                <p class="dashboard-update-command">Ejecuta <code>./scripts/upgrade.sh</code> desde el servidor para instalarla.</p>
+              </div>
+              ${updateRelease.url ? `<a class="dashboard-update-link" href="${escapeAttr(updateRelease.url)}" target="_blank" rel="noopener noreferrer">Ver publicación</a>` : ''}
+            </section>
+          ` : ''}
 
           <section class="dashboard-kpis" aria-label="Metricas principales">
             <div class="dashboard-kpi"><strong>${stats.total}</strong><span>Total</span></div>
@@ -3709,6 +3803,25 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
               </div>
             </div>
             ${sectionSaveButton('Servicios externos', 'services')}
+          </section>
+          <section class="settings-section" data-settings-section="updates">
+            <div>
+              <h2>Actualizaciones</h2>
+              <p class="small">Elige qué versiones debe anunciar e instalar esta instancia.</p>
+            </div>
+            <div class="settings-fields">
+              ${selectField('UPDATE_CHANNEL', 'Canal de actualizaciones', [
+                ['stable', 'Estable (recomendado)'],
+                ['beta', 'Beta (todos los cambios de la rama)']
+              ])}
+            </div>
+            <div class="settings-service">
+              <strong>${settings.UPDATE_CHANNEL === 'beta' ? 'Canal beta activo' : 'Canal estable activo'}</strong>
+              <p class="small">${settings.UPDATE_CHANNEL === 'beta'
+                ? 'Recibirás avisos por cada nueva revisión. Puede incluir cambios todavía no validados para producción.'
+                : 'Solo recibirás avisos de versiones publicadas expresamente y etiquetadas como estables.'}</p>
+            </div>
+            ${sectionSaveButton('Actualizaciones', 'updates')}
           </section>
         </div>
       </form>

@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "ref": "v2.0.0",
+  "publishedAt": "2026-07-16",
+  "title": "Instalación y actualizaciones administrables",
+  "notes": [
+    "Nueva instalación Docker de un solo paso con credenciales temporales seguras y limpieza automática del secreto de bootstrap.",
+    "Nuevo asistente de actualización con backup, avance rápido, reintentos y comprobación de salud del contenedor.",
+    "Canal estable recomendado, ligado a versiones etiquetadas, y canal beta opcional para seguir cada cambio de la rama.",
+    "Avisos de actualización en el panel con versión, novedades y enlace a la publicación.",
+    "Selección del canal de actualizaciones desde la configuración administrativa."
+  ],
+  "url": "https://github.com/PucelaBits/basuracero/tree/v2.0.0"
+}

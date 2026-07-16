@@ -53,6 +53,26 @@ describe('Activacion del panel administrativo', () => {
     expect(script).toContain('node_image="${ADMIN_ACTIVATION_NODE_IMAGE:-node:22-slim}"');
     expect(script).toContain('docker run --rm');
   });
+
+  it('ofrece una instalacion nueva de un solo paso reutilizando el bootstrap seguro', () => {
+    const script = fs.readFileSync(path.join(__dirname, '../../scripts/install.sh'), 'utf8');
+
+    expect(script).toContain('scripts/enable_admin.sh');
+    expect(script).toContain('scripts/upgrade.sh');
+    expect(script).toContain('.installation-complete');
+    expect(script).not.toContain('ADMIN_BOOTSTRAP_PASSWORD');
+  });
+
+  it('incluye un upgrade conservador con backup, fast-forward y healthcheck', () => {
+    const script = fs.readFileSync(path.join(__dirname, '../../scripts/upgrade.sh'), 'utf8');
+
+    expect(script).toContain('git merge --ff-only');
+    expect(script).toContain('data/update-channel');
+    expect(script).toContain('v[0-9]+\\.[0-9]+\\.[0-9]+');
+    expect(script).toContain('backups/upgrade-');
+    expect(script).toContain("health_status");
+    expect(script).toContain('.upgrade-incomplete');
+  });
 });
 
 describe('Aplicacion con panel desactivado', () => {

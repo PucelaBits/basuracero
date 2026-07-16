@@ -56,6 +56,7 @@ const {
   renderSettingsPage
 } = require('./html');
 const { getAppSettings, updateAppSettings, updateAppSettingsSection } = require('./settings');
+const { getUpdateStatus } = require('./updateChecker');
 
 const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
@@ -524,13 +525,18 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
   async function renderAdminHome(req, res, next) {
     try {
-      const dashboard = await getAdminDashboardData();
+      const settings = await getAppSettings();
+      const [dashboard, updateStatus] = await Promise.all([
+        getAdminDashboardData(),
+        getUpdateStatus({ logger, channel: settings.UPDATE_CHANNEL })
+      ]);
       res.send(renderDashboardPage({
         currentAdmin: req.currentAdmin,
         notice: req.query.passwordChanged
           ? { type: 'success', message: 'Contraseña actualizada correctamente.' }
           : null,
         dashboard,
+        updateStatus,
         csrfToken: req.session.csrfToken
       }));
     } catch (error) {

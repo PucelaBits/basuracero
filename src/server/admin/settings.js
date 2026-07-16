@@ -1,4 +1,7 @@
+const fs = require('fs');
+const path = require('path');
 const { all, run } = require('../utils/dbAsync');
+const { getDatabasePath } = require('./activation');
 const { createAuditLog } = require('./service');
 
 const SETTING_DEFINITIONS = {
@@ -65,7 +68,8 @@ const SETTING_DEFINITIONS = {
   MAPA_ZOOM_INICIAL: { fallback: () => process.env.VITE_MAPA_ZOOM_INICIAL || '13', type: 'number', min: 1, max: 19 },
   SEARCH_REGION_LIMIT_ENABLED: { fallback: () => process.env.VITE_SEARCH_REGION_LIMIT_ENABLED || 'true', type: 'boolean' },
   SEARCH_REGION_QUERY: { fallback: () => process.env.VITE_SEARCH_REGION_QUERY || '', maxLength: 120 },
-  DISTANCIA_MAXIMA_CERCANAS: { fallback: () => process.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', type: 'integer', min: 100, max: 50000 }
+  DISTANCIA_MAXIMA_CERCANAS: { fallback: () => process.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', type: 'integer', min: 100, max: 50000 },
+  UPDATE_CHANNEL: { fallback: () => process.env.APP_UPDATE_CHANNEL || 'stable', type: 'updateChannel', public: false }
 };
 
 const SETTING_SECTIONS = {
@@ -90,7 +94,8 @@ const SETTING_SECTIONS = {
     'FRIENDLYCAPTCHA_ENABLED', 'FRIENDLYCAPTCHA_SITEKEY', 'FRIENDLYCAPTCHA_SECRET',
     'ANALYTICS_PROVIDER', 'MATOMO_URL', 'MATOMO_SITE_ID', 'GA_ID'
   ],
-  texts: ['VITE_INSTRUCCIONES_REGISTRO', 'TEXTO_BOTON_RESOLVER', 'TEXTO_ESTADO_SOLUCIONADO']
+  texts: ['VITE_INSTRUCCIONES_REGISTRO', 'TEXTO_BOTON_RESOLVER', 'TEXTO_ESTADO_SOLUCIONADO'],
+  updates: ['UPDATE_CHANNEL']
 };
 
 let cachedSettings = null;
@@ -110,6 +115,9 @@ function validateValue(key, rawValue) {
   }
   if (definition.type === 'analyticsProvider' && !['none', 'matomo', 'google', 'matomo,google'].includes(value)) {
     throw new Error('Proveedor de analítica no permitido.');
+  }
+  if (definition.type === 'updateChannel' && !['stable', 'beta'].includes(value)) {
+    throw new Error('Canal de actualizaciones no permitido.');
   }
   if (definition.type === 'optionalUrl' && value && !/^https?:\/\//i.test(value)) {
     throw new Error('La URL de Matomo debe comenzar por http:// o https://.');
@@ -229,6 +237,13 @@ async function updateAppSettings(input, actingAdminId, { keys = Object.keys(SETT
   } catch (error) {
     await run('ROLLBACK').catch(() => {});
     throw error;
+  }
+  if (allowedKeys.includes('UPDATE_CHANNEL')) {
+    const channelPath = path.join(path.dirname(getDatabasePath()), 'update-channel');
+    const temporaryPath = `${channelPath}.${process.pid}.tmp`;
+    fs.mkdirSync(path.dirname(channelPath), { recursive: true });
+    fs.writeFileSync(temporaryPath, `${next.UPDATE_CHANNEL}\n`, { encoding: 'utf8', mode: 0o600 });
+    fs.renameSync(temporaryPath, channelPath);
   }
   cachedSettings = { ...next };
   const beforeSection = Object.fromEntries(allowedKeys.map((key) => [key, before[key]]));

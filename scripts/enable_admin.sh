@@ -110,6 +110,7 @@ rm -f "$status_file"
 temporary_password="BCero-$(docker_node -e "process.stdout.write(require('crypto').randomBytes(12).toString('base64url'))")!"
 
 echo "Construyendo la version actualizada..."
+export APP_GIT_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
 docker compose build
 
 echo "Aplicando migraciones y preparando el administrador inicial..."
@@ -123,6 +124,12 @@ unset ADMIN_BOOTSTRAP_PASSWORD ADMIN_BOOTSTRAP_STATUS_FILE
 
 docker_node scripts/clearAdminBootstrapEnv.js
 docker compose up -d
+if [[ ! -f data/update-channel ]]; then
+  echo "stable" > data/update-channel
+fi
+chmod 600 data/update-channel 2>/dev/null || true
+touch data/.installation-complete
+chmod 600 data/.installation-complete 2>/dev/null || true
 activation_completed=true
 
 echo
