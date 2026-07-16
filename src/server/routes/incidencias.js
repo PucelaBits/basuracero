@@ -15,10 +15,6 @@ const { getAmigableErrorMessage, getSpecificErrorMessage } = require('../utils/e
 const { run: runAsync } = require('../utils/dbAsync');
 const { getCachedAppSettings } = require('../admin/settings');
 
-const REPORTES_PARA_SOLUCIONAR = parseInt(process.env.REPORTES_PARA_SOLUCIONAR) || 3;
-const DIAS_PARA_CONSIDERAR_ANTIGUA = parseInt(process.env.DIAS_PARA_CONSIDERAR_ANTIGUA) || 14;
-const REPORTES_PARA_SOLUCIONAR_ANTIGUA = parseInt(process.env.REPORTES_PARA_SOLUCIONAR_ANTIGUA) || 2;
-
 // Asegurarse de que la carpeta uploads existe
 const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
@@ -838,22 +834,18 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
 });
 
 async function procesarReporteSolucion(incidenciaId) {
-  // Obtener la fecha de creación de la incidencia
   const incidencia = await new Promise((resolve, reject) => {
     db.get('SELECT fecha FROM incidencias WHERE id = ?', [incidenciaId], (err, row) => {
       if (err) reject(err);
       else resolve(row);
     });
   });
-
-  const fechaCreacion = new Date(incidencia.fecha);
-  const ahora = new Date();
-  const diasTranscurridos = (ahora - fechaCreacion) / (1000 * 60 * 60 * 24);
-
-  // Determinar el número de reportes necesarios
-  const reportesNecesarios = diasTranscurridos > DIAS_PARA_CONSIDERAR_ANTIGUA
-    ? REPORTES_PARA_SOLUCIONAR_ANTIGUA
-    : REPORTES_PARA_SOLUCIONAR;
+  const settings = getCachedAppSettings();
+  const diasParaConsiderarAntigua = Number.parseInt(settings.DIAS_PARA_CONSIDERAR_ANTIGUA, 10) || 14;
+  const diasTranscurridos = (Date.now() - new Date(incidencia.fecha).getTime()) / (1000 * 60 * 60 * 24);
+  const reportesNecesarios = diasTranscurridos > diasParaConsiderarAntigua
+    ? Number.parseInt(settings.REPORTES_PARA_SOLUCIONAR_ANTIGUA, 10) || 2
+    : Number.parseInt(settings.REPORTES_PARA_SOLUCIONAR, 10) || 3;
 
   // Contar el número de reportes para esta incidencia
   const { count } = await new Promise((resolve, reject) => {

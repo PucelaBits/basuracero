@@ -475,7 +475,7 @@ onMounted(async () => {
 })
 
 const textoEstadoSolucionado = computed(() => 
-  import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+  runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
 )
 
 const mostrarFaldon = (incidencia) => {

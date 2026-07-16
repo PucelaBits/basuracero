@@ -380,7 +380,7 @@ export default {
       tipoSeleccionado.value = [tipoId]
     }
 
-    const distanciaMaxima = ref(parseInt(import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000', 10));
+    const distanciaMaxima = ref(parseInt(runtimeConfig.DISTANCIA_MAXIMA_CERCANAS || '1000', 10));
 
     const obtenerNombreTipo = (tipoId) => {
       const tipo = tiposIncidencias.value.find(t => t.id === tipoId);
@@ -765,11 +765,11 @@ export default {
     }
 
     const textoBotonResolver = computed(() => 
-      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+      runtimeConfig.TEXTO_BOTON_RESOLVER
     )
 
     const textoEstadoSolucionado = computed(() => 
-      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
     )
 
     return {

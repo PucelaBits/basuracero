@@ -7,13 +7,13 @@ export function useWhatsAppShare() {
   const isEnabled = computed(() => config.WHATSAPP_SHARE_ENABLED === 'true');
   const requiresActivation = computed(() => config.WHATSAPP_REQUIRE_ACTIVATION === 'true');
   const phoneNumber = computed(() => config.WHATSAPP_SHARE_PHONE);
-  const buttonText = computed(() => import.meta.env.VITE_WHATSAPP_SHARE_BUTTON_TEXT || 'Compartir por WhatsApp');
-  const dialogTitle = computed(() => import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_TITLE || 'Compartir por WhatsApp');
+  const buttonText = computed(() => config.WHATSAPP_SHARE_BUTTON_TEXT);
+  const dialogTitle = computed(() => config.WHATSAPP_SHARE_DIALOG_TITLE);
   const dialogText = computed(() => requiresActivation.value
-    ? (import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_TEXT || 'Se abrirá el WhatsApp del organismo responsable. Envía el primer mensaje para iniciar el bot.')
+    ? config.WHATSAPP_SHARE_DIALOG_TEXT
     : 'Se abrirá WhatsApp con la información de esta incidencia preparada para enviar.');
   const dialogNote = computed(() => requiresActivation.value
-    ? (import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_NOTE || 'Después, pega la información de la incidencia en el cuadro de escritura.')
+    ? config.WHATSAPP_SHARE_DIALOG_NOTE
     : 'Revisa el contenido antes de enviarlo.');
 
   const enviarWhatsApp = (incidencia) => {

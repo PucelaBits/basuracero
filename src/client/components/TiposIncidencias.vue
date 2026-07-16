@@ -87,12 +87,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { obtenerResumenTiposIncidencias } from '@/utils/api'
 import { buildTipoRoute, sortTiposByConfiguredOrder } from '@/utils/tipoRoutes'
+import { getRuntimeConfig } from '@/utils/runtimeConfig'
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
 export default {
   name: 'TiposIncidencias',
   setup() {
+    const runtimeConfig = getRuntimeConfig()
     const router = useRouter()
     const route = useRoute()
     const dialogVisible = ref(false)
@@ -102,7 +104,7 @@ export default {
     const incidenciasSolucionadas = ref(0)
 
     const textoEstadoSolucionado = computed(() =>
-      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
     )
 
     const obtenerResumen = async () => {

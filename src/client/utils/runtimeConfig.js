@@ -14,10 +14,17 @@ function buildDefaults() {
     APP_ERROR_COLOR: import.meta.env.VITE_APP_ERROR_COLOR || '#f44336',
     APP_WARNING_COLOR: import.meta.env.VITE_APP_WARNING_COLOR || '#ffc107',
     APP_INFO_COLOR: import.meta.env.VITE_APP_INFO_COLOR || '#2196f3',
+    APP_SOCIAL_LINKS: import.meta.env.VITE_APP_SOCIAL_LINKS || '[]',
     VITE_INSTRUCCIONES_REGISTRO: import.meta.env.VITE_INSTRUCCIONES_REGISTRO || '',
+    TEXTO_BOTON_RESOLVER: import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver',
+    TEXTO_ESTADO_SOLUCIONADO: import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada',
     WHATSAPP_SHARE_ENABLED: import.meta.env.VITE_WHATSAPP_SHARE_ENABLED || 'false',
     WHATSAPP_SHARE_PHONE: import.meta.env.VITE_WHATSAPP_SHARE_PHONE || '',
     WHATSAPP_REQUIRE_ACTIVATION: import.meta.env.VITE_WHATSAPP_REQUIRE_ACTIVATION || 'true',
+    WHATSAPP_SHARE_BUTTON_TEXT: import.meta.env.VITE_WHATSAPP_SHARE_BUTTON_TEXT || 'Compartir por WhatsApp',
+    WHATSAPP_SHARE_DIALOG_TITLE: import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_TITLE || 'Compartir por WhatsApp',
+    WHATSAPP_SHARE_DIALOG_TEXT: import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_TEXT || 'Se abrirá el WhatsApp del organismo responsable.',
+    WHATSAPP_SHARE_DIALOG_NOTE: import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_NOTE || 'Después, pega la información de la incidencia.',
     FRIENDLYCAPTCHA_ENABLED: import.meta.env.VITE_FRIENDLYCAPTCHA_ENABLED || (import.meta.env.PROD ? 'true' : 'false'),
     FRIENDLYCAPTCHA_SITEKEY: import.meta.env.VITE_FRIENDLYCAPTCHA_SITEKEY || '',
     ANALYTICS_PROVIDER: import.meta.env.VITE_ANALYTICS_PROVIDER || 'none',
@@ -30,7 +37,10 @@ function buildDefaults() {
     CIUDAD_LON_MAX: import.meta.env.VITE_CIUDAD_LON_MAX || '-4.6481',
     MAPA_CENTRO_LAT: import.meta.env.VITE_MAPA_CENTRO_LAT || '41.652251',
     MAPA_CENTRO_LON: import.meta.env.VITE_MAPA_CENTRO_LON || '-4.724532',
-    MAPA_ZOOM_INICIAL: import.meta.env.VITE_MAPA_ZOOM_INICIAL || '13'
+    MAPA_ZOOM_INICIAL: import.meta.env.VITE_MAPA_ZOOM_INICIAL || '13',
+    SEARCH_REGION_LIMIT_ENABLED: import.meta.env.VITE_SEARCH_REGION_LIMIT_ENABLED || 'true',
+    SEARCH_REGION_QUERY: import.meta.env.VITE_SEARCH_REGION_QUERY || '',
+    DISTANCIA_MAXIMA_CERCANAS: import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000'
   }
 }
 

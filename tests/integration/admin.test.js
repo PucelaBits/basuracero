@@ -343,9 +343,31 @@ describe('Panel admin', () => {
   it('permite actualizar identidad y apariencia desde configuracion', async () => {
     const page = await agent.get('/admin/configuracion');
     expect(page.status).toBe(200);
-    expect(page.text).toContain('Identidad');
-    expect(page.text).toContain('Apariencia');
+    expect(page.text).toContain('Identidad y apariencia');
+    expect(page.text).toContain('dashboard-mobile-nav');
+    expect(page.text).toContain('Sección actual');
+    expect(page.text).toContain('aria-current="page"');
+    expect(page.text).toContain('dashboard-header has-intro');
+    expect(page.text).toContain('dashboard-section-title');
+    expect(page.text).toContain('Colores');
+    expect(page.text).toContain('Enlaces públicos');
+    expect(page.text).toContain('data-social-icon-trigger');
+    expect(page.text).toContain('social-icon-modal');
+    expect(page.text).toContain('Iconos recomendados');
+    expect(page.text).toContain('mdi-whatsapp');
+    expect(page.text).toContain('Mapa y proximidad');
+    expect(page.text).toContain('Distancia máxima de incidencias cercanas');
+    expect(page.text).toContain('Mensaje antes de abrir WhatsApp');
+    expect(page.text).toContain('id="whatsapp-dependent-fields" hidden');
+    expect(page.text).toContain("dependentFields.hidden = !enabled");
+    expect(page.text).not.toContain('<h2>Apariencia</h2>');
+    expect((page.text.match(/data-settings-save aria-label/g) || []).length).toBe(5);
+    expect(page.text).not.toContain('Guardar configuración');
     expect(page.text).toContain('Reporte por WhatsApp');
+    expect(page.text).toContain('Votos mínimos para considerar una incidencia como solucionada');
+    expect(page.text).toContain('Se considerará una incidencia antigua a partir de');
+    expect(page.text).toContain('Votos mínimos para considerar una incidencia antigua como solucionada');
+    expect(page.text).toContain('El autor siempre puede resolver su incidencia con un voto.');
     expect(page.text).toContain('Enviar la incidencia directamente');
     expect(page.text).toContain('Subir logotipo');
     expect(page.text).toContain('Subir icono');
@@ -376,10 +398,20 @@ describe('Panel admin', () => {
         APP_ERROR_COLOR: '#aa3344',
         APP_WARNING_COLOR: '#cc8800',
         APP_INFO_COLOR: '#3366aa',
+        APP_SOCIAL_LINKS: '[{"name":"Comunidad","url":"https://example.com","icon":"mdi-account-group"}]',
         VITE_INSTRUCCIONES_REGISTRO: 'Comprueba la ubicacion antes de enviar.',
+        TEXTO_BOTON_RESOLVER: 'Resolver aviso',
+        TEXTO_ESTADO_SOLUCIONADO: 'Resuelta',
+        REPORTES_PARA_SOLUCIONAR: '4',
+        DIAS_PARA_CONSIDERAR_ANTIGUA: '30',
+        REPORTES_PARA_SOLUCIONAR_ANTIGUA: '2',
         WHATSAPP_SHARE_ENABLED: 'true',
         WHATSAPP_SHARE_PHONE: '34600100100',
         WHATSAPP_REQUIRE_ACTIVATION: 'false',
+        WHATSAPP_SHARE_BUTTON_TEXT: 'Informar por WhatsApp',
+        WHATSAPP_SHARE_DIALOG_TITLE: 'Enviar incidencia',
+        WHATSAPP_SHARE_DIALOG_TEXT: 'Se abrirá WhatsApp.',
+        WHATSAPP_SHARE_DIALOG_NOTE: 'Revisa el mensaje antes de enviarlo.',
         FRIENDLYCAPTCHA_ENABLED: 'false',
         FRIENDLYCAPTCHA_SITEKEY: '',
         FRIENDLYCAPTCHA_SECRET: '',
@@ -393,7 +425,10 @@ describe('Panel admin', () => {
         CIUDAD_LON_MAX: '-4.64',
         MAPA_CENTRO_LAT: '41.65',
         MAPA_CENTRO_LON: '-4.72',
-        MAPA_ZOOM_INICIAL: '13'
+        MAPA_ZOOM_INICIAL: '13',
+        SEARCH_REGION_LIMIT_ENABLED: 'true',
+        SEARCH_REGION_QUERY: '+Valladolid+España',
+        DISTANCIA_MAXIMA_CERCANAS: '1500'
       });
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe('/admin/configuracion?saved=1');
@@ -405,11 +440,94 @@ describe('Panel admin', () => {
     expect(config.body.WHATSAPP_SHARE_ENABLED).toBe('true');
     expect(config.body.WHATSAPP_SHARE_PHONE).toBe('34600100100');
     expect(config.body.WHATSAPP_REQUIRE_ACTIVATION).toBe('false');
+    expect(config.body.WHATSAPP_SHARE_BUTTON_TEXT).toBe('Informar por WhatsApp');
+    expect(config.body.DISTANCIA_MAXIMA_CERCANAS).toBe('1500');
+    expect(config.body.APP_SOCIAL_LINKS).toContain('Comunidad');
+    expect(config.body.REPORTES_PARA_SOLUCIONAR).toBeUndefined();
+    expect(config.body.DIAS_PARA_CONSIDERAR_ANTIGUA).toBeUndefined();
+    expect(config.body.REPORTES_PARA_SOLUCIONAR_ANTIGUA).toBeUndefined();
+
+    const settingsService = require('../../src/server/admin/settings');
+    const savedSettings = await settingsService.getAppSettings();
+    expect(savedSettings.REPORTES_PARA_SOLUCIONAR).toBe('4');
+    expect(savedSettings.DIAS_PARA_CONSIDERAR_ANTIGUA).toBe('30');
+    expect(savedSettings.REPORTES_PARA_SOLUCIONAR_ANTIGUA).toBe('2');
+
+    const partialResponse = await agent
+      .post('/admin/configuracion')
+      .set('accept', 'application/json')
+      .set('x-csrf-token', extractCsrfToken(page.text))
+      .type('form')
+      .send({
+        _csrf: extractCsrfToken(page.text),
+        _section: 'texts',
+        VITE_INSTRUCCIONES_REGISTRO: 'Texto guardado sin recarga.',
+        TEXTO_BOTON_RESOLVER: 'Cerrar incidencia',
+        TEXTO_ESTADO_SOLUCIONADO: 'Cerrada'
+      });
+    expect(partialResponse.status).toBe(200);
+    expect(partialResponse.body).toEqual(expect.objectContaining({ ok: true, section: 'texts' }));
+    const partiallySaved = await settingsService.getAppSettings();
+    expect(partiallySaved.TEXTO_BOTON_RESOLVER).toBe('Cerrar incidencia');
+    expect(partiallySaved.APP_NAME).toBe('Basura Cero Test');
+
+    const incidencia = await dbAsync.run(
+      `INSERT INTO incidencias (
+        tipo_id, descripcion, latitud, longitud, nombre, fecha, estado
+      ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)`,
+      [1, 'Umbral configurable', 41.65, -4.72, 'Vecina', 'activa']
+    );
+    for (let index = 1; index <= 3; index += 1) {
+      await dbAsync.run(
+        `INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario)
+         VALUES (?, ?, datetime('now', 'localtime'), ?)`,
+        [incidencia.lastID, `127.0.1.${index}`, `Vecina ${index}`]
+      );
+    }
+
+    const solutionResponse = await agent
+      .post(`/api/incidencias/${incidencia.lastID}/solucionada`)
+      .send({ nombre: 'Vecina final' });
+    const solvedIncidencia = await dbAsync.get('SELECT estado FROM incidencias WHERE id = ?', [incidencia.lastID]);
+    expect(solutionResponse.status).toBe(200);
+    expect(solutionResponse.body.solucionada).toBe(true);
+    expect(solutionResponse.body.reportes_solucion).toBe(4);
+    expect(solvedIncidencia.estado).toBe('solucionada');
+
+    const oldIncidencia = await dbAsync.run(
+      `INSERT INTO incidencias (
+        tipo_id, descripcion, latitud, longitud, nombre, fecha, estado
+      ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime', '-31 days'), ?)`,
+      [1, 'Umbral antiguo configurable', 41.65, -4.72, 'Vecino', 'activa']
+    );
+    await dbAsync.run(
+      `INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario)
+       VALUES (?, ?, datetime('now', 'localtime'), ?)`,
+      [oldIncidencia.lastID, '127.0.2.1', 'Vecino 1']
+    );
+    const oldSolutionResponse = await agent
+      .post(`/api/incidencias/${oldIncidencia.lastID}/solucionada`)
+      .send({ nombre: 'Vecino final' });
+    const solvedOldIncidencia = await dbAsync.get('SELECT estado FROM incidencias WHERE id = ?', [oldIncidencia.lastID]);
+    expect(oldSolutionResponse.status).toBe(200);
+    expect(oldSolutionResponse.body.solucionada).toBe(true);
+    expect(oldSolutionResponse.body.reportes_solucion).toBe(2);
+    expect(solvedOldIncidencia.estado).toBe('solucionada');
   });
 
   it('impide activar servicios externos con una configuración incompleta', async () => {
     const settingsService = require('../../src/server/admin/settings');
     const current = await settingsService.getAppSettings();
+
+    await expect(settingsService.updateAppSettings({
+      ...current,
+      REPORTES_PARA_SOLUCIONAR: '0'
+    }, 1)).rejects.toThrow('numero entero entre 1 y 100');
+
+    await expect(settingsService.updateAppSettings({
+      ...current,
+      DIAS_PARA_CONSIDERAR_ANTIGUA: '12.5'
+    }, 1)).rejects.toThrow('numero entero entre 1 y 3650');
 
     await expect(settingsService.updateAppSettings({
       ...current,
@@ -679,7 +797,8 @@ describe('Panel admin', () => {
 
     const response = await agent.get('/admin/incidencias');
     expect(response.status).toBe(200);
-    expect(response.text).toContain('<h1>Incidencias</h1>');
+    expect(response.text).toContain('<h1 class="dashboard-section-title">Incidencias</h1>');
+    expect(response.text).toContain('dashboard-header no-intro');
     expect(response.text).toContain('Enseres');
     expect(response.text).toContain('Accion masiva');
     expect(response.text).toContain('Foto');
@@ -876,6 +995,12 @@ describe('Panel admin', () => {
       ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime', '-120 days'), ?)`,
       [1, 'Candidata', 41.65, -4.72, 'Admin', 'activa']
     );
+    const secondCandidate = await dbAsync.run(
+      `INSERT INTO incidencias (
+        tipo_id, descripcion, latitud, longitud, nombre, fecha, estado
+      ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime', '-150 days'), ?)`,
+      [1, 'Segunda candidata', 41.65, -4.72, 'Admin', 'activa']
+    );
     const fresh = await dbAsync.run(
       `INSERT INTO incidencias (
         tipo_id, descripcion, latitud, longitud, nombre, fecha, estado
@@ -887,18 +1012,35 @@ describe('Panel admin', () => {
       `INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario) VALUES (?, ?, datetime('now', 'localtime'), ?)`,
       [candidate.lastID, '127.0.0.1', 'Vecino']
     );
+    await dbAsync.run(
+      `INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario) VALUES (?, ?, datetime('now', 'localtime'), ?)`,
+      [secondCandidate.lastID, '127.0.0.2', 'Vecina']
+    );
 
     const preview = await service.previewOldSolvable({ days: 90, votes: 1 });
     expect(preview.map((row) => row.id)).toContain(candidate.lastID);
+    expect(preview.map((row) => row.id)).toContain(secondCandidate.lastID);
     expect(preview.map((row) => row.id)).not.toContain(fresh.lastID);
+    expect(preview.find((row) => row.id === candidate.lastID).antiguedad_dias).toBeGreaterThanOrEqual(119);
 
-    const executed = await service.executeOldSolvable({ days: 90, votes: 1 }, 1);
+    const executed = await service.executeOldSolvable({
+      days: 90,
+      votes: 1,
+      incidenciaIds: [String(candidate.lastID)]
+    }, 1);
     const candidateRow = await dbAsync.get('SELECT estado FROM incidencias WHERE id = ?', [candidate.lastID]);
+    let secondCandidateRow = await dbAsync.get('SELECT estado FROM incidencias WHERE id = ?', [secondCandidate.lastID]);
     const freshRow = await dbAsync.get('SELECT estado FROM incidencias WHERE id = ?', [fresh.lastID]);
 
     expect(executed).toHaveLength(1);
     expect(candidateRow.estado).toBe('solucionada');
+    expect(secondCandidateRow.estado).toBe('activa');
     expect(freshRow.estado).toBe('activa');
+
+    const executedRemaining = await service.executeOldSolvable({ days: 90, votes: 1 }, 1);
+    secondCandidateRow = await dbAsync.get('SELECT estado FROM incidencias WHERE id = ?', [secondCandidate.lastID]);
+    expect(executedRemaining.map((row) => row.id)).toContain(secondCandidate.lastID);
+    expect(secondCandidateRow.estado).toBe('solucionada');
   });
 
   it('muestra y resuelve moderacion de reportes inadecuados desde mantenimiento', async () => {

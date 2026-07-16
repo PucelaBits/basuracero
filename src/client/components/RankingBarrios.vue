@@ -131,6 +131,7 @@
   import { useRouter, useRoute } from 'vue-router';
   import axios from 'axios';
   import TipoLink from './TipoLink.vue';
+  import { getRuntimeConfig } from '../utils/runtimeConfig';
   
   const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
   
@@ -140,6 +141,7 @@
       TipoLink
     },
     setup() {
+      const runtimeConfig = getRuntimeConfig();
       const router = useRouter();
       const route = useRoute();
       const dialogVisible = ref(false);
@@ -237,11 +239,11 @@
       }
   
       const textoBotonResolver = computed(() => 
-        import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+        runtimeConfig.TEXTO_BOTON_RESOLVER
       )
   
       const textoEstadoSolucionado = computed(() => 
-        import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+        runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
       )
   
       onMounted(() => {

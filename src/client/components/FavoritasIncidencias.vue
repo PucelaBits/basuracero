@@ -162,6 +162,7 @@
   import { useRouter, useRoute } from 'vue-router'
   import MapaIncidencias from './MapaIncidencias.vue'
   import { useFavoritosStore } from '../store/favoritosStore'
+  import { getRuntimeConfig } from '../utils/runtimeConfig'
   
   const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
   
@@ -177,6 +178,7 @@
       }
     },
     setup(props) {
+      const runtimeConfig = getRuntimeConfig()
       const dialogVisible = ref(false)
       const router = useRouter()
       const route = useRoute()
@@ -255,11 +257,11 @@
       }
   
       const textoBotonResolver = computed(() => 
-        import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+        runtimeConfig.TEXTO_BOTON_RESOLVER
       )
   
       const textoEstadoSolucionado = computed(() => 
-        import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+        runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
       )
   
       watch(() => props.incidencias, async (newIncidencias) => {

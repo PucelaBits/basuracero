@@ -284,6 +284,7 @@ import { getRuntimeConfig } from '../utils/runtimeConfig'
 export default {
   name: 'MaratonGuide',
   setup() {
+    const runtimeConfig = getRuntimeConfig()
     const dialogVisible = ref(false)
     const router = useRouter()
     const route = useRoute()
@@ -291,12 +292,12 @@ export default {
     const whatsAppShare = useWhatsAppShare()
 
     // Obtener la URL de la comunidad desde las variables de entorno
-    const socialLinks = JSON.parse(import.meta.env.VITE_APP_SOCIAL_LINKS || '[]')
+    const socialLinks = JSON.parse(runtimeConfig.APP_SOCIAL_LINKS || '[]')
     const communityLink = socialLinks.find(link => link.name === 'Comunidad')
     const communityUrl = ref(communityLink?.url || null)
 
     const baseUrl = (import.meta.env.VITE_BASE_URL || window.location.origin).replace(/^https?:\/\/|\/+$/g, '')
-    const appName = getRuntimeConfig().APP_NAME || 'Basura Cero'
+    const appName = runtimeConfig.APP_NAME || 'Basura Cero'
 
     const cerrar = () => {
       dialogVisible.value = false
@@ -341,11 +342,11 @@ export default {
     })
 
     const textoBotonResolver = computed(() => 
-      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+      runtimeConfig.TEXTO_BOTON_RESOLVER
     )
 
     const textoEstadoSolucionado = computed(() => 
-      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
     )
 
     return {

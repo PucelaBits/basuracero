@@ -5,6 +5,24 @@ const {
   normalizeTipoIcon
 } = require('./iconCatalog');
 
+const CURATED_SOCIAL_ICON_OPTIONS = [
+  { value: 'mdi-account-group', label: 'Comunidad' },
+  { value: 'mdi-web', label: 'Sitio web' },
+  { value: 'mdi-email', label: 'Correo' },
+  { value: 'mdi-telegram', label: 'Telegram' },
+  { value: 'mdi-whatsapp', label: 'WhatsApp' },
+  { value: 'mdi-instagram', label: 'Instagram' },
+  { value: 'mdi-facebook', label: 'Facebook' },
+  { value: 'mdi-twitter', label: 'Twitter' },
+  { value: 'mdi-youtube', label: 'YouTube' },
+  { value: 'mdi-linkedin', label: 'LinkedIn' },
+  { value: 'mdi-github', label: 'GitHub' },
+  { value: 'mdi-rss', label: 'RSS' },
+  { value: 'mdi-newspaper', label: 'Blog' },
+  { value: 'mdi-book-open-page-variant', label: 'Documentación' },
+  { value: 'mdi-link', label: 'Enlace' }
+];
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -235,6 +253,10 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         button[aria-disabled="true"] {
           cursor: wait;
           opacity: 0.72;
+        }
+        button:disabled {
+          cursor: not-allowed;
+          opacity: 0.48;
         }
         .sr-only {
           position: absolute;
@@ -673,6 +695,86 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .settings-section p {
           margin: 0;
         }
+        .settings-section-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          padding-top: 4px;
+        }
+        .settings-save-status {
+          min-height: 21px;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .settings-save-status.success {
+          color: #28734d;
+        }
+        .settings-save-status.error {
+          color: var(--danger);
+        }
+        .settings-section-save {
+          width: fit-content;
+          min-width: 168px;
+        }
+        .settings-subsection {
+          display: grid;
+          gap: 12px;
+          padding-top: 4px;
+        }
+        .settings-subsection-heading {
+          display: grid;
+          gap: 4px;
+        }
+        .settings-subsection-heading h3 {
+          margin: 0;
+          font-size: 16px;
+          line-height: 1.4;
+        }
+        .settings-social-list {
+          display: grid;
+          gap: 10px;
+        }
+        .settings-social-row {
+          display: grid;
+          grid-template-columns: 48px minmax(0, 1fr) 48px;
+          gap: 10px;
+          align-items: start;
+          padding: 12px;
+          border: 1px solid var(--line);
+          border-radius: 16px;
+          background: var(--surface-soft);
+        }
+        .settings-social-fields {
+          display: grid;
+          grid-template-columns: minmax(120px, 0.8fr) minmax(220px, 1.6fr);
+          gap: 10px;
+          min-width: 0;
+        }
+        .settings-social-icon-trigger,
+        .settings-social-remove {
+          width: 48px;
+          min-width: 48px;
+          padding: 0;
+        }
+        .settings-social-icon-trigger {
+          font-size: 22px;
+          color: var(--ink);
+        }
+        .settings-social-icon-trigger i,
+        .settings-social-remove i {
+          line-height: 1;
+        }
+        .settings-social-remove {
+          color: var(--danger);
+        }
+        .settings-social-empty {
+          padding: 14px 0;
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.5;
+        }
         .settings-fields {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -720,15 +822,43 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .settings-upload-status {
           min-height: 21px;
         }
-        .settings-color-grid {
+        .settings-color-block {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 12px;
+          max-width: 560px;
         }
-        .settings-color-grid input[type="color"] {
-          width: 100%;
+        .settings-color-heading {
+          display: grid;
+          gap: 4px;
+        }
+        .settings-color-heading h3 {
+          margin: 0;
+          font-size: 16px;
+          line-height: 1.4;
+        }
+        .settings-color-list {
+          display: grid;
+          border-top: 1px solid var(--line);
+        }
+        .settings-color-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          min-height: 56px;
+          padding: 4px 0;
+          border-bottom: 1px solid var(--line);
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .settings-color-row input[type="color"] {
+          flex: 0 0 48px;
+          width: 48px;
+          height: 48px;
           min-height: 48px;
-          padding: 4px;
+          padding: 3px;
+          border-radius: 12px;
           cursor: pointer;
         }
         .settings-preview-panel {
@@ -1058,6 +1188,144 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         }
         .bulk-controls > * {
           flex: 1 1 220px;
+        }
+        .old-solvable-workspace {
+          overflow: hidden;
+          border: 1px solid var(--line);
+          border-radius: 20px;
+          background: #fff;
+        }
+        .old-solvable-heading {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 28px;
+          padding: 24px 24px 20px;
+        }
+        .old-solvable-heading h2 {
+          margin-bottom: 8px;
+        }
+        .old-solvable-heading p {
+          max-width: 720px;
+          margin: 0;
+        }
+        .old-solvable-count {
+          display: grid;
+          min-width: 150px;
+          text-align: right;
+        }
+        .old-solvable-count strong {
+          font-size: 32px;
+          line-height: 1.1;
+          font-variant-numeric: tabular-nums;
+        }
+        .old-solvable-count span {
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .old-solvable-filters {
+          display: grid;
+          grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1fr) auto;
+          gap: 12px;
+          align-items: end;
+          padding: 18px 24px;
+          border-block: 1px solid var(--line);
+          background: var(--surface-soft);
+        }
+        .old-solvable-filters button {
+          gap: 8px;
+          white-space: nowrap;
+        }
+        .old-solvable-filter-status {
+          grid-column: 1 / -1;
+          min-height: 0;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .old-solvable-filter-status:empty {
+          display: none;
+        }
+        .input-suffix {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          overflow: hidden;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          background: #fff;
+        }
+        .input-suffix:focus-within {
+          outline: 3px solid #315f7d;
+          outline-offset: 3px;
+        }
+        .input-suffix input {
+          border: 0;
+          border-radius: 0;
+          outline: 0;
+        }
+        .input-suffix span {
+          padding-right: 14px;
+          color: var(--muted);
+          font-size: 14px;
+          font-weight: 500;
+        }
+        .old-solvable-results {
+          gap: 0;
+        }
+        .old-solvable-toolbar,
+        .old-solvable-actions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 14px 24px;
+        }
+        .old-solvable-toolbar {
+          border-bottom: 1px solid var(--line);
+        }
+        .select-all-label {
+          display: flex;
+          align-items: center;
+          grid-template-columns: none;
+          gap: 10px;
+          min-height: 44px;
+          cursor: pointer;
+        }
+        .old-solvable-table {
+          min-width: 920px;
+        }
+        .old-solvable-table th:first-child,
+        .old-solvable-table td:first-child {
+          width: 48px;
+        }
+        .old-solvable-table th:nth-child(6),
+        .old-solvable-table td:nth-child(6) {
+          width: 38%;
+        }
+        .maintenance-description {
+          max-width: 440px;
+          line-height: 1.5;
+        }
+        .maintenance-incident-link {
+          color: var(--ink);
+          font-weight: 700;
+          text-decoration: none;
+        }
+        .maintenance-incident-link:hover,
+        .dashboard-muted-link:hover {
+          text-decoration: underline;
+        }
+        .maintenance-card-link {
+          display: inline-flex;
+          align-items: center;
+          min-height: 44px;
+          margin-top: 8px;
+        }
+        .old-solvable-actions {
+          border-top: 1px solid var(--line);
+          background: var(--surface-soft);
         }
         .checkbox-cell {
           display: flex;
@@ -1458,6 +1726,9 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         }
         .dashboard-nav a.active {
           background: #eef1f4;
+        }
+        .dashboard-mobile-nav {
+          display: none;
         }
         .dashboard-sidebar-meta {
           display: grid;
@@ -1947,13 +2218,27 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .settings-layout,
           .settings-fields,
           .settings-brand-assets,
-          .settings-color-grid,
           .settings-service-grid,
           .settings-coordinate-grid {
             grid-template-columns: 1fr;
           }
           .settings-preview-panel {
             position: static;
+          }
+          .settings-section-actions {
+            display: grid;
+            align-items: stretch;
+            justify-content: stretch;
+          }
+          .settings-section-save {
+            width: 100%;
+          }
+          .settings-social-row {
+            grid-template-columns: 48px minmax(0, 1fr) 48px;
+          }
+          .settings-social-fields {
+            grid-template-columns: 1fr;
+            gap: 8px;
           }
           .modal-backdrop {
             padding: 12px;
@@ -1977,19 +2262,106 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .dashboard-sidebar-meta {
             display: none;
           }
-          .dashboard-nav {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 4px;
+          .dashboard-sidebar > .dashboard-nav {
+            display: none;
           }
-          .dashboard-nav a {
-            flex: 0 0 auto;
-            min-height: 44px;
-            padding: 0 14px;
+          .dashboard-mobile-nav {
+            display: block;
+            width: 100%;
+          }
+          .dashboard-mobile-nav summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            min-height: 56px;
+            padding: 8px 14px;
             border: 1px solid var(--line);
+            border-radius: 16px;
             background: #fff;
+            cursor: pointer;
+            list-style: none;
+          }
+          .dashboard-mobile-nav summary::-webkit-details-marker {
+            display: none;
+          }
+          .dashboard-mobile-nav-current {
+            display: grid;
+            gap: 1px;
+            min-width: 0;
+          }
+          .dashboard-mobile-nav-current span {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.35;
+          }
+          .dashboard-mobile-nav-current strong {
+            overflow: hidden;
+            font-size: 16px;
+            line-height: 1.35;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .dashboard-mobile-nav-chevron {
+            flex: 0 0 auto;
+            font-size: 22px;
+            line-height: 1;
+            transition: transform 160ms ease;
+          }
+          .dashboard-mobile-nav[open] .dashboard-mobile-nav-chevron {
+            transform: rotate(180deg);
+          }
+          .dashboard-mobile-nav-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            margin-top: 8px;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 12px 30px rgba(23, 32, 42, 0.08);
+          }
+          .dashboard-mobile-nav-list a {
+            display: flex;
+            align-items: center;
+            min-height: 48px;
+            padding: 0 12px;
+            border-radius: 12px;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.35;
+            text-decoration: none;
+          }
+          .dashboard-mobile-nav-list a.active {
+            background: var(--accent-soft);
+            color: var(--accent);
+          }
+          .dashboard-section-label,
+          .dashboard-section-title {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+          }
+          .dashboard-header.no-intro {
+            min-height: 0;
+            gap: 0;
+            padding: 0;
+            border: 0;
+          }
+          .dashboard-header.has-intro {
+            gap: 0;
+          }
+          .dashboard-header.has-intro > p {
+            margin: 0;
           }
           .category-table thead {
             display: none;
@@ -2106,8 +2478,35 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .table-cards {
             display: grid;
           }
-          .bulk-controls > * {
+          .bulk-controls > *,
+          .old-solvable-filters > * {
             flex-basis: 100%;
+          }
+          .old-solvable-heading,
+          .old-solvable-toolbar,
+          .old-solvable-actions {
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .old-solvable-heading {
+            gap: 16px;
+            padding: 20px 16px 16px;
+          }
+          .old-solvable-count {
+            min-width: 0;
+            text-align: left;
+          }
+          .old-solvable-filters {
+            grid-template-columns: 1fr;
+            padding: 16px;
+          }
+          .old-solvable-toolbar,
+          .old-solvable-actions {
+            gap: 10px;
+            padding: 12px 16px;
+          }
+          .old-solvable-actions .actions {
+            width: 100%;
           }
         }
       </style>
@@ -2268,14 +2667,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
             <h2 style="margin-bottom:8px">Panel de control</h2>
             <div class="small">Basura Cero</div>
           </div>
-          <nav class="dashboard-nav">
-            <a class="" href="/admin">Vista general</a>
-            <a class="active" href="/admin/incidencias">Incidencias</a>
-            <a class="" href="/admin/categorias">Categorias</a>
-            <a class="" href="/admin/maintenance">Mantenimiento</a>
-            <a class="" href="/admin/administradores">Administradores</a>
-            <a class="" href="/admin/auditoria">Auditoria</a>
-          </nav>
+          ${renderAdminNavigation('incidencias')}
           <div class="dashboard-sidebar-meta">
             <div class="small">Sesion: ${escapeHtml(currentAdmin.username)}</div>
           </div>
@@ -2815,15 +3207,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, csrfToken }) {
             <h2 style="margin-bottom:8px">Panel de control</h2>
             <div class="small">Basura Cero</div>
           </div>
-          <nav class="dashboard-nav">
-            <a class="active" href="/admin">Vista general</a>
-            <a href="/admin/incidencias">Incidencias</a>
-            <a href="/admin/categorias">Categorias</a>
-            <a href="/admin/maintenance">Mantenimiento</a>
-            <a href="/admin/configuracion">Configuración</a>
-            <a href="/admin/administradores">Administradores</a>
-            <a href="/admin/auditoria">Auditoria</a>
-          </nav>
+          ${renderAdminNavigation('dashboard')}
           <div class="dashboard-sidebar-meta">
             <div class="small">Sesion: ${escapeHtml(currentAdmin.username)}</div>
             <a class="dashboard-muted-link" href="/admin/incidencias">Ver listado completo</a>
@@ -2913,8 +3297,36 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, csrfToken }) {
   });
 }
 
+function renderAdminNavigation(activeNav) {
+  const items = [
+    ['/admin', 'Vista general', 'dashboard'],
+    ['/admin/incidencias', 'Incidencias', 'incidencias'],
+    ['/admin/categorias', 'Categorías', 'categorias'],
+    ['/admin/maintenance', 'Mantenimiento', 'maintenance'],
+    ['/admin/configuracion', 'Configuración', 'configuracion'],
+    ['/admin/administradores', 'Administradores', 'administradores'],
+    ['/admin/auditoria', 'Auditoría', 'auditoria']
+  ];
+  const activeItem = items.find(([, , key]) => key === activeNav) || items[0];
+  const links = items
+    .map(([href, label, key]) => `<a class="${activeNav === key ? 'active' : ''}" href="${href}"${activeNav === key ? ' aria-current="page"' : ''}>${label}</a>`)
+    .join('');
+
+  return `
+    <nav class="dashboard-nav" aria-label="Secciones del panel">${links}</nav>
+    <details class="dashboard-mobile-nav">
+      <summary>
+        <span class="dashboard-mobile-nav-current">
+          <span>Sección actual</span>
+          <strong>${escapeHtml(activeItem[1])}</strong>
+        </span>
+        <i class="mdi mdi-chevron-down dashboard-mobile-nav-chevron" aria-hidden="true"></i>
+      </summary>
+      <nav class="dashboard-mobile-nav-list" aria-label="Cambiar sección">${links}</nav>
+    </details>`;
+}
+
 function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro, activeNav, content, csrfToken }) {
-  const navItem = (href, label, key) => `<a class="${activeNav === key ? 'active' : ''}" href="${href}">${label}</a>`;
   return renderLayout({
     title,
     currentAdmin,
@@ -2928,25 +3340,17 @@ function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro,
             <h2 style="margin-bottom:8px">Panel de control</h2>
             <div class="small">Basura Cero</div>
           </div>
-          <nav class="dashboard-nav">
-            ${navItem('/admin', 'Vista general', 'dashboard')}
-            ${navItem('/admin/incidencias', 'Incidencias', 'incidencias')}
-            ${navItem('/admin/categorias', 'Categorias', 'categorias')}
-            ${navItem('/admin/maintenance', 'Mantenimiento', 'maintenance')}
-            ${navItem('/admin/configuracion', 'Configuración', 'configuracion')}
-            ${navItem('/admin/administradores', 'Administradores', 'administradores')}
-            ${navItem('/admin/auditoria', 'Auditoria', 'auditoria')}
-          </nav>
+          ${renderAdminNavigation(activeNav)}
           <div class="dashboard-sidebar-meta">
             <div class="small">Sesion: ${escapeHtml(currentAdmin.username)}</div>
           </div>
         </aside>
         <div class="dashboard-main">
-          <section class="dashboard-header">
+          <section class="dashboard-header ${intro ? 'has-intro' : 'no-intro'}">
             <div class="dashboard-header-top">
               <div>
-                <div class="eyebrow">${escapeHtml(eyebrow)}</div>
-                <h1>${escapeHtml(title)}</h1>
+                <div class="eyebrow dashboard-section-label">${escapeHtml(eyebrow)}</div>
+                <h1 class="dashboard-section-title">${escapeHtml(title)}</h1>
               </div>
             </div>
             ${intro ? `<p class="small">${escapeHtml(intro)}</p>` : ''}
@@ -2959,6 +3363,15 @@ function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro,
 }
 
 function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
+  let socialLinks = [];
+  try {
+    const parsedLinks = JSON.parse(settings.APP_SOCIAL_LINKS || '[]');
+    socialLinks = Array.isArray(parsedLinks) ? parsedLinks : [];
+  } catch (_error) {
+    socialLinks = [];
+  }
+  const socialIconJson = escapeAttr(JSON.stringify(getAllMdiIcons()));
+  const recommendedSocialIconJson = escapeAttr(JSON.stringify(CURATED_SOCIAL_ICON_OPTIONS));
   const field = (key, label, options = {}) => `
     <label class="${options.wide ? 'field-wide' : ''}">${escapeHtml(label)}
       ${options.textarea
@@ -2966,9 +3379,29 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
     : `<input name="${key}" type="${options.type || 'text'}" value="${escapeAttr(settings[key])}" ${options.maxLength ? `maxlength="${options.maxLength}"` : ''} ${options.required === false ? '' : 'required'}>`}
     </label>`;
   const colorField = (key, label) => `
-    <label>${escapeHtml(label)}
-      <input type="color" name="${key}" value="${escapeAttr(settings[key])}" data-settings-color="${key}">
+    <label class="settings-color-row">
+      <span>${escapeHtml(label)}</span>
+      <input type="color" name="${key}" value="${escapeAttr(settings[key])}" data-settings-color="${key}" aria-label="Color ${escapeAttr(label)}">
     </label>`;
+  const socialLinkRow = (link = {}) => `
+    <div class="settings-social-row" data-social-row>
+      <button type="button" class="button-ghost settings-social-icon-trigger" data-social-icon-trigger aria-label="Elegir icono para ${escapeAttr(link.name || 'el enlace')}"><i class="mdi ${escapeAttr(link.icon || 'mdi-link')}" aria-hidden="true"></i></button>
+      <div class="settings-social-fields">
+        <label><span class="sr-only">Nombre</span>
+          <input type="text" maxlength="60" value="${escapeAttr(link.name || '')}" placeholder="Nombre" aria-label="Nombre del enlace" data-social-name required>
+        </label>
+        <label><span class="sr-only">URL</span>
+          <input type="url" maxlength="300" value="${escapeAttr(link.url || '')}" placeholder="URL" aria-label="URL del enlace" data-social-url required>
+        </label>
+      </div>
+      <input type="hidden" value="${escapeAttr(link.icon || 'mdi-link')}" data-social-icon>
+      <button type="button" class="button-ghost settings-social-remove" data-social-remove aria-label="Eliminar enlace"><i class="mdi mdi-delete-outline" aria-hidden="true"></i></button>
+    </div>`;
+  const sectionSaveButton = (sectionName, sectionKey) => `
+    <div class="settings-section-actions">
+      <span class="settings-save-status" data-settings-status="${escapeAttr(sectionKey)}" role="status" aria-live="polite"></span>
+      <button type="submit" name="_section" value="${escapeAttr(sectionKey)}" formnovalidate class="settings-section-save" data-settings-save aria-label="Guardar cambios de ${escapeAttr(sectionName)}">Guardar cambios</button>
+    </div>`;
   const selectField = (key, label, options) => `
     <label>${escapeHtml(label)}
       <select name="${key}">${options.map(([value, text]) => `<option value="${escapeAttr(value)}" ${settings[key] === value ? 'selected' : ''}>${escapeHtml(text)}</option>`).join('')}</select>
@@ -2986,10 +3419,10 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
       <link rel="stylesheet" href="/admin-assets/leaflet/leaflet.css">
       <form method="post" action="/admin/configuracion" class="settings-layout" id="settings-form">
         <div class="settings-form">
-          <section class="settings-section">
+          <section class="settings-section" data-settings-section="identity">
             <div>
-              <h2>Identidad</h2>
-              <p class="small">Estos datos aparecen en la cabecera, al compartir enlaces y al instalar la aplicación.</p>
+              <h2>Identidad y apariencia</h2>
+              <p class="small">Nombre, imágenes, colores y textos del sitio público.</p>
             </div>
             <div class="settings-preview-panel" aria-label="Vista previa de la cabecera pública">
               <div class="eyebrow">Cabecera pública</div>
@@ -3033,11 +3466,50 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                 </div>
               </div>
             </div>
+            <div class="settings-color-block">
+              <div class="settings-color-heading">
+                <h3>Colores</h3>
+                <p class="small">Paleta utilizada en la interfaz pública.</p>
+              </div>
+              <div class="settings-color-list">
+                ${colorField('APP_PRIMARY_COLOR', 'Principal')}
+                ${colorField('APP_SECONDARY_COLOR', 'Secundario')}
+                ${colorField('APP_BACKGROUND_COLOR', 'Fondo')}
+                ${colorField('APP_SUCCESS_COLOR', 'Éxito')}
+                ${colorField('APP_ERROR_COLOR', 'Error')}
+                ${colorField('APP_WARNING_COLOR', 'Aviso')}
+                ${colorField('APP_INFO_COLOR', 'Información')}
+              </div>
+            </div>
+            <div class="settings-subsection">
+              <div class="settings-subsection-heading">
+                <h3>Textos públicos</h3>
+                <p class="small">Aparecen al reportar y resolver incidencias.</p>
+              </div>
+              <div class="settings-fields">
+                ${field('VITE_INSTRUCCIONES_REGISTRO', 'Instrucciones al reportar', { textarea: true, maxLength: 300, wide: true, required: false })}
+                ${field('TEXTO_BOTON_RESOLVER', 'Botón para resolver una incidencia', { maxLength: 40 })}
+                ${field('TEXTO_ESTADO_SOLUCIONADO', 'Estado de una incidencia resuelta', { maxLength: 40 })}
+              </div>
+            </div>
+            <div class="settings-subsection">
+              <div class="settings-subsection-heading">
+                <h3>Enlaces públicos</h3>
+                <p class="small">Aparecen en el menú y en la guía.</p>
+              </div>
+              <input type="hidden" name="APP_SOCIAL_LINKS" value="${escapeAttr(settings.APP_SOCIAL_LINKS || '[]')}" data-social-json>
+              <div class="settings-social-list" data-social-list>
+                ${socialLinks.map((link) => socialLinkRow(link)).join('')}
+              </div>
+              <div class="settings-social-empty" data-social-empty${socialLinks.length ? ' hidden' : ''}>No hay enlaces configurados.</div>
+              <button type="button" class="button-ghost settings-upload-button" data-social-add>Añadir enlace</button>
+            </div>
+            ${sectionSaveButton('Identidad y apariencia', 'identity')}
           </section>
-          <section class="settings-section">
+          <section class="settings-section" data-settings-section="map">
             <div>
-              <h2>Área permitida</h2>
-              <p class="small">Pulsa “Dibujar área” y arrastra sobre el mapa. Solo se aceptarán incidencias dentro del rectángulo.</p>
+              <h2>Mapa y proximidad</h2>
+              <p class="small">Define dónde se puede reportar, buscar direcciones y mostrar incidencias cercanas.</p>
             </div>
             <div class="settings-map-toolbar">
               <button type="button" class="button-ghost" id="settings-draw-area">Dibujar área</button>
@@ -3057,14 +3529,49 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
               <div><span class="small">Oeste</span><output data-coordinate="CIUDAD_LON_MIN">${escapeHtml(settings.CIUDAD_LON_MIN)}</output></div>
               <div><span class="small">Este</span><output data-coordinate="CIUDAD_LON_MAX">${escapeHtml(settings.CIUDAD_LON_MAX)}</output></div>
             </div>
+            <div class="settings-fields">
+              ${selectField('SEARCH_REGION_LIMIT_ENABLED', 'Limitar la búsqueda de direcciones', [['false', 'No'], ['true', 'Sí']])}
+              ${field('SEARCH_REGION_QUERY', 'Región de búsqueda', { maxLength: 120, required: false })}
+              <label>Distancia máxima de incidencias cercanas
+                <span class="input-suffix">
+                  <input name="DISTANCIA_MAXIMA_CERCANAS" type="number" inputmode="numeric" min="100" max="50000" value="${escapeAttr(settings.DISTANCIA_MAXIMA_CERCANAS)}" required>
+                  <span>metros</span>
+                </span>
+              </label>
+            </div>
+            ${sectionSaveButton('Mapa y proximidad', 'map')}
           </section>
-          <section class="settings-section">
+          <section class="settings-section" data-settings-section="resolution">
+            <div>
+              <h2>Resolución de incidencias</h2>
+              <p class="small">Configura los umbrales que determinan cuándo una incidencia se considera solucionada.</p>
+            </div>
+            <div class="settings-fields">
+              <label>Votos mínimos para considerar una incidencia como solucionada
+                <input name="REPORTES_PARA_SOLUCIONAR" type="number" inputmode="numeric" min="1" max="100" value="${escapeAttr(settings.REPORTES_PARA_SOLUCIONAR)}" required>
+              </label>
+              <label>Se considerará una incidencia antigua a partir de
+                <span class="input-suffix">
+                  <input name="DIAS_PARA_CONSIDERAR_ANTIGUA" type="number" inputmode="numeric" min="1" max="3650" value="${escapeAttr(settings.DIAS_PARA_CONSIDERAR_ANTIGUA)}" required>
+                  <span>días</span>
+                </span>
+              </label>
+              <label>Votos mínimos para considerar una incidencia antigua como solucionada
+                <input name="REPORTES_PARA_SOLUCIONAR_ANTIGUA" type="number" inputmode="numeric" min="1" max="100" value="${escapeAttr(settings.REPORTES_PARA_SOLUCIONAR_ANTIGUA)}" required>
+              </label>
+            </div>
+            <p class="small">El autor siempre puede resolver su incidencia con un voto.</p>
+            ${sectionSaveButton('Resolución de incidencias', 'resolution')}
+          </section>
+          <section class="settings-section" data-settings-section="whatsapp">
             <div>
               <h2>Reporte por WhatsApp</h2>
               <p class="small">Permite enviar una incidencia al teléfono del organismo responsable.</p>
             </div>
             <div class="settings-fields">
               ${selectField('WHATSAPP_SHARE_ENABLED', 'Mostrar la opción de WhatsApp', [['false', 'No'], ['true', 'Sí']])}
+            </div>
+            <div class="settings-fields" id="whatsapp-dependent-fields"${settings.WHATSAPP_SHARE_ENABLED === 'true' ? '' : ' hidden'}>
               <label>Teléfono de destino
                 <input name="WHATSAPP_SHARE_PHONE" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" value="${escapeAttr(settings.WHATSAPP_SHARE_PHONE)}" placeholder="34600100100" aria-describedby="whatsapp-phone-help">
                 <span class="small" id="whatsapp-phone-help">Incluye el prefijo del país y escribe solo números.</span>
@@ -3074,9 +3581,14 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                 <strong id="whatsapp-mode-title"></strong>
                 <span class="small" id="whatsapp-mode-description"></span>
               </div>
+              ${field('WHATSAPP_SHARE_BUTTON_TEXT', 'Texto del botón', { maxLength: 80 })}
+              ${field('WHATSAPP_SHARE_DIALOG_TITLE', 'Título del aviso', { maxLength: 100 })}
+              ${field('WHATSAPP_SHARE_DIALOG_TEXT', 'Mensaje antes de abrir WhatsApp', { textarea: true, maxLength: 300, wide: true })}
+              ${field('WHATSAPP_SHARE_DIALOG_NOTE', 'Indicación para pegar la incidencia', { textarea: true, maxLength: 300, wide: true })}
             </div>
+            ${sectionSaveButton('Reporte por WhatsApp', 'whatsapp')}
           </section>
-          <section class="settings-section">
+          <section class="settings-section" data-settings-section="services">
             <div>
               <h2>Servicios externos</h2>
               <p class="small">Protege los formularios frente a abuso y elige cómo medir las visitas.</p>
@@ -3102,36 +3614,31 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                 ${field('GA_ID', 'ID de Google Analytics', { maxLength: 40, required: false })}
               </div>
             </div>
+            ${sectionSaveButton('Servicios externos', 'services')}
           </section>
-          <section class="settings-section">
-            <div>
-              <h2>Apariencia</h2>
-              <p class="small">Elige una paleta legible y comprueba el resultado en la vista previa.</p>
-            </div>
-            <div class="settings-color-grid">
-              ${colorField('APP_PRIMARY_COLOR', 'Principal')}
-              ${colorField('APP_SECONDARY_COLOR', 'Secundario')}
-              ${colorField('APP_BACKGROUND_COLOR', 'Fondo')}
-              ${colorField('APP_SUCCESS_COLOR', 'Éxito')}
-              ${colorField('APP_ERROR_COLOR', 'Error')}
-              ${colorField('APP_WARNING_COLOR', 'Aviso')}
-              ${colorField('APP_INFO_COLOR', 'Información')}
-            </div>
-          </section>
-          <section class="settings-section">
-            <div>
-              <h2>Textos públicos</h2>
-              <p class="small">Mensajes breves que aparecen al reportar y resolver incidencias.</p>
-            </div>
-            <div class="settings-fields">
-              ${field('VITE_INSTRUCCIONES_REGISTRO', 'Instrucciones al reportar', { textarea: true, maxLength: 300, wide: true, required: false })}
-            </div>
-          </section>
-          <div class="detail-actions">
-            <button type="submit">Guardar configuración</button>
-          </div>
         </div>
       </form>
+      <div class="modal-backdrop" id="social-icon-modal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="social-icon-modal-title">
+          <div class="modal-header">
+            <div>
+              <h2 id="social-icon-modal-title">Icono del enlace</h2>
+            </div>
+            <button type="button" class="button-ghost modal-close" data-close-social-icons>Cerrar</button>
+          </div>
+          <div class="icon-search">
+            <label>Buscar icono
+              <input id="social-icon-search" type="search" placeholder="Red social, correo, web…">
+            </label>
+            <button type="button" class="button-ghost icon-catalog-toggle" id="social-icon-toggle" aria-expanded="false">Ver todos</button>
+          </div>
+          <div class="icon-picker-heading">
+            <strong id="social-icon-picker-title">Iconos recomendados</strong>
+            <span class="icon-picker-count" id="social-icon-picker-count"></span>
+          </div>
+          <div class="icon-picker-grid" id="social-icons-grid" data-icons='${socialIconJson}' data-recommended-icons='${recommendedSocialIconJson}' aria-labelledby="social-icon-picker-title"></div>
+        </div>
+      </div>
       <script src="/admin-assets/leaflet/leaflet.js"></script>
       <script>
         (() => {
@@ -3146,6 +3653,185 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
           };
           form?.addEventListener('input', sync);
           sync();
+
+          const socialList = document.querySelector('[data-social-list]');
+          const socialJson = document.querySelector('[data-social-json]');
+          const socialEmpty = document.querySelector('[data-social-empty]');
+          const updateSocialEmpty = () => {
+            if (socialEmpty) socialEmpty.hidden = Boolean(socialList?.querySelector('[data-social-row]'));
+          };
+          const syncSocialLinks = () => {
+            if (!socialJson || !socialList) return;
+            socialJson.value = JSON.stringify([...socialList.querySelectorAll('[data-social-row]')].map((row) => ({
+              name: row.querySelector('[data-social-name]').value.trim(),
+              url: row.querySelector('[data-social-url]').value.trim(),
+              icon: row.querySelector('[data-social-icon]').value.trim() || 'mdi-link'
+            })));
+          };
+          const createSocialRow = () => {
+            const row = document.createElement('div');
+            row.className = 'settings-social-row';
+            row.dataset.socialRow = '';
+            row.innerHTML = '<button type="button" class="button-ghost settings-social-icon-trigger" data-social-icon-trigger aria-label="Elegir icono para el enlace"><i class="mdi mdi-link" aria-hidden="true"></i></button>'
+              + '<div class="settings-social-fields">'
+              + '<label><span class="sr-only">Nombre</span><input type="text" maxlength="60" placeholder="Nombre" aria-label="Nombre del enlace" data-social-name required></label>'
+              + '<label><span class="sr-only">URL</span><input type="url" maxlength="300" placeholder="URL" aria-label="URL del enlace" data-social-url required></label>'
+              + '</div>'
+              + '<input type="hidden" value="mdi-link" data-social-icon>'
+              + '<button type="button" class="button-ghost settings-social-remove" data-social-remove aria-label="Eliminar enlace"><i class="mdi mdi-delete-outline" aria-hidden="true"></i></button>';
+            return row;
+          };
+          document.querySelector('[data-social-add]')?.addEventListener('click', () => {
+            if (!socialList || socialList.querySelectorAll('[data-social-row]').length >= 12) return;
+            const row = createSocialRow();
+            socialList.append(row);
+            updateSocialEmpty();
+            row.querySelector('[data-social-name]').focus();
+          });
+          socialList?.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('[data-social-remove]');
+            if (removeButton) {
+              removeButton.closest('[data-social-row]')?.remove();
+              syncSocialLinks();
+              updateSocialEmpty();
+              return;
+            }
+            const iconButton = event.target.closest('[data-social-icon-trigger]');
+            if (iconButton) openSocialIconPicker(iconButton.closest('[data-social-row]'));
+          });
+          updateSocialEmpty();
+
+          const socialIconModal = document.getElementById('social-icon-modal');
+          const socialIconSearch = document.getElementById('social-icon-search');
+          const socialIconToggle = document.getElementById('social-icon-toggle');
+          const socialIconTitle = document.getElementById('social-icon-picker-title');
+          const socialIconCount = document.getElementById('social-icon-picker-count');
+          const socialIconsGrid = document.getElementById('social-icons-grid');
+          const rawSocialIcons = JSON.parse(socialIconsGrid?.dataset.icons || '[]');
+          const recommendedSocialIcons = JSON.parse(socialIconsGrid?.dataset.recommendedIcons || '[]');
+          const recommendedSocialMap = new Map(recommendedSocialIcons.map((icon) => [icon.value, icon]));
+          const allSocialIcons = rawSocialIcons.map((icon) => recommendedSocialMap.get(icon.value) || icon);
+          let activeSocialRow = null;
+          let showAllSocialIcons = false;
+          let filteredSocialIcons = recommendedSocialIcons;
+
+          const closeSocialIconPicker = () => {
+            socialIconModal?.classList.remove('open');
+            socialIconModal?.setAttribute('aria-hidden', 'true');
+            activeSocialRow = null;
+          };
+          const getSocialIconOptions = () => {
+            const currentValue = activeSocialRow?.querySelector('[data-social-icon]')?.value;
+            const currentIcon = allSocialIcons.find((icon) => icon.value === currentValue);
+            return currentIcon && !recommendedSocialMap.has(currentIcon.value)
+              ? [currentIcon, ...recommendedSocialIcons]
+              : recommendedSocialIcons;
+          };
+          const renderSocialIcons = () => {
+            if (!socialIconsGrid) return;
+            const currentValue = activeSocialRow?.querySelector('[data-social-icon]')?.value || 'mdi-link';
+            socialIconsGrid.innerHTML = filteredSocialIcons.map((icon) => \`
+              <label class="icon-option">
+                <input type="radio" name="social-icon-choice" value="\${icon.value}" \${icon.value === currentValue ? 'checked' : ''}>
+                <span class="icon-tile">
+                  <i class="mdi \${icon.value}" aria-hidden="true"></i>
+                  <strong>\${icon.label}</strong>
+                </span>
+              </label>
+            \`).join('');
+            if (socialIconCount) socialIconCount.textContent = filteredSocialIcons.length + (filteredSocialIcons.length === 1 ? ' opción' : ' opciones');
+          };
+          const filterSocialIcons = () => {
+            const term = socialIconSearch?.value.trim().toLowerCase() || '';
+            filteredSocialIcons = term
+              ? allSocialIcons.filter((icon) => icon.label.toLowerCase().includes(term) || icon.value.toLowerCase().includes(term))
+              : showAllSocialIcons
+                ? allSocialIcons
+                : getSocialIconOptions();
+            if (socialIconTitle) socialIconTitle.textContent = term ? 'Resultados' : showAllSocialIcons ? 'Todos los iconos' : 'Iconos recomendados';
+            if (socialIconToggle) {
+              socialIconToggle.textContent = showAllSocialIcons || term ? 'Ver recomendados' : 'Ver todos';
+              socialIconToggle.setAttribute('aria-expanded', String(showAllSocialIcons || Boolean(term)));
+            }
+            renderSocialIcons();
+          };
+          const openSocialIconPicker = (row) => {
+            if (!row || !socialIconModal) return;
+            activeSocialRow = row;
+            showAllSocialIcons = false;
+            if (socialIconSearch) socialIconSearch.value = '';
+            filterSocialIcons();
+            socialIconModal.classList.add('open');
+            socialIconModal.setAttribute('aria-hidden', 'false');
+          };
+          socialIconsGrid?.addEventListener('change', (event) => {
+            if (!(event.target instanceof HTMLInputElement) || !activeSocialRow) return;
+            const value = event.target.value;
+            activeSocialRow.querySelector('[data-social-icon]').value = value;
+            activeSocialRow.querySelector('[data-social-icon-trigger] i').className = 'mdi ' + value;
+            syncSocialLinks();
+            closeSocialIconPicker();
+          });
+          socialIconSearch?.addEventListener('input', filterSocialIcons);
+          socialIconToggle?.addEventListener('click', () => {
+            if (socialIconSearch?.value.trim()) socialIconSearch.value = '';
+            showAllSocialIcons = !showAllSocialIcons;
+            filterSocialIcons();
+          });
+          document.querySelector('[data-close-social-icons]')?.addEventListener('click', closeSocialIconPicker);
+          socialIconModal?.addEventListener('click', (event) => {
+            if (event.target === socialIconModal) closeSocialIconPicker();
+          });
+
+          form?.addEventListener('submit', async (event) => {
+            const button = event.submitter;
+            if (!button?.matches('[data-settings-save]')) return;
+            event.preventDefault();
+            const section = button.closest('[data-settings-section]');
+            const sectionKey = button.value;
+            if (!section || !sectionKey) return;
+            if (sectionKey === 'identity') syncSocialLinks();
+            const controls = [...section.querySelectorAll('input:not([type="file"]), select, textarea')];
+            const invalidControl = controls.find((control) => !control.closest('[hidden]') && !control.checkValidity());
+            if (invalidControl) {
+              invalidControl.reportValidity();
+              return;
+            }
+            const status = form.querySelector('[data-settings-status="' + sectionKey + '"]');
+            const payload = new URLSearchParams();
+            payload.set('_csrf', form.elements._csrf.value);
+            payload.set('_section', sectionKey);
+            section.querySelectorAll('[name]').forEach((control) => {
+              if (control.name !== '_section' && !control.disabled) payload.set(control.name, control.value);
+            });
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Guardando…';
+            status.className = 'settings-save-status';
+            status.textContent = 'Guardando cambios…';
+            try {
+              const response = await fetch('/admin/configuracion', {
+                method: 'POST',
+                headers: {
+                  'accept': 'application/json',
+                  'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                  'x-csrf-token': form.elements._csrf.value
+                },
+                body: payload.toString()
+              });
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || 'No se han podido guardar los cambios.');
+              status.className = 'settings-save-status success';
+              status.textContent = 'Cambios guardados.';
+              if (sectionKey === 'map') mapStatus.textContent = 'Área guardada';
+            } catch (error) {
+              status.className = 'settings-save-status error';
+              status.textContent = error.message;
+            } finally {
+              button.disabled = false;
+              button.textContent = originalText;
+            }
+          });
 
           document.querySelectorAll('[data-brand-choose]').forEach((button) => {
             button.addEventListener('click', () => {
@@ -3174,7 +3860,7 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                 const settingName = kind === 'logo' ? 'APP_LOGO_PATH' : 'APP_FAVICON_PATH';
                 form.elements[settingName].value = result.path;
                 document.getElementById(kind === 'logo' ? 'settings-logo-current' : 'settings-favicon-current').src = result.path;
-                status.textContent = 'Imagen preparada. Guarda la configuración para aplicarla.';
+                status.textContent = 'Imagen preparada. Guarda esta sección para aplicarla.';
                 sync();
               } catch (error) {
                 status.textContent = error.message;
@@ -3188,14 +3874,18 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
           const syncWhatsApp = () => {
             const enabled = form.WHATSAPP_SHARE_ENABLED.value === 'true';
             const requiresActivation = form.WHATSAPP_REQUIRE_ACTIVATION.value === 'true';
+            const dependentFields = document.getElementById('whatsapp-dependent-fields');
+            dependentFields.hidden = !enabled;
+            form.WHATSAPP_SHARE_ENABLED.setAttribute('aria-expanded', String(enabled));
+            form.WHATSAPP_SHARE_ENABLED.setAttribute('aria-controls', 'whatsapp-dependent-fields');
             document.getElementById('whatsapp-mode-title').textContent = enabled
               ? (requiresActivation ? 'Inicio de bot activado' : 'Envío directo activado')
-              : 'Reporte por WhatsApp desactivado';
+              : '';
             document.getElementById('whatsapp-mode-description').textContent = enabled
               ? (requiresActivation
                 ? 'Primero se abrirá un mensaje para iniciar el bot y la incidencia quedará copiada para pegarla después.'
                 : 'WhatsApp se abrirá con la descripción y la dirección preparadas para enviar.')
-              : 'La opción no aparecerá en las incidencias.';
+              : '';
           };
           form.WHATSAPP_SHARE_ENABLED.addEventListener('change', syncWhatsApp);
           form.WHATSAPP_REQUIRE_ACTIVATION.addEventListener('change', syncWhatsApp);
@@ -3744,49 +4434,41 @@ function renderAuditPage({ currentAdmin, notice, entries, csrfToken }) {
   });
 }
 
-function renderMaintenancePage({ currentAdmin, notice, pendingIncidencias, inadequateIncidencias, missingLocationIncidencias, tipos, preview, csrfToken }) {
+function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, missingLocationIncidencias, tipos, preview, oldSolvableCriteria, csrfToken }) {
   const tiposOptions = tipos.map((tipo) => `<option value="${tipo.id}">${escapeHtml(tipo.nombre)}</option>`).join('');
-  const pendingRows = pendingIncidencias.length
-    ? pendingIncidencias.map((item) => `
-      <tr>
-        <td>${item.id}</td>
-        <td>${escapeHtml(item.tipo)}</td>
-        <td>${item.reportes_solucion}</td>
-        <td>${escapeHtml(item.descripcion)}</td>
-      </tr>
-    `).join('')
-    : '<tr><td colspan="4">No hay incidencias activas con votos de solucion pendientes.</td></tr>';
+  const criteria = oldSolvableCriteria || { days: 90, votes: 1 };
 
   const previewRows = preview.length
     ? preview.map((item) => `
       <tr>
-        <td>${item.id}</td>
+        <td class="checkbox-cell">
+          <input class="old-solvable-checkbox" type="checkbox" name="incidenciaIds" value="${item.id}" aria-label="Seleccionar incidencia ${item.id}">
+        </td>
+        <td><a class="maintenance-incident-link" href="/admin/incidencias/${item.id}">#${item.id}</a></td>
         <td>${escapeHtml(item.tipo || '')}</td>
+        <td><strong>${item.antiguedad_dias}</strong> dias<br><span class="small">${formatDate(item.fecha)}</span></td>
         <td>${item.votos_solucion}</td>
-        <td>${escapeHtml(item.descripcion)}</td>
+        <td class="maintenance-description">${escapeHtml(item.descripcion)}</td>
+        <td><a class="dashboard-muted-link" href="/admin/incidencias/${item.id}">Ver detalle</a></td>
       </tr>
     `).join('')
-    : '<tr><td colspan="4">Todavia no hay previsualizacion cargada.</td></tr>';
-
-  const pendingCards = pendingIncidencias.length
-    ? pendingIncidencias.map((item) => `
-      <article class="table-card">
-        <strong>#${item.id} · ${escapeHtml(item.tipo)}</strong>
-        <span>${item.reportes_solucion} votos de solucion</span>
-        <span>${escapeHtml(item.descripcion)}</span>
-      </article>
-    `).join('')
-    : '<div class="empty-state">No hay incidencias activas con votos de solucion pendientes.</div>';
+    : '<tr><td colspan="7">No hay incidencias activas que cumplan estos criterios.</td></tr>';
 
   const previewCards = preview.length
     ? preview.map((item) => `
       <article class="table-card">
-        <strong>#${item.id} · ${escapeHtml(item.tipo || '')}</strong>
-        <span>${item.votos_solucion} votos de solucion</span>
+        <div class="table-card-head">
+          <div>
+            <strong><a class="maintenance-incident-link" href="/admin/incidencias/${item.id}">#${item.id}</a> · ${escapeHtml(item.tipo || '')}</strong>
+            <span>${item.antiguedad_dias} dias · ${item.votos_solucion} ${item.votos_solucion === 1 ? 'voto' : 'votos'} de solucion</span>
+          </div>
+          <input class="table-card-check old-solvable-checkbox" type="checkbox" name="incidenciaIds" value="${item.id}" aria-label="Seleccionar incidencia ${item.id}">
+        </div>
         <span>${escapeHtml(item.descripcion)}</span>
+        <a class="dashboard-muted-link maintenance-card-link" href="/admin/incidencias/${item.id}">Ver incidencia</a>
       </article>
     `).join('')
-    : '<div class="empty-state">Todavia no hay previsualizacion cargada.</div>';
+    : '<div class="empty-state">No hay incidencias activas que cumplan estos criterios. Prueba a reducir la antiguedad o los votos minimos.</div>';
 
   const inadequateRows = (inadequateIncidencias || []).length
     ? inadequateIncidencias.map((item) => `
@@ -3888,41 +4570,63 @@ function renderMaintenancePage({ currentAdmin, notice, pendingIncidencias, inade
           </form>
         </div>
       </div>
-      <div class="grid two" style="margin-top:16px">
-        <div class="subtle-panel">
-          <h2>Previsualizar incidencias antiguas solucionables</h2>
-          <form method="post" action="/admin/maintenance/preview-old-solvable">
-            <label>Dias minimos
-              <input name="days" type="number" min="1" value="90" required>
-            </label>
-            <label>Votos minimos
-              <input name="votes" type="number" min="0" value="1" required>
-            </label>
-            <button type="submit">Calcular vista previa</button>
-          </form>
-          <form method="post" action="/admin/maintenance/run-old-solvable" style="margin-top:12px" data-confirm="Se marcaran como solucionadas todas las candidatas que cumplan estos criterios. ¿Continuar?">
-            <label>Dias minimos
-              <input name="days" type="number" min="1" value="90" required>
-            </label>
-            <label>Votos minimos
-              <input name="votes" type="number" min="0" value="1" required>
-            </label>
-            <button type="submit">Ejecutar sobre candidatas</button>
-          </form>
+      <section class="old-solvable-workspace" style="margin-top:16px" aria-labelledby="old-solvable-title">
+        <div class="old-solvable-heading">
+          <div>
+            <span class="eyebrow">Resolucion asistida</span>
+            <h2 id="old-solvable-title">Incidencias antiguas</h2>
+            <p>Busca por antiguedad y, si lo necesitas, exige un numero minimo de votos de solucion.</p>
+          </div>
+          <div class="old-solvable-count" aria-label="${preview.length} incidencias encontradas">
+            <strong>${preview.length}</strong>
+            <span>${preview.length === 1 ? 'incidencia encontrada' : 'incidencias encontradas'}</span>
+          </div>
         </div>
-        <div class="subtle-panel">
-          <h2>Pendientes de validar</h2>
+
+        <form class="old-solvable-filters" method="post" action="/admin/maintenance/preview-old-solvable">
+          <label>Antiguedad minima
+            <span class="input-suffix">
+              <input name="days" type="number" min="1" max="3650" value="${escapeAttr(criteria.days)}" required>
+              <span>dias</span>
+            </span>
+          </label>
+          <label>Votos minimos de solucion
+            <input name="votes" type="number" min="1" max="1000" value="${escapeAttr(criteria.votes)}" required>
+          </label>
+          <button class="button-ghost" type="submit"><i class="mdi mdi-magnify" aria-hidden="true"></i> Buscar</button>
+          <span class="old-solvable-filter-status" role="status" aria-live="polite"></span>
+        </form>
+
+        <form id="old-solvable-form" class="old-solvable-results" method="post" action="/admin/maintenance/run-old-solvable" data-confirm="Se marcaran como solucionadas las incidencias indicadas. ¿Continuar?">
+          <input type="hidden" name="days" value="${escapeAttr(criteria.days)}">
+          <input type="hidden" name="votes" value="${escapeAttr(criteria.votes)}">
+          <div class="old-solvable-toolbar">
+            <label class="select-all-label">
+              <input id="old-solvable-select-all" class="select-all" type="checkbox"${preview.length ? '' : ' disabled'}>
+              <span>Seleccionar todas</span>
+            </label>
+            <span id="old-solvable-selection" class="meta" aria-live="polite">Ninguna seleccionada</span>
+          </div>
           <div class="table-wrap">
-            <table class="responsive-table">
+            <table class="responsive-table old-solvable-table">
               <thead>
-                <tr><th>ID</th><th>Tipo</th><th>Votos</th><th>Descripcion</th></tr>
+                <tr>
+                  <th><span class="sr-only">Seleccionar</span></th>
+                  <th>ID</th><th>Tipo</th><th>Antiguedad</th><th>Votos</th><th>Descripcion</th><th>Detalle</th>
+                </tr>
               </thead>
-              <tbody>${pendingRows}</tbody>
+              <tbody>${previewRows}</tbody>
             </table>
           </div>
-          <div class="table-cards">${pendingCards}</div>
-        </div>
-      </div>
+          <div class="table-cards">${previewCards}</div>
+          <div class="old-solvable-actions">
+            <span class="meta">Esta accion cambia el estado y queda registrada en auditoria.</span>
+            <div class="actions">
+              <button id="solve-selected" type="submit" name="scope" value="selected" disabled>Marcar 0 como solucionadas</button>
+            </div>
+          </div>
+        </form>
+      </section>
       <div class="subtle-panel" style="margin-top:16px">
         <h2>Moderacion de reportes inadecuados</h2>
         <div class="table-wrap">
@@ -3952,18 +4656,89 @@ function renderMaintenancePage({ currentAdmin, notice, pendingIncidencias, inade
         </div>
         <div class="table-cards">${missingLocationCards}</div>
       </div>
-      <div class="subtle-panel" style="margin-top:16px">
-        <h2>Ultima previsualizacion</h2>
-        <div class="table-wrap">
-          <table class="responsive-table">
-            <thead>
-              <tr><th>ID</th><th>Tipo</th><th>Votos</th><th>Descripcion</th></tr>
-            </thead>
-            <tbody>${previewRows}</tbody>
-          </table>
-        </div>
-        <div class="table-cards">${previewCards}</div>
-      </div>
+      <script>
+        (() => {
+          const workspace = document.querySelector('.old-solvable-workspace');
+          const filterForm = workspace?.querySelector('.old-solvable-filters');
+          const resultsForm = document.getElementById('old-solvable-form');
+          if (!workspace || !filterForm || !resultsForm) return;
+
+          const bindResults = () => {
+            const selectAll = resultsForm.querySelector('#old-solvable-select-all');
+            const selectedButton = resultsForm.querySelector('#solve-selected');
+            const selectionLabel = resultsForm.querySelector('#old-solvable-selection');
+            const checkboxes = Array.from(resultsForm.querySelectorAll('.old-solvable-checkbox'));
+            const uniqueIds = () => new Set(checkboxes.filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value));
+            const refresh = () => {
+              const count = uniqueIds().size;
+              selectionLabel.textContent = count ? count + (count === 1 ? ' seleccionada' : ' seleccionadas') : 'Ninguna seleccionada';
+              selectedButton.disabled = count === 0;
+              selectedButton.textContent = count === 1 ? 'Marcar 1 como solucionada' : 'Marcar ' + count + ' como solucionadas';
+              if (selectAll) {
+                const total = new Set(checkboxes.map((checkbox) => checkbox.value)).size;
+                selectAll.checked = total > 0 && count === total;
+                selectAll.indeterminate = count > 0 && count < total;
+              }
+            };
+            checkboxes.forEach((checkbox) => checkbox.addEventListener('change', () => {
+              checkboxes.filter((peer) => peer.value === checkbox.value).forEach((peer) => { peer.checked = checkbox.checked; });
+              refresh();
+            }));
+            selectAll?.addEventListener('change', () => {
+              checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
+              refresh();
+            });
+            resultsForm.onclick = (event) => {
+              const submitter = event.target.closest('button[type="submit"]');
+              if (!submitter) return;
+              const count = uniqueIds().size;
+              resultsForm.dataset.confirm = 'Se marcaran como solucionadas ' + count + (count === 1 ? ' incidencia' : ' incidencias') + '. ¿Continuar?';
+            };
+            refresh();
+          };
+
+          filterForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const scrollPosition = window.scrollY;
+            const button = filterForm.querySelector('button[type="submit"]');
+            const status = filterForm.querySelector('.old-solvable-filter-status');
+            const originalLabel = button.innerHTML;
+            button.disabled = true;
+            button.textContent = 'Buscando…';
+            status.textContent = '';
+            workspace.setAttribute('aria-busy', 'true');
+            try {
+              const response = await fetch(filterForm.action, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                body: new URLSearchParams(new FormData(filterForm))
+              });
+              const nextDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+              const nextWorkspace = nextDocument.querySelector('.old-solvable-workspace');
+              const nextResults = nextWorkspace?.querySelector('#old-solvable-form');
+              const nextCount = nextWorkspace?.querySelector('.old-solvable-count');
+              if (!response.ok || !nextWorkspace || !nextResults || !nextCount) {
+                const errorMessage = nextDocument.querySelector('.notice.error')?.textContent?.trim();
+                throw new Error(errorMessage || 'No se ha podido actualizar la búsqueda.');
+              }
+              workspace.querySelector('.old-solvable-count').replaceWith(nextCount);
+              resultsForm.innerHTML = nextResults.innerHTML;
+              bindResults();
+              window.scrollTo(0, scrollPosition);
+              const total = nextCount.querySelector('strong')?.textContent || '0';
+              status.textContent = total + (total === '1' ? ' incidencia encontrada.' : ' incidencias encontradas.');
+            } catch (error) {
+              status.textContent = error.message;
+            } finally {
+              button.disabled = false;
+              button.innerHTML = originalLabel;
+              workspace.removeAttribute('aria-busy');
+            }
+          });
+
+          bindResults();
+        })();
+      </script>
     `
   });
 }

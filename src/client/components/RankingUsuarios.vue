@@ -102,10 +102,12 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
+import { getRuntimeConfig } from '../utils/runtimeConfig';
 
 export default {
   name: 'RankingUsuarios',
   setup() {
+    const runtimeConfig = getRuntimeConfig();
     const router = useRouter();
     const route = useRoute();
     const dialogVisible = ref(false);
@@ -137,11 +139,11 @@ export default {
     };
 
     const textoBotonResolver = computed(() => 
-      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+      runtimeConfig.TEXTO_BOTON_RESOLVER
     )
 
     const textoEstadoSolucionado = computed(() => 
-      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
     )
 
     const cerrar = () => {

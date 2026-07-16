@@ -552,8 +552,8 @@ export default {
     const searchAddress = async () => {
       if (searchQuery.value.length < 3) return
       try {
-        const regionLimit = import.meta.env.VITE_SEARCH_REGION_LIMIT_ENABLED === 'true' 
-          ? import.meta.env.VITE_SEARCH_REGION_QUERY 
+        const regionLimit = runtimeConfig.SEARCH_REGION_LIMIT_ENABLED === 'true'
+          ? runtimeConfig.SEARCH_REGION_QUERY
           : '';
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.value)}${regionLimit}&limit=5`)
         const data = await response.json()
@@ -1207,5 +1207,3 @@ export default {
   height: 60vh;
 }
 </style>
-
-

@@ -841,11 +841,11 @@ export default {
     })
 
     const textoBotonResolver = computed(() => 
-      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+      runtimeConfig.TEXTO_BOTON_RESOLVER
     )
 
     const textoEstadoSolucionado = computed(() => 
-      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
     )
 
     return {

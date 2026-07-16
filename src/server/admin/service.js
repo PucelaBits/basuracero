@@ -853,6 +853,7 @@ async function previewOldSolvable({ days, votes }) {
        i.fecha,
        i.estado,
        t.nombre AS tipo,
+       CAST(julianday('now', 'localtime') - julianday(i.fecha) AS INTEGER) AS antiguedad_dias,
        COUNT(rs.id) AS votos_solucion
      FROM incidencias i
      LEFT JOIN tipos_incidencias t ON t.id = i.tipo_id
@@ -866,10 +867,23 @@ async function previewOldSolvable({ days, votes }) {
   );
 }
 
-async function executeOldSolvable({ days, votes }, actingAdminId) {
+async function executeOldSolvable({ days, votes, incidenciaIds }, actingAdminId) {
   const candidates = await previewOldSolvable({ days, votes });
+  let selectedCandidates = candidates;
 
-  for (const candidate of candidates) {
+  if (incidenciaIds !== undefined) {
+    const safeIds = new Set(
+      (Array.isArray(incidenciaIds) ? incidenciaIds : [incidenciaIds])
+        .map((id) => Number.parseInt(id, 10))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    );
+    selectedCandidates = candidates.filter((candidate) => safeIds.has(candidate.id));
+    if (!selectedCandidates.length) {
+      throw new Error('Selecciona al menos una incidencia que siga cumpliendo los criterios.');
+    }
+  }
+
+  for (const candidate of selectedCandidates) {
     await run(
       `UPDATE incidencias
        SET estado = 'solucionada',
@@ -883,7 +897,7 @@ async function executeOldSolvable({ days, votes }, actingAdminId) {
     });
   }
 
-  return candidates;
+  return selectedCandidates;
 }
 
 async function getPendingSolutionIncidencias() {

@@ -1232,7 +1232,7 @@ export default {
       ]
     }))
 
-    const socialLinks = ref(JSON.parse(import.meta.env.VITE_APP_SOCIAL_LINKS || '[]'))
+    const socialLinks = ref(JSON.parse(runtimeConfig.APP_SOCIAL_LINKS || '[]'))
 
     // Encontrar el enlace de comunidad si existe
     const comunidadLink = computed(() => 
@@ -1359,11 +1359,11 @@ export default {
     const sidebarLinks = ref(JSON.parse(import.meta.env.VITE_APP_SIDEBAR_LINKS || '[]'))
 
     const textoBotonResolver = computed(() => 
-      import.meta.env.VITE_TEXTO_BOTON_RESOLVER || 'Resolver'
+      runtimeConfig.TEXTO_BOTON_RESOLVER
     )
 
     const textoEstadoSolucionado = computed(() => 
-      import.meta.env.VITE_TEXTO_ESTADO_SOLUCIONADO || 'Solucionada'
+      runtimeConfig.TEXTO_ESTADO_SOLUCIONADO
     )
 
     return {

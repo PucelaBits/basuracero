@@ -31,7 +31,6 @@ const {
   getIncidenciaDetail,
   getInadequateReportedIncidencias,
   getMissingLocationIncidencias,
-  getPendingSolutionIncidencias,
   getTipoSummary,
   mergeTipos,
   previewOldSolvable,
@@ -55,7 +54,7 @@ const {
   renderMaintenancePage,
   renderSettingsPage
 } = require('./html');
-const { getAppSettings, updateAppSettings } = require('./settings');
+const { getAppSettings, updateAppSettings, updateAppSettingsSection } = require('./settings');
 
 const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
@@ -563,10 +562,24 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
   });
 
   router.post('/configuracion', async (req, res) => {
+    const wantsJson = req.get('accept')?.includes('application/json');
     try {
-      await updateAppSettings(req.body, req.currentAdmin.id);
+      const section = String(req.body._section || '');
+      if (section) {
+        await updateAppSettingsSection(section, req.body, req.currentAdmin.id);
+      } else {
+        await updateAppSettings(req.body, req.currentAdmin.id);
+      }
+      if (wantsJson) {
+        res.json({ ok: true, section: section || 'all', message: 'Cambios guardados.' });
+        return;
+      }
       res.redirect('/admin/configuracion?saved=1');
     } catch (error) {
+      if (wantsJson) {
+        res.status(400).json({ error: toActionNotice(error).message });
+        return;
+      }
       const persistedSettings = await getAppSettings();
       res.status(400).send(renderSettingsPage({
         currentAdmin: req.currentAdmin,
@@ -971,18 +984,22 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
   router.get('/maintenance', async (req, res, next) => {
     try {
       const tipos = await all('SELECT id, nombre, icono FROM tipos_incidencias ORDER BY nombre COLLATE NOCASE ASC');
-      const [pendingIncidencias, inadequateIncidencias, missingLocationIncidencias] = await Promise.all([
-        getPendingSolutionIncidencias(),
+      const appSettings = await getAppSettings();
+      const oldSolvableCriteria = req.session.oldSolvableCriteria || {
+        days: Number.parseInt(appSettings.DIAS_PARA_CONSIDERAR_ANTIGUA, 10) || 14,
+        votes: Number.parseInt(appSettings.REPORTES_PARA_SOLUCIONAR_ANTIGUA, 10) || 2
+      };
+      const [preview, inadequateIncidencias, missingLocationIncidencias] = await Promise.all([
+        previewOldSolvable(oldSolvableCriteria),
         getInadequateReportedIncidencias(),
         getMissingLocationIncidencias(100)
       ]);
-      const preview = req.session.oldSolvablePreview || [];
       res.send(renderMaintenancePage({
         currentAdmin: req.currentAdmin,
         missingLocationIncidencias,
         notice: req.query.message ? { type: 'success', message: req.query.message } : null,
         inadequateIncidencias,
-        pendingIncidencias,
+        oldSolvableCriteria,
         preview,
         tipos,
         csrfToken: req.session.csrfToken
@@ -994,8 +1011,13 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
   async function renderMaintenanceError(req, res, error) {
     const tipos = await all('SELECT id, nombre, icono FROM tipos_incidencias ORDER BY nombre COLLATE NOCASE ASC');
-    const [pendingIncidencias, inadequateIncidencias, missingLocationIncidencias] = await Promise.all([
-      getPendingSolutionIncidencias(),
+    const appSettings = await getAppSettings();
+    const oldSolvableCriteria = req.session.oldSolvableCriteria || {
+      days: Number.parseInt(appSettings.DIAS_PARA_CONSIDERAR_ANTIGUA, 10) || 14,
+      votes: Number.parseInt(appSettings.REPORTES_PARA_SOLUCIONAR_ANTIGUA, 10) || 2
+    };
+    const [preview, inadequateIncidencias, missingLocationIncidencias] = await Promise.all([
+      previewOldSolvable(oldSolvableCriteria),
       getInadequateReportedIncidencias(),
       getMissingLocationIncidencias(100)
     ]);
@@ -1004,8 +1026,8 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       missingLocationIncidencias,
       inadequateIncidencias,
       notice: toActionNotice(error),
-      pendingIncidencias,
-      preview: req.session.oldSolvablePreview || [],
+      oldSolvableCriteria,
+      preview,
       tipos,
       csrfToken: req.session.csrfToken
     }));
@@ -1048,18 +1070,25 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
   });
 
   router.post('/maintenance/preview-old-solvable', async (req, res) => {
-    const days = Number.parseInt(req.body.days, 10) || 90;
-    const votes = Number.parseInt(req.body.votes, 10) || 1;
-    req.session.oldSolvablePreview = await previewOldSolvable({ days, votes });
-    res.redirect('/admin/maintenance?message=Vista%20previa%20actualizada');
+    try {
+      const days = Number.parseInt(req.body.days, 10);
+      const votes = Number.parseInt(req.body.votes, 10);
+      await previewOldSolvable({ days, votes });
+      req.session.oldSolvableCriteria = { days, votes };
+      res.redirect('/admin/maintenance?message=Criterios%20actualizados');
+    } catch (error) {
+      await renderMaintenanceError(req, res, error);
+    }
   });
 
   router.post('/maintenance/run-old-solvable', async (req, res) => {
     try {
-      const days = Number.parseInt(req.body.days, 10) || 90;
-      const votes = Number.parseInt(req.body.votes, 10) || 1;
-      const updated = await executeOldSolvable({ days, votes }, req.currentAdmin.id);
-      req.session.oldSolvablePreview = updated;
+      const days = Number.parseInt(req.body.days, 10);
+      const votes = Number.parseInt(req.body.votes, 10);
+      const scope = req.body.scope === 'all' ? 'all' : 'selected';
+      const incidenciaIds = scope === 'all' ? undefined : req.body.incidenciaIds;
+      const updated = await executeOldSolvable({ days, votes, incidenciaIds }, req.currentAdmin.id);
+      req.session.oldSolvableCriteria = { days, votes };
       res.redirect(`/admin/maintenance?message=${encodeURIComponent(`Se han actualizado ${updated.length} incidencias`)}`);
     } catch (error) {
       await renderMaintenanceError(req, res, error);
