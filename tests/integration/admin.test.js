@@ -57,11 +57,10 @@ describe('Panel admin', () => {
     process.env.ADMIN_ENABLED = 'true';
     process.env.APP_VERSION = INSTALLED_VERSION;
     process.env.NODE_ENV = nodeEnv;
+    process.env.ADMIN_BOOTSTRAP_PASSWORD = 'BootstrapProduccionSegura123';
     if (nodeEnv === 'production') {
-      process.env.ADMIN_BOOTSTRAP_PASSWORD = 'BootstrapProduccionSegura123';
       process.env.TRUST_PROXY = '1';
     } else {
-      delete process.env.ADMIN_BOOTSTRAP_PASSWORD;
       delete process.env.TRUST_PROXY;
     }
     process.env.ADMIN_LOGIN_RATE_LIMIT_MAX = '2';
@@ -80,11 +79,7 @@ describe('Panel admin', () => {
     app = await appModule.createApp({ logger });
     agent = request.agent(app);
 
-    tempPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD || logger.warn.mock.calls
-      .map(([message]) => message)
-      .find((message) => typeof message === 'string' && message.startsWith('Contraseña temporal admin:'))
-      ?.split(': ')
-      ?.at(1);
+    tempPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
   }
 
   beforeAll(async () => {
@@ -117,6 +112,7 @@ describe('Panel admin', () => {
     expect(admin.mustChangePassword).toBe(true);
     expect(admin.isActive).toBe(true);
     expect(tempPassword).toBeTruthy();
+    expect(logger.warn.mock.calls.flat().join('\n')).not.toContain(tempPassword);
     expect(tipos.length).toBeGreaterThan(0);
     expect(tipos.find((tipo) => tipo.nombre === 'Basura u objetos abandonados')?.icono).toBe('mdi-trash-can');
   });
@@ -188,10 +184,10 @@ describe('Panel admin', () => {
       });
 
     expect(saveResponse.status).toBe(302);
-    expect(saveResponse.headers.location).toBe('/admin?passwordChanged=1');
+    expect(saveResponse.headers.location).toBe('/admin?credentialsChanged=1');
     expect(getSessionIdFromCookie(getSessionCookie(saveResponse))).not.toBe(authenticatedSessionId);
 
-    const panelResponse = await agent.get('/admin?passwordChanged=1');
+    const panelResponse = await agent.get('/admin?credentialsChanged=1');
     expect(panelResponse.status).toBe(200);
     expect(panelResponse.text).toContain('Panel de control');
     expect(panelResponse.text).toContain('Contraseña actualizada correctamente.');

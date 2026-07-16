@@ -54,6 +54,13 @@ const reporteLimiter = rateLimit({
   max: 50 // máximo 50 reportes por hora por IP; express-rate-limit usa req.ip
 });
 
+const publicReadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 function parseTiposQuery(tipoQuery) {
   const rawValues = Array.isArray(tipoQuery)
     ? tipoQuery
@@ -140,7 +147,7 @@ function isFriendlyCaptchaEnabled() {
 }
 
 // Obtener tipos de incidencias
-router.get('/tipos', (req, res) => {
+router.get('/tipos', publicReadLimiter, (req, res) => {
   const sql = `
     SELECT *
     FROM tipos_incidencias
@@ -162,7 +169,7 @@ router.get('/tipos', (req, res) => {
   });
 });
 
-router.get('/tipos/resumen', (req, res) => {
+router.get('/tipos/resumen', publicReadLimiter, (req, res) => {
   const sql = `
     SELECT
       t.id,
@@ -340,7 +347,7 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
 });
 
 // Obtener incidencias paginadas
-router.get('/', (req, res) => {
+router.get('/', publicReadLimiter, (req, res) => {
   const format = req.query.format?.toLowerCase();
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -446,7 +453,7 @@ router.get('/', (req, res) => {
 });
 
 // Obtener todas las incidencias sin paginación
-router.get('/todas', (req, res) => {
+router.get('/todas', publicReadLimiter, (req, res) => {
   const format = req.query.format?.toLowerCase();
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
   const tipos = parseTiposQuery(req.query.tipo);
@@ -531,7 +538,7 @@ router.get('/todas', (req, res) => {
   });
 });
 
-router.get('/ultima-actualizacion', (req, res) => {
+router.get('/ultima-actualizacion', publicReadLimiter, (req, res) => {
   db.get('SELECT fecha FROM incidencias ORDER BY datetime(fecha) DESC LIMIT 1', (err, row) => {
     if (err) {
       console.error('Error al obtener la última actualización:', err);
@@ -547,7 +554,7 @@ router.get('/ultima-actualizacion', (req, res) => {
   });
 });
 
-router.get('/usuarios/ranking', (req, res) => {
+router.get('/usuarios/ranking', publicReadLimiter, (req, res) => {
   let minIncidencias = parseInt(req.query.minIncidencias) || 1;
   let minVotos = parseInt(req.query.minVotos) || 0;
   let periodo = req.query.periodo || 'total';
@@ -692,7 +699,7 @@ router.get('/usuarios/ranking', (req, res) => {
 });
 
 // Obtener incidencia por ID
-router.get('/:id', (req, res) => {
+router.get('/:id', publicReadLimiter, (req, res) => {
   const incidenciaId = req.params.id;
 
   const sql = `
@@ -929,7 +936,7 @@ router.post('/:id/inadecuado', reporteLimiter, async (req, res) => {
   }
 });
 
-router.get('/barrios/ranking', (req, res) => {
+router.get('/barrios/ranking', publicReadLimiter, (req, res) => {
   let minIncidencias = parseInt(req.query.minIncidencias);
   let periodo = req.query.periodo || 'total';
   const incluirDetalles = req.query.incluirDetalles === 'true';

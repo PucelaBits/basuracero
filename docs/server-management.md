@@ -160,10 +160,13 @@ git pull --ff-only origin main
 Para ejecutar manualmente las migraciones y el bootstrap en un entorno ya preparado:
 
 ```bash
+read -s ADMIN_BOOTSTRAP_PASSWORD
+export ADMIN_BOOTSTRAP_PASSWORD
 npm run admin:bootstrap
+unset ADMIN_BOOTSTRAP_PASSWORD
 ```
 
-`ADMIN_BOOTSTRAP_PASSWORD` solo se utiliza si no existe ningún administrador activo. En instalaciones Docker nuevas usa `scripts/install.sh`, que la pasa únicamente al contenedor efímero y la retira automáticamente; si haces el bootstrap manualmente, elimínala del entorno al terminar.
+`ADMIN_BOOTSTRAP_PASSWORD` es obligatoria si todavía no existe ningún administrador activo y nunca se escribe en los logs. En instalaciones Docker nuevas, `scripts/install.sh` la pasa únicamente al contenedor efímero y la retira automáticamente; si haces el bootstrap manualmente, elimínala del entorno al terminar.
 
 ## Actualizar la aplicación
 

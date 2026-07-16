@@ -315,6 +315,12 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       }));
     }
   });
+  const loginPageLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
 
   router.use(async (req, _res, next) => {
     ensureCsrfToken(req);
@@ -410,7 +416,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     next();
   });
 
-  router.get('/login', (req, res) => {
+  router.get('/login', loginPageLimiter, (req, res) => {
     if (req.currentAdmin) {
       res.redirect('/admin');
       return;
@@ -457,7 +463,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       return;
     }
     if (req.query.saved && !req.currentAdmin.mustChangePassword) {
-      res.redirect('/admin?passwordChanged=1');
+      res.redirect('/admin?credentialsChanged=1');
       return;
     }
     res.send(renderChangePasswordPage({
@@ -490,7 +496,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       await regenerateSession(req);
       req.session.adminUserId = adminId;
       rotateCsrfToken(req);
-      res.redirect('/admin?passwordChanged=1');
+      res.redirect('/admin?credentialsChanged=1');
     } catch (error) {
       res.status(400).send(renderChangePasswordPage({
         currentAdmin: req.currentAdmin,
@@ -547,7 +553,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       ]);
       res.send(renderDashboardPage({
         currentAdmin: req.currentAdmin,
-        notice: req.query.passwordChanged
+        notice: req.query.credentialsChanged
           ? { type: 'success', message: 'Contraseña actualizada correctamente.' }
           : null,
         dashboard,

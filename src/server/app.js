@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 const incidenciasRoutes = require('./routes/incidencias');
 const rssRoutes = require('./routes/rss');
 const configRoutes = require('./routes/config');
@@ -50,6 +51,41 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function replaceElement(html, tagName, replacement) {
+  const lowerHtml = html.toLowerCase();
+  const openingStart = lowerHtml.indexOf(`<${tagName}`);
+  if (openingStart === -1) {
+    return html;
+  }
+  const openingEnd = lowerHtml.indexOf('>', openingStart);
+  const closingEnd = lowerHtml.indexOf(`</${tagName}>`, openingEnd + 1);
+  if (openingEnd === -1 || closingEnd === -1) {
+    return html;
+  }
+  return html.slice(0, openingStart) + replacement + html.slice(closingEnd + tagName.length + 3);
+}
+
+function replaceLinkByRel(html, rel, replacement) {
+  const lowerHtml = html.toLowerCase();
+  const relAttribute = `rel="${rel.toLowerCase()}"`;
+  let searchFrom = 0;
+  while (searchFrom < lowerHtml.length) {
+    const tagStart = lowerHtml.indexOf('<link', searchFrom);
+    if (tagStart === -1) {
+      return html;
+    }
+    const tagEnd = lowerHtml.indexOf('>', tagStart + 5);
+    if (tagEnd === -1) {
+      return html;
+    }
+    if (lowerHtml.slice(tagStart, tagEnd + 1).includes(relAttribute)) {
+      return html.slice(0, tagStart) + replacement + html.slice(tagEnd + 1);
+    }
+    searchFrom = tagEnd + 1;
+  }
+  return html;
+}
+
 function upsertMetaTag(html, attrName, attrValue, content) {
   const escapedContent = escapeHtml(content);
   const pattern = new RegExp(`<meta\\s+${attrName}="${attrValue}"\\s+content="[^"]*">`, 'i');
@@ -63,7 +99,7 @@ function upsertMetaTag(html, attrName, attrValue, content) {
 }
 
 function injectCategoryMeta(html, meta) {
-  let nextHtml = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(meta.title)}</title>`);
+  let nextHtml = replaceElement(html, 'title', `<title>${escapeHtml(meta.title)}</title>`);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'description', meta.description);
   nextHtml = upsertMetaTag(nextHtml, 'property', 'og:type', 'website');
   nextHtml = upsertMetaTag(nextHtml, 'property', 'og:title', meta.title);
@@ -99,7 +135,7 @@ function injectCategoryMeta(html, meta) {
 
 function injectAppSettings(html, settings, baseUrl) {
   const title = `${settings.APP_NAME} - ${settings.APP_DESCRIPTION}`;
-  let nextHtml = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+  let nextHtml = replaceElement(html, 'title', `<title>${escapeHtml(title)}</title>`);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'description', settings.APP_DESCRIPTION);
   nextHtml = upsertMetaTag(nextHtml, 'property', 'og:title', settings.APP_NAME);
   nextHtml = upsertMetaTag(nextHtml, 'property', 'og:description', settings.APP_DESCRIPTION);
@@ -107,8 +143,8 @@ function injectAppSettings(html, settings, baseUrl) {
   nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:title', settings.APP_NAME);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:description', settings.APP_DESCRIPTION);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'theme-color', settings.APP_PRIMARY_COLOR);
-  nextHtml = nextHtml.replace(/<link\s+rel="icon"\s+href="[^"]*"[^>]*>/i, `<link rel="icon" href="${escapeHtml(settings.APP_FAVICON_PATH)}" type="image/png">`);
-  nextHtml = nextHtml.replace(/<link\s+rel="apple-touch-icon"\s+href="[^"]*"[^>]*>/i, `<link rel="apple-touch-icon" href="${escapeHtml(settings.APP_FAVICON_PATH)}">`);
+  nextHtml = replaceLinkByRel(nextHtml, 'icon', `<link rel="icon" href="${escapeHtml(settings.APP_FAVICON_PATH)}" type="image/png">`);
+  nextHtml = replaceLinkByRel(nextHtml, 'apple-touch-icon', `<link rel="apple-touch-icon" href="${escapeHtml(settings.APP_FAVICON_PATH)}">`);
   return nextHtml;
 }
 
@@ -156,6 +192,12 @@ async function createApp({ logger = console } = {}) {
   app.disable('x-powered-by');
   const PORT = process.env.PORT || 5050;
   const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+  const dynamicPageLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
 
   app.set('trust proxy', getTrustProxySetting(process.env.TRUST_PROXY));
   const allowedCorsOrigins = getAllowedCorsOrigins(BASE_URL);
@@ -269,7 +311,7 @@ async function createApp({ logger = console } = {}) {
     });
   }
 
-  app.get('/tipo/:id/:slug?', (req, res) => {
+  app.get('/tipo/:id/:slug?', dynamicPageLimiter, (req, res) => {
     const tipoId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(tipoId) || tipoId <= 0) {
       res.sendFile(DIST_INDEX_PATH);
@@ -307,9 +349,9 @@ async function createApp({ logger = console } = {}) {
     });
   });
 
-  app.get('/i/:id', renderIncidenciaMeta);
-  app.get('/incidencia/:id', renderIncidenciaMeta);
-  app.get('*', async (_req, res, next) => {
+  app.get('/i/:id', dynamicPageLimiter, renderIncidenciaMeta);
+  app.get('/incidencia/:id', dynamicPageLimiter, renderIncidenciaMeta);
+  app.get('*', dynamicPageLimiter, async (_req, res, next) => {
     try {
       const settings = await getAppSettings();
       const html = injectAppSettings(fs.readFileSync(DIST_INDEX_PATH, 'utf8'), settings, BASE_URL);

@@ -109,13 +109,32 @@ function renderPostFormsWithCsrf(html, csrfToken) {
     return html;
   }
 
-  return String(html).replace(/<form\b([^>]*)method="post"([^>]*)>/gi, (match) => {
-    if (match.includes('name="_csrf"')) {
-      return match;
-    }
+  const source = String(html);
+  const lowerSource = source.toLowerCase();
+  const csrfInput = `<input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}">`;
+  let result = '';
+  let searchFrom = 0;
 
-    return `${match}<input type="hidden" name="_csrf" value="${escapeAttr(csrfToken)}">`;
-  });
+  while (searchFrom < source.length) {
+    const formStart = lowerSource.indexOf('<form', searchFrom);
+    if (formStart === -1) {
+      result += source.slice(searchFrom);
+      break;
+    }
+    const formEnd = lowerSource.indexOf('>', formStart + 5);
+    if (formEnd === -1) {
+      result += source.slice(searchFrom);
+      break;
+    }
+    const openingTag = source.slice(formStart, formEnd + 1);
+    result += source.slice(searchFrom, formEnd + 1);
+    if (openingTag.toLowerCase().includes('method="post"')) {
+      result += csrfInput;
+    }
+    searchFrom = formEnd + 1;
+  }
+
+  return result;
 }
 
 function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {

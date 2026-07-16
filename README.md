@@ -177,7 +177,7 @@ npm run build
 - `npm run dev:server`: servidor de desarrollo con recarga automática.
 - `npm run dev:client`: cliente Vite en desarrollo.
 - `npm run migrate`: aplica migraciones pendientes.
-- `npm run admin:bootstrap`: prepara el administrador inicial.
+- `npm run admin:bootstrap`: prepara el administrador inicial; requiere `ADMIN_BOOTSTRAP_PASSWORD` si aún no existe uno.
 - `npm run incidencia -- ...`: operaciones heredadas sobre incidencias.
 - `npm run tipos -- ...`: operaciones heredadas sobre categorías.
 - `npm run solucionar-antiguas -- ...`: procesamiento de incidencias antiguas.

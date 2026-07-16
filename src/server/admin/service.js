@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
@@ -15,10 +14,6 @@ const DUMMY_PASSWORD_HASH = '$2b$12$C6UzMDM.H6dfI/f/IKcEe.9wksZ1w1q1OReP4bIu4hB7
 
 function normalizeFlag(value) {
   return value ? 1 : 0;
-}
-
-function generateTemporaryPassword() {
-  return crypto.randomBytes(12).toString('base64url');
 }
 
 function validatePassword(password) {
@@ -204,10 +199,10 @@ async function bootstrapAdminIfNeeded(logger = console) {
 
   const username = normalizeUsername(process.env.ADMIN_BOOTSTRAP_USERNAME || 'admin');
   const configuredPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
-  if (process.env.NODE_ENV === 'production' && !configuredPassword) {
-    throw new Error('ADMIN_BOOTSTRAP_PASSWORD es obligatorio en produccion cuando no existe ningun administrador activo.');
+  if (!configuredPassword) {
+    throw new Error('ADMIN_BOOTSTRAP_PASSWORD es obligatorio cuando no existe ningun administrador activo.');
   }
-  const temporaryPassword = configuredPassword || generateTemporaryPassword();
+  const temporaryPassword = configuredPassword;
   validatePassword(temporaryPassword);
   const passwordHash = await bcrypt.hash(temporaryPassword, 12);
 
@@ -226,11 +221,7 @@ async function bootstrapAdminIfNeeded(logger = console) {
   logger.warn('');
   logger.warn('=== Admin bootstrap ===');
   logger.warn(`Usuario admin temporal: ${username}`);
-  if (process.env.NODE_ENV !== 'production') {
-    logger.warn(`Contraseña temporal admin: ${temporaryPassword}`);
-  } else {
-    logger.warn('Contraseña bootstrap tomada de ADMIN_BOOTSTRAP_PASSWORD; no se mostrará en logs.');
-  }
+  logger.warn('Contraseña bootstrap tomada de ADMIN_BOOTSTRAP_PASSWORD; no se mostrará en logs.');
   logger.warn('Cambia esta contraseña al iniciar sesión en /admin.');
   logger.warn('=======================');
   logger.warn('');
