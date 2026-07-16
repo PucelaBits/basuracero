@@ -488,6 +488,8 @@ describe('Panel admin', () => {
     expect(response.text).toContain('type="date"');
     expect(response.text).toContain('data-open-photo-modal');
     expect(response.text).toContain(`/admin/incidencias/${incidencia.lastID}/imagenes/`);
+    expect(response.text).toContain(`href="/i/${incidencia.lastID}"`);
+    expect(response.text).toContain('Ver en la web');
   });
 
   it('permite editar una incidencia desde su ficha', async () => {
@@ -514,6 +516,11 @@ describe('Panel admin', () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.location).toContain(`/admin/incidencias/${incidencia.lastID}?message=`);
+
+    const detailWithNotice = await agent.get(response.headers.location);
+    expect(detailWithNotice.text).toContain('id="success-toast"');
+    expect(detailWithNotice.text).toContain('Incidencia actualizada correctamente');
+    expect(detailWithNotice.text).toContain('data-dismiss-toast');
 
     const updated = await dbAsync.get(
       `SELECT descripcion, tipo_id, estado, nombre, barrio, direccion, fecha, fecha_solucion

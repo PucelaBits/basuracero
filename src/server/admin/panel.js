@@ -884,7 +884,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
   router.post('/incidencias/:id', async (req, res) => {
     try {
       await updateIncidencia(req.params.id, req.body, req.currentAdmin.id);
-      res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent('Incidencia actualizada')}`);
+      res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent('Incidencia actualizada correctamente')}`);
     } catch (error) {
       const incidencia = await getIncidenciaDetail(req.params.id);
       const tipos = await all('SELECT id, nombre, icono FROM tipos_incidencias ORDER BY nombre COLLATE NOCASE ASC');

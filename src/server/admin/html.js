@@ -119,6 +119,8 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           --line: #dbe2e8;
           --accent: #1b2430;
           --accent-soft: #eef2f5;
+          --success: #276749;
+          --success-soft: #edf7f1;
           --danger: #a3322a;
           --surface-soft: #f8fafb;
         }
@@ -270,6 +272,66 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           color: var(--ink);
           line-height: 1.5;
           border: 1px solid #cce2dc;
+        }
+        .toast-region {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 100;
+          width: min(420px, calc(100vw - 32px));
+          pointer-events: none;
+        }
+        .notice.toast {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 12px;
+          align-items: center;
+          margin: 0;
+          padding: 12px 12px 12px 16px;
+          color: #1f563c;
+          background: var(--success-soft);
+          border-color: #a9d5bd;
+          box-shadow: 0 18px 45px rgba(23, 32, 42, 0.18);
+          pointer-events: auto;
+          animation: toast-in 180ms ease-out both;
+          transition: opacity 160ms ease, transform 160ms ease;
+        }
+        .toast-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border-radius: 999px;
+          color: #fff;
+          background: var(--success);
+          font-size: 17px;
+          line-height: 1;
+        }
+        .toast-message {
+          font-size: 15px;
+          font-weight: 600;
+          line-height: 1.5;
+        }
+        .toast-close {
+          width: 44px;
+          min-width: 44px;
+          min-height: 44px;
+          padding: 0;
+          border-radius: 12px;
+          color: #315b48;
+          background: transparent;
+        }
+        .notice.toast.is-leaving {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        @keyframes toast-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .notice.toast { animation: none; transition: none; }
         }
         .notice.error {
           background: #faece9;
@@ -1265,7 +1327,11 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           display: flex;
           flex-wrap: wrap;
           gap: 10px 16px;
-          align-items: baseline;
+          align-items: center;
+        }
+        .detail-public-link {
+          margin-left: auto;
+          gap: 8px;
         }
         .detail-id {
           color: var(--muted);
@@ -1829,6 +1895,14 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             padding: 18px 14px;
             border-radius: 18px;
           }
+          .toast-region {
+            top: 12px;
+            right: 12px;
+            width: calc(100vw - 24px);
+          }
+          .toast-close {
+            width: 44px;
+          }
           .actions {
             align-items: stretch;
           }
@@ -2039,6 +2113,17 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
       </style>
     </head>
     <body>
+      ${notice && notice.type !== 'error' ? `
+        <div class="toast-region" aria-live="polite" aria-atomic="true">
+          <div class="notice toast" id="success-toast" role="status">
+            <span class="toast-icon" aria-hidden="true"><i class="mdi mdi-check"></i></span>
+            <span class="toast-message">${escapeHtml(notice.message)}</span>
+            <button class="toast-close" type="button" data-dismiss-toast aria-label="Cerrar notificacion">
+              <i class="mdi mdi-close" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      ` : ''}
       <div class="shell">
         <div class="topbar">
           <div>
@@ -2048,7 +2133,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           ${currentAdmin ? `<form method="post" action="/admin/logout"><input type="hidden" name="_csrf" value="${escapeAttr(csrfToken || '')}"><button class="button-ghost" type="submit">Cerrar sesion</button></form>` : ''}
         </div>
         <div class="panel">
-          ${notice ? `<div class="notice${notice.type === 'error' ? ' error' : ''}" role="${notice.type === 'error' ? 'alert' : 'status'}" aria-live="polite">${escapeHtml(notice.message)}</div>` : ''}
+          ${notice?.type === 'error' ? `<div class="notice error" role="alert" aria-live="assertive">${escapeHtml(notice.message)}</div>` : ''}
           ${safeBody}
         </div>
       </div>
@@ -2056,7 +2141,24 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
       <script>
         (() => {
           const status = document.getElementById('form-status');
+          const toast = document.getElementById('success-toast');
           let lastModalTrigger = null;
+          const dismissToast = () => {
+            if (!toast || toast.dataset.leaving === 'true') return;
+            toast.dataset.leaving = 'true';
+            toast.className += ' is-leaving';
+            window.setTimeout(() => toast.closest('.toast-region')?.remove(), 180);
+          };
+          if (toast) {
+            const toastClose = toast.querySelector('[data-dismiss-toast]');
+            if (toastClose) toastClose.onclick = dismissToast;
+            window.setTimeout(dismissToast, 5000);
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('message')) {
+              url.searchParams.delete('message');
+              window.history.replaceState({}, '', url);
+            }
+          }
           document.onclick = (event) => {
             const opener = event.target.closest('[data-open-delete-modal], [data-open-photo-modal], [data-open-category-create], [data-open-category-edit], [data-open-merge-modal]');
             if (opener) {
@@ -2186,6 +2288,10 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
             <span>Listado</span>
           </a>
           <span class="detail-id">#${incidencia.id}</span>
+          <a class="button-link button-ghost detail-mini-button detail-public-link" href="/i/${incidencia.id}" target="_blank" rel="noopener noreferrer">
+            <i class="mdi mdi-open-in-new" aria-hidden="true"></i>
+            <span>Ver en la web</span>
+          </a>
         </div>
         <h2 class="detail-title">${escapeHtml(incidencia.descripcion || 'Sin descripcion')}</h2>
         <div class="detail-category-line">
