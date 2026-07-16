@@ -279,6 +279,17 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     next();
   });
 
+  router.get('/session-status', async (req, res, next) => {
+    try {
+      const admin = req.session?.adminUserId
+        ? await getAdminById(req.session.adminUserId)
+        : null;
+      res.json({ authenticated: Boolean(admin?.isActive) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   const loginLimiter = rateLimit({
     windowMs: parsePositiveInt(process.env.ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
     max: parsePositiveInt(process.env.ADMIN_LOGIN_RATE_LIMIT_MAX, 5),

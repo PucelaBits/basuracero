@@ -60,6 +60,16 @@
         <v-btn icon dark size="x-small" class="close-btn" @click="cerrar">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
+        <v-btn
+          v-if="isAdminAuthenticated"
+          icon
+          :href="`/admin/incidencias/${incidencia.id}`"
+          class="admin-edit-header-btn"
+          aria-label="Editar incidencia"
+          title="Editar incidencia"
+        >
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
       </div>
 
       <v-card-text class="flex-grow-1 overflow-y-auto pa-0">
@@ -159,11 +169,10 @@
         </v-container>
       </v-card-text>
 
-      <v-card-actions class="flex-column" id="botones-detalle" v-if="incidencia.estado !== 'spam'">
+      <v-card-actions v-if="incidencia.estado !== 'spam'" class="flex-column" id="botones-detalle">
         <v-row class="mb-0">
-          <v-col cols="auto" class="pt-2 pb-1">
+          <v-col v-if="incidencia.estado === 'activa'" cols="auto" class="pt-2 pb-1">
             <v-btn
-              v-if="incidencia.estado === 'activa'"
               @click="mostrarDialogoConfirmacion = true"
               :loading="reportando"
               :disabled="reportando"
@@ -417,6 +426,7 @@ export default {
     const snackbar = ref(false);
     const snackbarText = ref('');
     const añadirAFavoritas = ref(true);
+    const isAdminAuthenticated = ref(false);
 
     const captchaEnabled = runtimeConfig.FRIENDLYCAPTCHA_ENABLED === 'true';
 
@@ -663,7 +673,20 @@ export default {
       enviarEventoMatomo('Incidencia', isFavorite.value ? 'Añadir a favoritos' : 'Quitar de favoritos', `ID: ${props.incidencia.id}`);
     };
 
+    const comprobarSesionAdmin = async () => {
+      try {
+        const response = await axios.get('/admin/session-status', { withCredentials: true });
+        if (isComponentMounted.value) {
+          isAdminAuthenticated.value = response.data?.authenticated === true;
+        }
+      } catch (_error) {
+        isAdminAuthenticated.value = false;
+      }
+    };
+
     onMounted(() => {
+      comprobarSesionAdmin();
+
       if (props.incidencia.latitud && props.incidencia.longitud) {
         map.value = L.map('mapa-detalle', {
           dragging: false,
@@ -888,6 +911,7 @@ export default {
       incidenciaConIcono,
       textoBotonResolver,
       textoEstadoSolucionado,
+      isAdminAuthenticated,
     };
   }
 };
@@ -922,6 +946,20 @@ a {
   left: 6px;
   background-color: hsla(0, 0%, 100%, 0.8) !important;
   z-index: 1;
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.admin-edit-header-btn {
+  position: absolute;
+  top: 7px;
+  left: 58px;
+  z-index: 1;
+  width: 44px !important;
+  height: 44px !important;
+  color: hsl(0, 0%, 22%) !important;
+  background-color: hsla(0, 0%, 100%, 0.88) !important;
+  box-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.18);
 }
 
 .pastillas-container {

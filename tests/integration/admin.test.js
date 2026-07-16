@@ -134,6 +134,15 @@ describe('Panel admin', () => {
     expect(response.headers.location).toBe('/admin/login');
   });
 
+  it('informa al frontend publico de que no hay una sesion administrativa', async () => {
+    const response = await request(app).get('/admin/session-status');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.body).toEqual({ authenticated: false });
+    expect(response.headers['set-cookie']).toBeUndefined();
+  });
+
   it('bloquea login con credenciales incorrectas', async () => {
     const { csrf } = await fetchCsrf('/admin/login');
     const response = await agent
@@ -183,6 +192,13 @@ describe('Panel admin', () => {
     expect(panelResponse.text).toContain('Contraseña actualizada correctamente.');
     expect(panelResponse.text).toContain('Incidencias recientes');
     expect(panelResponse.text).toContain('Categorias');
+  });
+
+  it('informa al frontend publico cuando existe una sesion administrativa', async () => {
+    const response = await agent.get('/admin/session-status');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ authenticated: true });
   });
 
   it('muestra fotos recientes y accesos amigables en la portada del panel', async () => {
