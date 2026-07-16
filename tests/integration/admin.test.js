@@ -2,7 +2,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const request = require('supertest');
-const release = require('../../release.json');
+
+const INSTALLED_VERSION = '2.1.0';
+const INSTALLED_RELEASE_URL = `https://github.com/PucelaBits/basuracero/releases/tag/v${INSTALLED_VERSION}`;
 
 jest.mock('axios');
 
@@ -53,6 +55,7 @@ describe('Panel admin', () => {
     process.env.UPLOADS_DIR = path.join(tempDir, 'uploads');
     process.env.SESSION_SECRET = 'test-session-secret-at-least-32-characters';
     process.env.ADMIN_ENABLED = 'true';
+    process.env.APP_VERSION = INSTALLED_VERSION;
     process.env.NODE_ENV = nodeEnv;
     if (nodeEnv === 'production') {
       process.env.ADMIN_BOOTSTRAP_PASSWORD = 'BootstrapProduccionSegura123';
@@ -97,6 +100,7 @@ describe('Panel admin', () => {
     delete process.env.ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS;
     delete process.env.ADMIN_BOOTSTRAP_PASSWORD;
     delete process.env.ADMIN_ENABLED;
+    delete process.env.APP_VERSION;
     delete process.env.TRUST_PROXY;
     if (db && typeof db.close === 'function') {
       db.close(() => done());
@@ -546,7 +550,10 @@ describe('Panel admin', () => {
     expect(page.text).toContain('href="/admin/updates"');
     expect(page.text.indexOf('href="/admin/updates"')).toBeGreaterThan(page.text.indexOf('href="/admin/auditoria"'));
     expect(page.text).toContain('Versión instalada');
-    expect(page.text).toContain(release.version);
+    expect(page.text).toContain(INSTALLED_VERSION);
+    expect(page.text).toContain('class="updates-version-link"');
+    expect(page.text).toContain(`href="${INSTALLED_RELEASE_URL}"`);
+    expect(page.text).toContain('ver novedades en GitHub');
     expect(page.text).toContain('Estable');
     expect(page.text).toContain('Recomendado');
     expect(page.text).toContain('últimas novedades en pruebas');
@@ -581,13 +588,13 @@ describe('Panel admin', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          tag_name: release.ref,
-          name: release.title,
+          tag_name: `v${INSTALLED_VERSION}`,
+          name: 'Versión instalada',
           body: '- Versión instalada',
           draft: false,
           prerelease: false,
-          published_at: `${release.publishedAt}T10:00:00Z`,
-          html_url: release.url
+          published_at: '2026-07-16T10:00:00Z',
+          html_url: INSTALLED_RELEASE_URL
         })
       });
       const response = await agent

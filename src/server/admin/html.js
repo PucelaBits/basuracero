@@ -1014,6 +1014,23 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           font-size: 20px;
           line-height: 1.3;
         }
+        .updates-version-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          min-height: 44px;
+          color: var(--ink);
+          text-decoration-color: #9aa7b2;
+          text-underline-offset: 4px;
+        }
+        .updates-version-link:hover {
+          text-decoration-color: var(--ink);
+        }
+        .updates-version-link i {
+          color: var(--muted);
+          font-size: 16px;
+          line-height: 1;
+        }
         .updates-channel-options {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3506,7 +3523,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
                 ${updateNotes}
                 <p class="dashboard-update-command">Ejecuta <code>./scripts/upgrade.sh</code> desde el servidor para instalarla.</p>
               </div>
-              ${updateRelease.url ? `<a class="dashboard-update-link" href="${escapeAttr(updateRelease.url)}" target="_blank" rel="noopener noreferrer">Ver publicación</a>` : ''}
+              ${updateRelease.url ? `<a class="dashboard-update-link" href="${escapeAttr(updateRelease.url)}" target="_blank" rel="noopener noreferrer">Ver novedades en GitHub</a>` : ''}
             </section>
           ` : ''}
 
@@ -3651,6 +3668,9 @@ function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro,
 
 function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, updateStatus, csrfToken }) {
   const installedVersion = installedRelease?.version || 'Desconocida';
+  const installedVersionContent = installedRelease?.url
+    ? `<a class="updates-version-link" href="${escapeAttr(installedRelease.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(installedVersion)}</span><i class="mdi mdi-open-in-new" aria-hidden="true"></i><span class="sr-only">: ver novedades en GitHub</span></a>`
+    : escapeHtml(installedVersion);
   const availableRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
   const availableTitle = updateStatus?.channel === 'beta'
     ? `Actualización beta ${availableRelease?.version || ''} disponible`
@@ -3671,7 +3691,7 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
       <section class="updates-summary" aria-label="Estado de la instalación">
         <div class="updates-summary-item">
           <span>Versión instalada</span>
-          <strong>${escapeHtml(installedVersion)}</strong>
+          <strong>${installedVersionContent}</strong>
         </div>
         <div class="updates-summary-item">
           <span>Canal activo</span>
@@ -3688,7 +3708,7 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
             ${availableNotes}
             <p class="dashboard-update-command">Ejecuta <code>./scripts/upgrade.sh</code> desde el servidor para instalarla.</p>
           </div>
-          ${availableRelease.url ? `<a class="dashboard-update-link" href="${escapeAttr(availableRelease.url)}" target="_blank" rel="noopener noreferrer">Ver publicación</a>` : ''}
+          ${availableRelease.url ? `<a class="dashboard-update-link" href="${escapeAttr(availableRelease.url)}" target="_blank" rel="noopener noreferrer">Ver novedades en GitHub</a>` : ''}
         </section>
       ` : ''}
 

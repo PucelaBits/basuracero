@@ -142,10 +142,11 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it('usa APP_VERSION como version instalada sin depender de release.json', () => {
+  it('usa exclusivamente APP_VERSION como version instalada', () => {
     expect(checker.getInstalledRelease({ APP_VERSION: 'v3.4.5' })).toEqual({
       version: '3.4.5',
-      ref: 'v3.4.5'
+      ref: 'v3.4.5',
+      url: 'https://github.com/PucelaBits/basuracero/releases/tag/v3.4.5'
     });
   });
 
@@ -174,5 +175,6 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(html).toContain('Correcciones de seguridad');
     expect(html).toContain('./scripts/upgrade.sh');
     expect(html).toContain('class="dashboard-update-link"');
+    expect(html).toContain('Ver novedades en GitHub');
   });
 });

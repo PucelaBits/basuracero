@@ -1,12 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-
 const DEFAULT_REPOSITORY = 'PucelaBits/basuracero';
 const DEFAULT_BRANCH = 'main';
 const SUCCESS_CACHE_MS = 6 * 60 * 60 * 1000;
 const ERROR_CACHE_MS = 60 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 2500;
-const LOCAL_RELEASE_PATH = path.join(__dirname, '..', '..', '..', 'release.json');
 
 let cache = null;
 
@@ -27,38 +23,22 @@ function compareVersions(left, right) {
   return 0;
 }
 
-function normalizeRelease(value) {
-  if (!value || !parseStableVersion(value.version)) return null;
-  const version = String(value.version);
-  const ref = String(value.ref || '').trim();
-  if (ref !== `v${version}`) return null;
-  const title = String(value.title || '').trim().slice(0, 120);
-  const notes = Array.isArray(value.notes)
-    ? value.notes.map((note) => String(note || '').trim().slice(0, 240)).filter(Boolean).slice(0, 8)
-    : [];
-  const publishedAt = /^\d{4}-\d{2}-\d{2}$/.test(String(value.publishedAt || ''))
-    ? String(value.publishedAt)
-    : null;
-  const url = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/.*)?$/.test(String(value.url || ''))
-    ? String(value.url)
-    : null;
-  return { version, ref, title, notes, publishedAt, url };
+function normalizeInstalledRelease(value) {
+  const version = String(value?.version || '').trim().replace(/^v/, '');
+  return parseStableVersion(version) ? { version, ref: `v${version}` } : null;
 }
 
-function readLocalRelease(releasePath = LOCAL_RELEASE_PATH) {
-  try {
-    return normalizeRelease(JSON.parse(fs.readFileSync(releasePath, 'utf8')));
-  } catch (_error) {
-    return null;
-  }
-}
-
-function getInstalledRelease(env = process.env, releasePath = LOCAL_RELEASE_PATH) {
+function getInstalledRelease(env = process.env) {
   const version = String(env.APP_VERSION || '').trim().replace(/^v/, '');
   if (parseStableVersion(version)) {
-    return { version, ref: `v${version}` };
+    const target = getUpdateTarget(env);
+    return {
+      version,
+      ref: `v${version}`,
+      url: target ? `https://github.com/${target.repository}/releases/tag/v${version}` : null
+    };
   }
-  return readLocalRelease(releasePath);
+  return null;
 }
 
 function parseReleaseNotes(body) {
@@ -114,7 +94,7 @@ async function getUpdateStatus({ env = process.env, fetchImpl = global.fetch, lo
   if (env.NODE_ENV === 'test' && env.APP_UPDATE_CHECK_IN_TESTS !== 'true' && localRelease === undefined) {
     return { checked: false, updateAvailable: false };
   }
-  const installedRelease = localRelease === undefined ? getInstalledRelease(env) : normalizeRelease(localRelease);
+  const installedRelease = localRelease === undefined ? getInstalledRelease(env) : normalizeInstalledRelease(localRelease);
   const selectedChannel = channel || env.APP_UPDATE_CHANNEL || 'stable';
   const currentSha = String(env.APP_GIT_SHA || '').trim().toLowerCase();
   const target = getUpdateTarget(env);
@@ -212,7 +192,6 @@ module.exports = {
   getInstalledRelease,
   getUpdateStatus,
   normalizeGithubRelease,
-  normalizeRelease,
   parseReleaseNotes,
   resetUpdateStatusCache
 };

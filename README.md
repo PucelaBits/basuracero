@@ -116,8 +116,6 @@ El botón **Comprobar ahora** de esa sección vacía la caché y consulta inmedi
 
 Para publicar una versión estable usa únicamente el flujo estándar de GitHub: abre **Releases**, pulsa **Draft a new release**, crea una etiqueta `vMAJOR.MINOR.PATCH` sobre `main`, escribe el título y las novedades y pulsa **Publish release**. Eso es todo; no cambies `package.json` ni ningún archivo de versión. Los commits de `main` siguen disponibles para el canal beta, pero el canal estable no avisa hasta que exista una nueva Release publicada. Esta comprobación es informativa: una caída de GitHub no afecta al panel y el proceso web nunca recibe permisos para controlar Git o Docker.
 
-El archivo `release.json` permanece congelado en `v2.1.0` únicamente para que las instalaciones antiguas detecten la transición a GitHub Releases. No debe editarse en versiones posteriores.
-
 ## Qué continúa gestionándose en el servidor
 
 El panel no expone secretos ni parámetros de infraestructura. Estos valores siguen perteneciendo a `.env` o al sistema de despliegue:
