@@ -28,7 +28,7 @@ El asistente genera `SESSION_SECRET` y una contraseña temporal, ejecuta el boot
 
 El upgrade solo acepta avances rápidos sobre `main`, rechaza cambios locales versionados, crea un backup antes de modificar el servicio y verifica su salud al terminar. Una ejecución interrumpida deja un marcador de reintento para que el mismo comando vuelva a desplegar la revisión actual.
 
-El canal **estable**, recomendado y predeterminado, compara el `release.json` incluido en la imagen con el publicado en la rama configurada. Solo admite versiones `major.minor.patch` cuya referencia sea `vMAJOR.MINOR.PATCH`; `upgrade.sh` instala esa etiqueta exacta, evitando commits posteriores. El título y `notes` se muestran en el aviso, así que no incrementes la versión ni publiques la etiqueta hasta que la entrega esté lista para producción.
+El canal **estable**, recomendado y predeterminado, compara la versión incluida en la imagen con la última GitHub Release publicada. Solo admite etiquetas `vMAJOR.MINOR.PATCH`; `upgrade.sh` instala esa etiqueta exacta, evitando commits posteriores. El título y la descripción de la Release se muestran en el aviso, así que no publiques la Release hasta que la entrega esté lista para producción.
 
 El canal **beta** es opt-in desde `/admin/updates`. Compara el SHA incluido al construir la imagen con la punta de la rama y avisa ante cualquier cambio; el upgrade instala esa rama mediante avance rápido. La selección se guarda en SQLite y se refleja en `data/update-channel` para que el script de servidor respete la misma preferencia.
 

@@ -56,15 +56,33 @@ git fetch --prune --prune-tags --tags "$remote" "$branch"
 current_revision="$(git rev-parse HEAD)"
 target_label="$remote/$branch"
 if [[ "$channel" == "stable" ]]; then
-  stable_tag=""
-  while IFS= read -r candidate; do
-    if [[ "$candidate" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && git merge-base --is-ancestor "$candidate" "$remote/$branch"; then
-      stable_tag="$candidate"
-      break
-    fi
-  done < <(git tag --list 'v*' --sort=-v:refname)
-  if [[ -z "$stable_tag" ]]; then
-    echo "Error: no se ha encontrado ninguna version estable etiquetada como vMAJOR.MINOR.PATCH." >&2
+  update_repository="${APP_UPDATE_REPOSITORY:-PucelaBits/basuracero}"
+  stable_tag="$(docker compose run --rm --no-deps -T basuracero-app node -e '
+    const repository = process.argv[1];
+    fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "basuracero-upgrade",
+        "X-GitHub-Api-Version": "2022-11-28"
+      }
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`GitHub respondio con HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((release) => {
+        if (!/^v\d+\.\d+\.\d+$/.test(release.tag_name || "")) {
+          throw new Error("La ultima GitHub Release no tiene una etiqueta valida");
+        }
+        process.stdout.write(release.tag_name);
+      })
+      .catch((error) => {
+        console.error(error.message);
+        process.exit(1);
+      });
+  ' "$update_repository")"
+  if ! git show-ref --verify --quiet "refs/tags/$stable_tag" || ! git merge-base --is-ancestor "$stable_tag" "$remote/$branch"; then
+    echo "Error: la ultima GitHub Release ($stable_tag) no apunta a una version disponible en $remote/$branch." >&2
     exit 1
   fi
   latest_revision="$(git rev-list -n 1 "$stable_tag")"
@@ -108,6 +126,12 @@ else
 fi
 deployed_revision="$(git rev-parse HEAD)"
 export APP_GIT_SHA="$deployed_revision"
+if [[ "$channel" == "stable" ]]; then
+  export APP_VERSION="${target_label#v}"
+else
+  deployed_stable_tag="$(git tag --merged HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+  export APP_VERSION="${deployed_stable_tag#v}"
+fi
 
 echo "Construyendo y arrancando la nueva version (${deployed_revision:0:7})..."
 docker compose build basuracero-app

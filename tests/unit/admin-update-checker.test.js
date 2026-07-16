@@ -3,6 +3,19 @@ const ORIGINAL_ENV = process.env;
 describe('Comprobacion de actualizaciones del panel', () => {
   let checker;
 
+  function githubRelease(version, { title = `Version ${version}`, body = '', ...extra } = {}) {
+    return {
+      tag_name: `v${version}`,
+      name: title,
+      body,
+      draft: false,
+      prerelease: false,
+      published_at: '2026-08-01T10:00:00Z',
+      html_url: `https://github.com/PucelaBits/basuracero/releases/tag/v${version}`,
+      ...extra
+    };
+  }
+
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...ORIGINAL_ENV };
@@ -21,7 +34,7 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(checker.compareVersions('latest', '1.0.0')).toBeNull();
   });
 
-  it('no consulta GitHub si la instalacion no tiene un manifiesto valido', async () => {
+  it('no consulta GitHub si la instalacion no tiene una version valida', async () => {
     const fetchImpl = jest.fn();
     const result = await checker.getUpdateStatus({ localRelease: {}, fetchImpl });
 
@@ -32,13 +45,9 @@ describe('Comprobacion de actualizaciones del panel', () => {
   it('detecta una version nueva, incluye sus novedades y conserva el resultado en cache', async () => {
     const fetchImpl = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        version: '1.1.0',
-        ref: 'v1.1.0',
-        publishedAt: '2026-08-01',
+      json: async () => githubRelease('1.1.0', {
         title: 'Mejoras de mantenimiento',
-        notes: ['Nuevo asistente', 'Correcciones de seguridad'],
-        url: 'https://github.com/PucelaBits/basuracero/releases/tag/v1.1.0'
+        body: '- Nuevo asistente\n- Correcciones de seguridad'
       })
     });
     const options = {
@@ -55,14 +64,18 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(first.release.notes).toEqual(['Nuevo asistente', 'Correcciones de seguridad']);
     expect(second).toEqual(first);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://api.github.com/repos/PucelaBits/basuracero/releases/latest',
+      expect.objectContaining({ signal: expect.any(Object) })
+    );
   });
 
-  it('no avisa por cambios en Git mientras release.json mantenga la misma version', async () => {
+  it('no avisa por cambios en Git mientras no se publique otra Release', async () => {
     const result = await checker.getUpdateStatus({
       localRelease: { version: '1.0.0', ref: 'v1.0.0' },
       fetchImpl: jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ version: '1.0.0', ref: 'v1.0.0', notes: ['Cien commits todavia no publicados'] })
+        json: async () => githubRelease('1.0.0', { body: '- Cien commits todavia no publicados' })
       })
     });
 
@@ -108,11 +121,11 @@ describe('Comprobacion de actualizaciones del panel', () => {
     const fetchImpl = jest.fn()
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ version: '2.0.1', ref: 'v2.0.1', notes: ['Primera comprobación'] })
+        json: async () => githubRelease('2.0.1', { body: '- Primera comprobación' })
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ version: '2.0.2', ref: 'v2.0.2', notes: ['Segunda comprobación'] })
+        json: async () => githubRelease('2.0.2', { body: '- Segunda comprobación' })
       });
     const options = {
       localRelease: { version: '2.0.0', ref: 'v2.0.0' },
@@ -127,6 +140,13 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(first.latestVersion).toBe('2.0.1');
     expect(second.latestVersion).toBe('2.0.2');
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('usa APP_VERSION como version instalada sin depender de release.json', () => {
+    expect(checker.getInstalledRelease({ APP_VERSION: 'v3.4.5' })).toEqual({
+      version: '3.4.5',
+      ref: 'v3.4.5'
+    });
   });
 
   it('muestra la version y sus novedades como aviso operativo', () => {

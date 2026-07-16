@@ -107,14 +107,16 @@ El asistente comprueba que no haya cambios locales, descarga `main` mediante un 
 
 El panel ofrece una sección independiente de **Actualizaciones**, situada debajo de **Auditoría**, con dos canales:
 
-- **Estable (recomendado):** consulta como máximo cada seis horas el archivo [`release.json`](release.json). Solo avisa cuando su versión es superior a la instalada y `upgrade.sh` instala la etiqueta Git `vMAJOR.MINOR.PATCH` correspondiente, sin arrastrar commits posteriores.
+- **Estable (recomendado):** consulta como máximo cada seis horas la última **GitHub Release** publicada. Solo avisa cuando su etiqueta `vMAJOR.MINOR.PATCH` es superior a la instalada y `upgrade.sh` instala esa etiqueta exacta, sin arrastrar commits posteriores.
 - **Beta:** compara la revisión instalada con la punta de `main`. Avisa ante cualquier commit nuevo y `upgrade.sh` instala el último avance rápido de la rama.
 
 En ambos casos el administrador ve en el panel el título y las novedades disponibles antes de ejecutar el comando.
 
 El botón **Comprobar ahora** de esa sección vacía la caché y consulta inmediatamente el canal guardado, sin esperar al intervalo automático de seis horas.
 
-`release.json` es la fuente de verdad para las versiones distribuibles. Cuando una tanda de cambios esté estable, incrementa su versión `major.minor.patch`, actualiza `ref`, `publishedAt`, `title`, `notes` y el enlace de publicación, confirma el cambio y crea sobre ese mismo commit la etiqueta indicada en `ref` —por ejemplo, `v1.1.0`—. Publica el commit y la etiqueta juntos. No cambies la versión privada de `package.json`: mantenerla fija permite que Docker reutilice la capa de dependencias cuando una versión solo contiene cambios de la aplicación. Esta comprobación es informativa: una caída de GitHub no afecta al panel y el proceso web nunca recibe permisos para controlar Git o Docker.
+Para publicar una versión estable usa únicamente el flujo estándar de GitHub: abre **Releases**, pulsa **Draft a new release**, crea una etiqueta `vMAJOR.MINOR.PATCH` sobre `main`, escribe el título y las novedades y pulsa **Publish release**. Eso es todo; no cambies `package.json` ni ningún archivo de versión. Los commits de `main` siguen disponibles para el canal beta, pero el canal estable no avisa hasta que exista una nueva Release publicada. Esta comprobación es informativa: una caída de GitHub no afecta al panel y el proceso web nunca recibe permisos para controlar Git o Docker.
+
+El archivo `release.json` permanece congelado en `v2.1.0` únicamente para que las instalaciones antiguas detecten la transición a GitHub Releases. No debe editarse en versiones posteriores.
 
 ## Qué continúa gestionándose en el servidor
 

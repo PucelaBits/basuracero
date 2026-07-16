@@ -111,6 +111,7 @@ temporary_password="BCero-$(docker_node -e "process.stdout.write(require('crypto
 
 echo "Construyendo la version actualizada..."
 export APP_GIT_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
+export APP_VERSION="$(git tag --merged HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname 2>/dev/null | head -n 1 | sed 's/^v//')"
 docker compose build
 
 echo "Aplicando migraciones y preparando el administrador inicial..."

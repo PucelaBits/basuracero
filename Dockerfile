@@ -25,8 +25,10 @@ COPY --from=build /app /app
 # 5050 como valor por defecto
 ARG PORT=5050
 ARG APP_GIT_SHA=unknown
+ARG APP_VERSION=unknown
 ENV PORT=$PORT
 ENV APP_GIT_SHA=$APP_GIT_SHA
+ENV APP_VERSION=$APP_VERSION
 EXPOSE ${PORT}
 
 ENV TZ=Europe/Madrid

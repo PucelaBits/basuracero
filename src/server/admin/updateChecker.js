@@ -53,6 +53,48 @@ function readLocalRelease(releasePath = LOCAL_RELEASE_PATH) {
   }
 }
 
+function getInstalledRelease(env = process.env, releasePath = LOCAL_RELEASE_PATH) {
+  const version = String(env.APP_VERSION || '').trim().replace(/^v/, '');
+  if (parseStableVersion(version)) {
+    return { version, ref: `v${version}` };
+  }
+  return readLocalRelease(releasePath);
+}
+
+function parseReleaseNotes(body) {
+  return String(body || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim()
+      .replace(/^#{1,6}\s+/, '')
+      .replace(/^[-*+]\s+/, '')
+      .replace(/^\d+[.)]\s+/, '')
+      .trim())
+    .filter(Boolean)
+    .slice(0, 8)
+    .map((note) => note.slice(0, 240));
+}
+
+function normalizeGithubRelease(value) {
+  if (!value || value.draft === true || value.prerelease === true) return null;
+  const tag = String(value.tag_name || '').trim();
+  const match = tag.match(/^v(\d{1,6}\.\d{1,6}\.\d{1,6})$/);
+  if (!match) return null;
+  const url = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/releases\/tag\/v\d+\.\d+\.\d+$/.test(String(value.html_url || ''))
+    ? String(value.html_url)
+    : null;
+  const publishedAt = /^\d{4}-\d{2}-\d{2}/.test(String(value.published_at || ''))
+    ? String(value.published_at).slice(0, 10)
+    : null;
+  return {
+    version: match[1],
+    ref: tag,
+    title: String(value.name || tag).trim().slice(0, 120),
+    notes: parseReleaseNotes(value.body),
+    publishedAt,
+    url
+  };
+}
+
 function getUpdateTarget(env) {
   const repository = String(env.APP_UPDATE_REPOSITORY || DEFAULT_REPOSITORY).trim();
   const branch = String(env.APP_UPDATE_BRANCH || DEFAULT_BRANCH).trim();
@@ -72,7 +114,7 @@ async function getUpdateStatus({ env = process.env, fetchImpl = global.fetch, lo
   if (env.NODE_ENV === 'test' && env.APP_UPDATE_CHECK_IN_TESTS !== 'true' && localRelease === undefined) {
     return { checked: false, updateAvailable: false };
   }
-  const installedRelease = localRelease === undefined ? readLocalRelease() : normalizeRelease(localRelease);
+  const installedRelease = localRelease === undefined ? getInstalledRelease(env) : normalizeRelease(localRelease);
   const selectedChannel = channel || env.APP_UPDATE_CHANNEL || 'stable';
   const currentSha = String(env.APP_GIT_SHA || '').trim().toLowerCase();
   const target = getUpdateTarget(env);
@@ -94,8 +136,6 @@ async function getUpdateStatus({ env = process.env, fetchImpl = global.fetch, lo
   timeout.unref?.();
 
   try {
-    const [owner, repository] = target.repository.split('/');
-    const encodedBranch = target.branch.split('/').map(encodeURIComponent).join('/');
     let response;
     if (selectedChannel === 'beta') {
       response = await fetchImpl(`https://api.github.com/repos/${target.repository}/commits/${encodeURIComponent(target.branch)}`, {
@@ -107,10 +147,14 @@ async function getUpdateStatus({ env = process.env, fetchImpl = global.fetch, lo
         }
       });
     } else {
-      response = await fetchImpl(
-        `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/${encodedBranch}/release.json`,
-        { signal: controller.signal, headers: { Accept: 'application/json' } }
-      );
+      response = await fetchImpl(`https://api.github.com/repos/${target.repository}/releases/latest`, {
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'basuracero-update-checker',
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      });
     }
     if (!response.ok) {
       throw new Error(`GitHub respondio con HTTP ${response.status}`);
@@ -136,8 +180,8 @@ async function getUpdateStatus({ env = process.env, fetchImpl = global.fetch, lo
         }
       };
     } else {
-      const latestRelease = normalizeRelease(await response.json());
-      if (!latestRelease) throw new Error('El manifiesto remoto de version no es valido');
+      const latestRelease = normalizeGithubRelease(await response.json());
+      if (!latestRelease) throw new Error('GitHub no devolvio una version estable valida');
       result = {
         checked: true,
         channel: 'stable',
@@ -165,8 +209,10 @@ function resetUpdateStatusCache() {
 
 module.exports = {
   compareVersions,
-  getInstalledRelease: readLocalRelease,
+  getInstalledRelease,
   getUpdateStatus,
+  normalizeGithubRelease,
   normalizeRelease,
+  parseReleaseNotes,
   resetUpdateStatusCache
 };

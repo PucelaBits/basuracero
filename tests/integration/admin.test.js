@@ -580,7 +580,15 @@ describe('Panel admin', () => {
       process.env.APP_UPDATE_CHECK_IN_TESTS = 'true';
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ version: '2.0.1', ref: 'v2.0.1', notes: ['Versión instalada'] })
+        json: async () => ({
+          tag_name: release.ref,
+          name: release.title,
+          body: '- Versión instalada',
+          draft: false,
+          prerelease: false,
+          published_at: `${release.publishedAt}T10:00:00Z`,
+          html_url: release.url
+        })
       });
       const response = await agent
         .post('/admin/updates/check')
