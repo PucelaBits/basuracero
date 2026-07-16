@@ -170,12 +170,13 @@ El panel administrativo vive en `/admin`, pero su activación depende del tipo d
 - **Instalación existente:** actualizar y reiniciar conserva el panel desactivado. La web pública continúa funcionando sin cambios. Para activarlo de forma voluntaria ejecuta:
 
   ```bash
+  git pull --ff-only origin main
   ./scripts/enable_admin.sh
   ```
 
-  El asistente solo requiere Docker y Docker Compose v2 en el servidor; no hace falta instalar Node o npm en el anfitrión. Detiene el servicio, crea un backup en `backups/`, genera `SESSION_SECRET` si falta, aplica las migraciones, crea el primer administrador mediante un contenedor efímero y vuelve a levantar la aplicación. Las credenciales temporales se muestran una sola vez en la terminal, no en la web pública ni en los logs persistentes.
+  El asistente solo requiere Docker y Docker Compose v2 en el servidor; no hace falta instalar Node o npm en el anfitrión. Detiene el servicio, crea un backup en `backups/`, genera `SESSION_SECRET` si falta, aplica las migraciones, crea el primer administrador mediante un contenedor efímero y vuelve a levantar la aplicación. Las credenciales temporales se muestran una sola vez en la terminal, no en la web pública ni en los logs persistentes. No borres `data/`, `uploads/` ni los volúmenes existentes.
 
-Consulta la [guía verificada de activación, backup, migración, despliegue y rollback](docs/production-admin.md) antes de actualizar una instancia existente.
+Sigue la [guía paso a paso para actualizar una instalación Docker existente](docs/upgrade-existing-docker.md). La referencia completa de backup, migración, despliegue y rollback está en [`docs/production-admin.md`](docs/production-admin.md).
 
 ### Configuración desde el panel
 
@@ -277,7 +278,7 @@ Puedes usar esos feeds para integraciones con otras aplicaciones, como un bot de
 
 ### Dominio personalizado
 
-Puedes publicar la aplicación detrás de Nginx usando un dominio propio. Hay un ejemplo genérico en [`docs/examples/nginx.conf.example`](docs/examples/nginx.conf.example), con terminación TLS en `443` y redirección de `80` a HTTPS.
+Puedes publicar la aplicación detrás de Nginx usando un dominio propio. Hay un ejemplo genérico en [`docs/examples/nginx.conf.example`](docs/examples/nginx.conf.example), con terminación TLS en `443`, redirección de `80` a HTTPS y las cabeceras necesarias para cookies administrativas seguras.
 
 Estrategia de caché recomendada:
 
@@ -287,7 +288,7 @@ Estrategia de caché recomendada:
 - `/api/incidencias/tipos`: sin caché agresiva
 - `/assets/*.js` y `/assets/*.css`: caché larga con `immutable`, porque Vite los genera con hash en el nombre
 
-Si adaptas el ejemplo a tu infraestructura, revisa también certificados, logs y cabeceras de proxy según tu entorno.
+Si adaptas el ejemplo a tu infraestructura, revisa también certificados, logs y cabeceras de proxy según tu entorno. Todas las rutas y fallbacks que lleguen a Node deben conservar `Host` y `X-Forwarded-Proto`; no añadas un `Access-Control-Allow-Origin "*"` global y no sobrescribas `Origin` desde Nginx.
 
 ## Ejecución local para desarrollo
 

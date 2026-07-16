@@ -15,6 +15,18 @@ server {
     # Ajusta este upstream al puerto publicado por Docker Compose.
     set $basuracero_upstream http://127.0.0.1:5050;
 
+    # Todas las rutas proxificadas, incluidas las ubicaciones con nombre que puedas
+    # añadir como fallback, deben conservar estas cabeceras. Son necesarias para
+    # que las cookies Secure del panel funcionen detrás de HTTPS.
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # No añadas Access-Control-Allow-Origin "*" aquí. La aplicación aplica su
+    # propia política de orígenes a partir de BASE_URL y CORS_ORIGINS.
+
     # Assets versionados por Vite: pueden cachearse fuerte porque incluyen hash.
     location ~* ^/assets/.*\.(js|css)$ {
         proxy_pass $basuracero_upstream;
@@ -59,22 +71,18 @@ server {
     # Resto de API: sin caché agresiva por defecto.
     location /api/ {
         proxy_pass $basuracero_upstream;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    # El panel y sus formularios nunca deben servirse desde una caché del proxy.
+    location ^~ /admin {
+        proxy_pass $basuracero_upstream;
         add_header Cache-Control "no-cache, no-store, must-revalidate" always;
     }
 
     # SPA: cualquier otra ruta debe servir la app sin quedarse cacheada.
     location / {
         proxy_pass $basuracero_upstream;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
         add_header Cache-Control "no-cache, no-store, must-revalidate" always;
     }
 }

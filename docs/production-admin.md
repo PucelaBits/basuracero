@@ -1,5 +1,7 @@
 # Panel administrativo: operación en producción
 
+Para una actualización habitual desde una versión anterior, empieza por la [guía paso a paso para instalaciones Docker existentes](upgrade-existing-docker.md). Este documento conserva la referencia operativa completa y el procedimiento de rollback.
+
 ## Modelo de activación
 
 - Una **instalación nueva**, sin `data/incidencias.sqlite`, crea `data/.admin-enabled` antes de inicializar la base y activa el panel por defecto.
@@ -48,6 +50,12 @@ No se muestran ni modifican desde el panel `SESSION_SECRET`, credenciales bootst
 6. En una instalación nueva define temporalmente `ADMIN_BOOTSTRAP_PASSWORD` con al menos 12 caracteres y un máximo de 72 bytes. Elimínala del entorno tras el primer acceso y cambio de clave. En una actualización opt-in el asistente la pasa únicamente al contenedor efímero.
 7. Configura `BASE_URL` con el origen HTTPS publico. Mantén `TRUST_PROXY=false` si Node recibe trafico directo; usa `TRUST_PROXY=1` solo detras de un unico proxy de confianza.
 
+### Proxy inverso y cookies seguras
+
+Cuando Nginx termina HTTPS, todas las rutas que llegan a Node deben conservar `Host`, `X-Forwarded-For` y `X-Forwarded-Proto`. Esto incluye ubicaciones con nombre como `location @app`: si el fallback pierde `X-Forwarded-Proto`, Express considera que la petición es HTTP y no entrega la cookie administrativa `Secure`.
+
+Usa el patrón genérico de [`examples/nginx.conf.example`](examples/nginx.conf.example), valida siempre con `nginx -t` y guarda backups fuera de `sites-enabled`. No sobrescribas `Origin` ni publiques un `Access-Control-Allow-Origin "*"` global; la aplicación gestiona su propia política de orígenes.
+
 ## Migracion y despliegue
 
 Prueba primero sobre una copia de la base:
@@ -67,6 +75,7 @@ Checklist de despliegue:
 - `docker compose config` no muestra errores de variables.
 - `docker compose up -d --build` crea un contenedor nuevo y `docker compose ps` lo marca como saludable.
 - `/api/incidencias/ultima-actualizacion`, la web publica y `/admin/login` responden.
+- En HTTPS, `/admin/login` entrega una cookie con `HttpOnly`, `Secure` y `SameSite=Strict`.
 - Se validan login, cambio de clave, logout, filtros, ficha, acciones masivas, categorias, administradores, mantenimiento y auditoria.
 - Se confirma que la contraseña bootstrap no aparece en logs.
 - La imagen no contiene `.env` ni `.npmrc`; ambos se excluyen del contexto y la configuración llega en runtime mediante Compose.
