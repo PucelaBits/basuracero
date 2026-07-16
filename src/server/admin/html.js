@@ -1176,6 +1176,30 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           font-size: 11px;
           opacity: 0.7;
         }
+        .number-sort-button {
+          width: auto;
+          min-height: 44px;
+          margin: -10px -4px;
+          padding: 0 4px;
+          gap: 6px;
+          border-radius: 8px;
+          color: inherit;
+          background: transparent;
+          font-size: inherit;
+          white-space: nowrap;
+        }
+        .number-sort-button:hover,
+        .number-sort-button[aria-pressed="true"] {
+          color: var(--ink);
+          background: var(--accent-soft);
+        }
+        .number-sort-indicator {
+          min-width: 12px;
+          color: var(--muted);
+          font-size: 12px;
+          line-height: 1;
+          text-align: center;
+        }
         .bulk-bar {
           display: grid;
           gap: 12px;
@@ -1296,6 +1320,17 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .old-solvable-table {
           min-width: 920px;
         }
+        .moderation-table {
+          min-width: 820px;
+        }
+        .moderation-table th:first-child,
+        .moderation-table td:first-child {
+          width: 48px;
+        }
+        .moderation-table th:last-child,
+        .moderation-table td:last-child {
+          width: 38%;
+        }
         .old-solvable-table th:first-child,
         .old-solvable-table td:first-child {
           width: 48px;
@@ -1326,6 +1361,15 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .old-solvable-actions {
           border-top: 1px solid var(--line);
           background: var(--surface-soft);
+        }
+        .moderation-actions {
+          justify-content: flex-end;
+        }
+        .moderation-actions label {
+          width: min(100%, 280px);
+        }
+        .moderation-actions button {
+          min-width: 230px;
         }
         .checkbox-cell {
           display: flex;
@@ -2508,6 +2552,10 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .old-solvable-actions .actions {
             width: 100%;
           }
+          .moderation-actions label,
+          .moderation-actions button {
+            width: 100%;
+          }
         }
       </style>
     </head>
@@ -2616,6 +2664,51 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
               }
               if (status) status.textContent = 'Procesando la solicitud.';
             };
+          });
+
+          document.addEventListener('click', (event) => {
+            const button = event.target.closest('.number-sort-button');
+            if (!button) return;
+            const heading = button.closest('th[data-sort-number]');
+            const table = heading?.closest('table[data-number-sortable]');
+            const body = table?.tBodies?.[0];
+            if (!heading || !table || !body) return;
+
+            const column = Array.from(heading.parentElement.children).indexOf(heading);
+            const rows = Array.from(body.rows);
+            if (column < 0 || rows.length < 2) return;
+
+            const nextDirection = table.dataset.sortColumn === String(column) && table.dataset.sortDirection === 'desc'
+              ? 'asc'
+              : 'desc';
+            const numericValue = (row) => {
+              const cell = row.cells[column];
+              const raw = cell?.dataset.sortValue ?? cell?.textContent ?? '';
+              const normalized = String(raw).replace(',', '.').replace(/[^0-9+.-]/g, '');
+              const value = Number(normalized);
+              return Number.isFinite(value) ? value : Number.NEGATIVE_INFINITY;
+            };
+
+            rows
+              .map((row, index) => ({ row, index, value: numericValue(row) }))
+              .sort((left, right) => {
+                const comparison = nextDirection === 'asc'
+                  ? left.value - right.value
+                  : right.value - left.value;
+                return comparison || left.index - right.index;
+              })
+              .forEach(({ row }) => body.appendChild(row));
+
+            table.dataset.sortColumn = String(column);
+            table.dataset.sortDirection = nextDirection;
+            table.querySelectorAll('th[data-sort-number]').forEach((candidate) => {
+              const active = candidate === heading;
+              candidate.setAttribute('aria-sort', active ? (nextDirection === 'asc' ? 'ascending' : 'descending') : 'none');
+              const candidateButton = candidate.querySelector('.number-sort-button');
+              const indicator = candidate.querySelector('.number-sort-indicator');
+              if (candidateButton) candidateButton.setAttribute('aria-pressed', active ? 'true' : 'false');
+              if (indicator) indicator.textContent = active ? (nextDirection === 'asc' ? '↑' : '↓') : '↕';
+            });
           });
         })();
       </script>
@@ -2971,6 +3064,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
         <td>${incidencia.imageUrl ? `<a href="/admin/incidencias/${incidencia.id}"><img class="ops-thumb" src="${escapeAttr(incidencia.imageUrl)}" alt="Foto de la incidencia ${incidencia.id}"></a>` : '<div class="ops-thumb"></div>'}</td>
         <td>
           <div class="ops-title">
+            <span class="small">#${incidencia.id}</span>
             <a href="/admin/incidencias/${incidencia.id}">${escapeHtml(incidencia.descripcion || 'Sin descripcion')}</a>
             <span class="small">${escapeHtml(incidencia.direccion || incidencia.barrio || 'Sin ubicacion')}</span>
           </div>
@@ -2992,7 +3086,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
         ${incidencia.imageUrl ? `<img class="ops-mobile-thumb" src="${escapeAttr(incidencia.imageUrl)}" alt="Foto de la incidencia ${incidencia.id}">` : '<div class="ops-mobile-thumb"></div>'}
         <div class="ops-mobile-body">
           <div class="ops-mobile-topline">
-            <a href="/admin/incidencias/${incidencia.id}">${escapeHtml(incidencia.descripcion || 'Sin descripcion')}</a>
+            <a href="/admin/incidencias/${incidencia.id}">#${incidencia.id} · ${escapeHtml(incidencia.descripcion || 'Sin descripcion')}</a>
             <span class="ops-mobile-date">${formatDate(incidencia.fecha)}</span>
           </div>
           <div class="ops-mobile-meta">
@@ -3079,7 +3173,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
                   <tr>
                     <th><input class="select-all" type="checkbox" aria-label="Seleccionar todas"></th>
                     <th>Foto</th>
-                    <th>Incidencia</th>
+                    <th><a class="ops-sort${filters.sortBy === 'id' ? ' active' : ''}" href="${buildSortUrl('id')}">Incidencia ${sortIndicator('id')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'tipo' ? ' active' : ''}" href="${buildSortUrl('tipo')}">Categoria ${sortIndicator('tipo')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'estado' ? ' active' : ''}" href="${buildSortUrl('estado')}">Estado ${sortIndicator('estado')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'barrio' ? ' active' : ''}" href="${buildSortUrl('barrio')}">Barrio ${sortIndicator('barrio')}</a></th>
@@ -3177,7 +3271,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, csrfToken }) {
     ? recentWithPhoto.map((item) => `
       <tr>
         <td data-label="Foto">${item.imageUrl ? `<img class="dashboard-thumb" src="${escapeAttr(item.imageUrl)}" alt="Foto de la incidencia ${item.id}">` : '<div class="dashboard-thumb"></div>'}</td>
-        <td data-label="Incidencia"><a href="/admin/incidencias/${item.id}">${escapeHtml(item.descripcion || `Incidencia #${item.id}`)}</a></td>
+        <td data-label="Incidencia" data-sort-value="${item.id}"><a href="/admin/incidencias/${item.id}">#${item.id} · ${escapeHtml(item.descripcion || 'Sin descripcion')}</a></td>
         <td data-label="Categoria">${renderTipoBadge(item.tipo || '-', item.tipo_icono, true)}</td>
         <td data-label="Estado"><span class="status-chip">${escapeHtml(item.estado || '-')}</span></td>
         <td data-label="Zona">${escapeHtml(item.barrio || item.direccion || '-')}</td>
@@ -3240,11 +3334,11 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, csrfToken }) {
               </div>
               <a class="dashboard-muted-link" href="/admin/incidencias">Ver todas</a>
             </div>
-            <table class="dashboard-table">
+            <table class="dashboard-table" data-number-sortable>
               <thead>
                 <tr>
                   <th>Foto</th>
-                  <th>Incidencia</th>
+                  <th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">Incidencia <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th>
                   <th>Categoria</th>
                   <th>Estado</th>
                   <th>Zona</th>
@@ -4056,9 +4150,9 @@ function renderCategoriasPage({ currentAdmin, notice, categorias, csrfToken }) {
     ? categorias.map((item) => `
       <tr>
         <td>${renderTipoLabel(item.nombre, item.icono)}</td>
-        <td class="metrics-cell" data-label="Activas"><span class="metric-value">${Number(item.activas || 0)}</span></td>
-        <td class="metrics-cell" data-label="Solucionadas"><span class="metric-value">${Number(item.solucionadas || 0)}</span></td>
-        <td class="metrics-cell" data-label="Total"><span class="metric-value">${Number(item.total || 0)}</span></td>
+        <td class="metrics-cell" data-label="Activas" data-sort-value="${Number(item.activas || 0)}"><span class="metric-value">${Number(item.activas || 0)}</span></td>
+        <td class="metrics-cell" data-label="Solucionadas" data-sort-value="${Number(item.solucionadas || 0)}"><span class="metric-value">${Number(item.solucionadas || 0)}</span></td>
+        <td class="metrics-cell" data-label="Total" data-sort-value="${Number(item.total || 0)}"><span class="metric-value">${Number(item.total || 0)}</span></td>
         <td class="actions-cell" data-label="Acciones">
           <div class="category-actions">
             <button
@@ -4095,13 +4189,13 @@ function renderCategoriasPage({ currentAdmin, notice, categorias, csrfToken }) {
           </div>
         </div>
         <div class="table-wrap">
-          <table class="category-table">
+          <table class="category-table" data-number-sortable>
             <thead>
               <tr>
                 <th>Categoria</th>
-                <th>Activas</th>
-                <th>Solucionadas</th>
-                <th>Total</th>
+                <th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">Activas <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th>
+                <th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">Solucionadas <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th>
+                <th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">Total <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -4394,7 +4488,7 @@ function renderAuditPage({ currentAdmin, notice, entries, csrfToken }) {
         <td>${escapeHtml(entry.admin_username || 'sistema')}</td>
         <td>${escapeHtml(entry.action || '-')}</td>
         <td>${escapeHtml(entry.entity_type || '-')}</td>
-        <td>${escapeHtml(entry.entity_id || '-')}</td>
+        <td data-sort-value="${Number.parseInt(entry.entity_id, 10) || 0}">${escapeHtml(entry.entity_id || '-')}</td>
       </tr>
     `).join('')
     : '<tr><td colspan="5">Todavia no hay actividad registrada.</td></tr>';
@@ -4416,14 +4510,14 @@ function renderAuditPage({ currentAdmin, notice, entries, csrfToken }) {
           </div>
         </div>
         <div class="table-wrap">
-          <table class="mobile-scroll-table">
+          <table class="mobile-scroll-table" data-number-sortable>
             <thead>
               <tr>
                 <th>Fecha</th>
                 <th>Administrador</th>
                 <th>Accion</th>
                 <th>Entidad</th>
-                <th>ID</th>
+                <th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">ID <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -4444,10 +4538,10 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
         <td class="checkbox-cell">
           <input class="old-solvable-checkbox" type="checkbox" name="incidenciaIds" value="${item.id}" aria-label="Seleccionar incidencia ${item.id}">
         </td>
-        <td><a class="maintenance-incident-link" href="/admin/incidencias/${item.id}">#${item.id}</a></td>
+        <td data-sort-value="${item.id}"><a class="maintenance-incident-link" href="/admin/incidencias/${item.id}">#${item.id}</a></td>
         <td>${escapeHtml(item.tipo || '')}</td>
-        <td><strong>${item.antiguedad_dias}</strong> dias<br><span class="small">${formatDate(item.fecha)}</span></td>
-        <td>${item.votos_solucion}</td>
+        <td data-sort-value="${item.antiguedad_dias}"><strong>${item.antiguedad_dias}</strong> dias<br><span class="small">${formatDate(item.fecha)}</span></td>
+        <td data-sort-value="${item.votos_solucion}">${item.votos_solucion}</td>
         <td class="maintenance-description">${escapeHtml(item.descripcion)}</td>
         <td><a class="dashboard-muted-link" href="/admin/incidencias/${item.id}">Ver detalle</a></td>
       </tr>
@@ -4473,24 +4567,14 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
   const inadequateRows = (inadequateIncidencias || []).length
     ? inadequateIncidencias.map((item) => `
       <tr>
-        <td>#${item.id}</td>
-        <td>${escapeHtml(item.tipo)}</td>
-        <td>${item.reportes_inadecuado}</td>
-        <td>${escapeHtml(item.estado)}</td>
-        <td>${escapeHtml(item.descripcion)}</td>
-        <td>
-          <div class="actions">
-            <form method="post" action="/admin/maintenance/mark-spam" data-confirm="La incidencia se ocultara como spam. ¿Continuar?">
-              <input type="hidden" name="incidenciaId" value="${item.id}">
-              <button class="detail-mini-button button-ghost" type="submit">Spam</button>
-            </form>
-            <form method="post" action="/admin/maintenance/clear-inadequate-reports" data-confirm="Se eliminaran todos los reportes inadecuados de esta incidencia. ¿Continuar?">
-              <input type="hidden" name="incidenciaId" value="${item.id}">
-              <button class="detail-mini-button button-ghost" type="submit">Limpiar</button>
-            </form>
-            <a class="dashboard-muted-link" href="/admin/incidencias/${item.id}">Abrir</a>
-          </div>
+        <td class="checkbox-cell">
+          <input class="inadequate-checkbox" type="checkbox" name="incidenciaIds" value="${item.id}" aria-label="Seleccionar incidencia ${item.id}">
         </td>
+        <td data-sort-value="${item.id}"><a class="maintenance-incident-link" href="/admin/incidencias/${item.id}">#${item.id}</a></td>
+        <td>${escapeHtml(item.tipo)}</td>
+        <td data-sort-value="${item.reportes_inadecuado}">${item.reportes_inadecuado}</td>
+        <td>${escapeHtml(item.estado)}</td>
+        <td class="maintenance-description">${escapeHtml(item.descripcion)}</td>
       </tr>
     `).join('')
     : '<tr><td colspan="6">No hay incidencias con reportes inadecuados pendientes.</td></tr>';
@@ -4498,20 +4582,14 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
   const inadequateCards = (inadequateIncidencias || []).length
     ? inadequateIncidencias.map((item) => `
       <article class="table-card">
-        <strong>#${item.id} · ${escapeHtml(item.tipo)}</strong>
-        <span>${item.reportes_inadecuado} reportes inadecuados · ${escapeHtml(item.estado)}</span>
-        <span>${escapeHtml(item.descripcion)}</span>
-        <div class="actions" style="margin-top:10px">
-          <form method="post" action="/admin/maintenance/mark-spam" data-confirm="La incidencia se ocultara como spam. ¿Continuar?">
-            <input type="hidden" name="incidenciaId" value="${item.id}">
-            <button class="detail-mini-button button-ghost" type="submit">Spam</button>
-          </form>
-          <form method="post" action="/admin/maintenance/clear-inadequate-reports" data-confirm="Se eliminaran todos los reportes inadecuados de esta incidencia. ¿Continuar?">
-            <input type="hidden" name="incidenciaId" value="${item.id}">
-            <button class="detail-mini-button button-ghost" type="submit">Limpiar</button>
-          </form>
-          <a class="dashboard-muted-link" href="/admin/incidencias/${item.id}">Abrir</a>
+        <div class="table-card-head">
+          <div>
+            <strong><a class="maintenance-incident-link" href="/admin/incidencias/${item.id}">#${item.id}</a> · ${escapeHtml(item.tipo)}</strong>
+            <span>${item.reportes_inadecuado} ${item.reportes_inadecuado === 1 ? 'reporte inadecuado' : 'reportes inadecuados'} · ${escapeHtml(item.estado)}</span>
+          </div>
+          <input class="table-card-check inadequate-checkbox" type="checkbox" name="incidenciaIds" value="${item.id}" aria-label="Seleccionar incidencia ${item.id}">
         </div>
+        <span>${escapeHtml(item.descripcion)}</span>
       </article>
     `).join('')
     : '<div class="empty-state">No hay incidencias con reportes inadecuados pendientes.</div>';
@@ -4519,7 +4597,7 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
   const missingLocationRows = (missingLocationIncidencias || []).length
     ? missingLocationIncidencias.map((item) => `
       <tr>
-        <td>#${item.id}</td>
+        <td data-sort-value="${item.id}">#${item.id}</td>
         <td>${escapeHtml(item.tipo)}</td>
         <td>${escapeHtml(item.barrio || 'Sin barrio')}</td>
         <td>${escapeHtml(item.direccion || 'Sin direccion')}</td>
@@ -4608,11 +4686,11 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
             <span id="old-solvable-selection" class="meta" aria-live="polite">Ninguna seleccionada</span>
           </div>
           <div class="table-wrap">
-            <table class="responsive-table old-solvable-table">
+            <table class="responsive-table old-solvable-table" data-number-sortable>
               <thead>
                 <tr>
                   <th><span class="sr-only">Seleccionar</span></th>
-                  <th>ID</th><th>Tipo</th><th>Antiguedad</th><th>Votos</th><th>Descripcion</th><th>Detalle</th>
+                  <th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">ID <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th><th>Tipo</th><th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">Antiguedad <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th><th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">Votos <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th><th>Descripcion</th><th>Detalle</th>
                 </tr>
               </thead>
               <tbody>${previewRows}</tbody>
@@ -4627,18 +4705,46 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
           </div>
         </form>
       </section>
-      <div class="subtle-panel" style="margin-top:16px">
-        <h2>Moderacion de reportes inadecuados</h2>
-        <div class="table-wrap">
-          <table class="responsive-table">
-            <thead>
-              <tr><th>ID</th><th>Tipo</th><th>Reportes</th><th>Estado</th><th>Descripcion</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>${inadequateRows}</tbody>
-          </table>
+      <section class="old-solvable-workspace moderation-workspace" style="margin-top:16px" aria-labelledby="inadequate-title">
+        <div class="old-solvable-heading">
+          <div>
+            <span class="eyebrow">Moderacion</span>
+            <h2 id="inadequate-title">Reportes inadecuados</h2>
+            <p>Revisa el detalle desde el ID y actua sobre una o varias incidencias.</p>
+          </div>
+          <div class="old-solvable-count" aria-label="${(inadequateIncidencias || []).length} incidencias pendientes">
+            <strong>${(inadequateIncidencias || []).length}</strong>
+            <span>${(inadequateIncidencias || []).length === 1 ? 'incidencia pendiente' : 'incidencias pendientes'}</span>
+          </div>
         </div>
-        <div class="table-cards">${inadequateCards}</div>
-      </div>
+        <form id="inadequate-moderation-form" class="old-solvable-results" method="post" action="/admin/maintenance/moderate-inadequate-reports" data-confirm="Se eliminaran los reportes inadecuados seleccionados. ¿Continuar?">
+          <div class="old-solvable-toolbar">
+            <label class="select-all-label">
+              <input id="inadequate-select-all" class="select-all" type="checkbox"${(inadequateIncidencias || []).length ? '' : ' disabled'}>
+              <span>Seleccionar todas</span>
+            </label>
+            <span id="inadequate-selection" class="meta" aria-live="polite">Ninguna seleccionada</span>
+          </div>
+          <div class="table-wrap">
+            <table class="responsive-table moderation-table" data-number-sortable>
+              <thead>
+                <tr><th><span class="sr-only">Seleccionar</span></th><th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">ID <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th><th>Tipo</th><th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">Reportes <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th><th>Estado</th><th>Descripcion</th></tr>
+              </thead>
+              <tbody>${inadequateRows}</tbody>
+            </table>
+          </div>
+          <div class="table-cards">${inadequateCards}</div>
+          <div class="old-solvable-actions moderation-actions">
+            <label>Accion
+              <select id="inadequate-action" name="action">
+                <option value="clear">Limpiar reportes</option>
+                <option value="delete">Borrar incidencias</option>
+              </select>
+            </label>
+            <button id="moderate-selected" type="submit" disabled>Limpiar reportes de 0</button>
+          </div>
+        </form>
+      </section>
       <div class="subtle-panel" style="margin-top:16px">
         <h2>Ubicacion pendiente</h2>
         <div class="actions" style="margin-bottom:12px">
@@ -4647,9 +4753,9 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
           </form>
         </div>
         <div class="table-wrap">
-          <table class="responsive-table">
+          <table class="responsive-table" data-number-sortable>
             <thead>
-              <tr><th>ID</th><th>Tipo</th><th>Barrio</th><th>Direccion</th><th>Descripcion</th></tr>
+              <tr><th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">ID <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th><th>Tipo</th><th>Barrio</th><th>Direccion</th><th>Descripcion</th></tr>
             </thead>
             <tbody>${missingLocationRows}</tbody>
           </table>
@@ -4737,6 +4843,44 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
           });
 
           bindResults();
+
+          const moderationForm = document.getElementById('inadequate-moderation-form');
+          if (moderationForm) {
+            const selectAllModeration = moderationForm.querySelector('#inadequate-select-all');
+            const selectionModeration = moderationForm.querySelector('#inadequate-selection');
+            const actionModeration = moderationForm.querySelector('#inadequate-action');
+            const submitModeration = moderationForm.querySelector('#moderate-selected');
+            const moderationCheckboxes = Array.from(moderationForm.querySelectorAll('.inadequate-checkbox'));
+            const selectedIds = () => new Set(moderationCheckboxes.filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value));
+            const refreshModeration = () => {
+              const count = selectedIds().size;
+              const deleting = actionModeration.value === 'delete';
+              selectionModeration.textContent = count ? count + (count === 1 ? ' seleccionada' : ' seleccionadas') : 'Ninguna seleccionada';
+              submitModeration.disabled = count === 0;
+              submitModeration.textContent = deleting
+                ? 'Borrar ' + count + (count === 1 ? ' incidencia' : ' incidencias')
+                : 'Limpiar reportes de ' + count;
+              submitModeration.style.background = deleting ? 'var(--danger)' : '';
+              moderationForm.dataset.confirm = deleting
+                ? 'Se eliminaran definitivamente ' + count + (count === 1 ? ' incidencia' : ' incidencias') + ' y todos sus datos. ¿Continuar?'
+                : 'Se eliminaran los reportes inadecuados de ' + count + (count === 1 ? ' incidencia' : ' incidencias') + '. ¿Continuar?';
+              if (selectAllModeration) {
+                const total = new Set(moderationCheckboxes.map((checkbox) => checkbox.value)).size;
+                selectAllModeration.checked = total > 0 && count === total;
+                selectAllModeration.indeterminate = count > 0 && count < total;
+              }
+            };
+            moderationCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', () => {
+              moderationCheckboxes.filter((peer) => peer.value === checkbox.value).forEach((peer) => { peer.checked = checkbox.checked; });
+              refreshModeration();
+            }));
+            selectAllModeration?.addEventListener('change', () => {
+              moderationCheckboxes.forEach((checkbox) => { checkbox.checked = selectAllModeration.checked; });
+              refreshModeration();
+            });
+            actionModeration.addEventListener('change', refreshModeration);
+            refreshModeration();
+          }
         })();
       </script>
     `

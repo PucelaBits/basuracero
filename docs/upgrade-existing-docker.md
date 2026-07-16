@@ -111,6 +111,8 @@ Activar el panel no copia ni borra de inmediato la personalización de `.env`. M
 
 Al guardar el formulario, la configuración administrable se persiste en SQLite y pasa a tener prioridad sobre `.env`. Los secretos operativos como `SESSION_SECRET`, proxy, CORS y ruta de SQLite siguen gestionándose exclusivamente en el entorno. La clave secreta de Friendly Captcha puede actualizarse desde el panel, pero nunca vuelve a mostrarse.
 
+Consulta [Administración desde el servidor](server-management.md) para ver la equivalencia completa entre bloques del panel, variables de entorno y comandos de terminal.
+
 ## Si la activación falla
 
 El asistente elimina una activación incompleta y trata de volver a arrancar el servicio público anterior. Corrige la causa y vuelve a ejecutar el mismo script; las migraciones son idempotentes.

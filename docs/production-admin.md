@@ -2,6 +2,8 @@
 
 Para una actualización habitual desde una versión anterior, empieza por la [guía paso a paso para instalaciones Docker existentes](upgrade-existing-docker.md). Este documento conserva la referencia operativa completa y el procedimiento de rollback.
 
+La equivalencia entre el panel, `.env` y los comandos disponibles está en [Administración desde el servidor](server-management.md).
+
 ## Modelo de activación
 
 - Una **instalación nueva**, sin `data/incidencias.sqlite`, crea `data/.admin-enabled` antes de inicializar la base y activa el panel por defecto.
@@ -34,7 +36,7 @@ La contraseña nunca se presenta en `/admin` sin autenticación: hacerlo permiti
 
 ## Configuración pública administrable
 
-La pantalla `/admin/configuracion` persiste identidad, rutas de marca, paleta, textos públicos, área geográfica, CAPTCHA, analítica y reporte por WhatsApp en la tabla `app_settings`. Estos valores prevalecen sobre sus equivalentes de `.env` y se sirven en runtime, por lo que basta recargar la web pública después de guardar.
+La pantalla `/admin/configuracion` persiste identidad, imágenes de marca, paleta, textos y enlaces públicos, área geográfica, búsqueda, proximidad, umbrales de resolución, CAPTCHA, analítica y reporte por WhatsApp en la tabla `app_settings`. Estos valores prevalecen sobre sus equivalentes de `.env` y se sirven en runtime, por lo que basta recargar la web pública después de guardar.
 
 Las rutas de logo y favicon deben apuntar a recursos públicos existentes, por ejemplo `/img/custom/logo.png` o `/uploads/branding/logo.png`. No se aceptan rutas relativas ni segmentos `..`.
 

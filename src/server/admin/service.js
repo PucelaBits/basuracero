@@ -746,6 +746,49 @@ async function clearInadequateReports(incidenciaId, actingAdminId) {
   return after;
 }
 
+async function moderateInadequateIncidencias({ action, incidenciaIds }, actingAdminId) {
+  const ids = [...new Set(
+    (Array.isArray(incidenciaIds) ? incidenciaIds : [incidenciaIds])
+      .map((id) => Number.parseInt(id, 10))
+      .filter((id) => Number.isInteger(id) && id > 0)
+  )];
+
+  if (!ids.length) {
+    throw new Error('Selecciona al menos una incidencia.');
+  }
+  if (ids.length > 100) {
+    throw new Error('Puedes moderar hasta 100 incidencias a la vez.');
+  }
+  if (!['clear', 'delete'].includes(action)) {
+    throw new Error('Selecciona una accion de moderacion valida.');
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const candidates = await all(
+    `SELECT i.id
+     FROM incidencias i
+     WHERE i.id IN (${placeholders})
+       AND EXISTS (
+         SELECT 1 FROM reportes_inadecuado ri WHERE ri.incidencia_id = i.id
+       )`,
+    ids
+  );
+  const candidateIds = new Set(candidates.map((row) => row.id));
+  if (candidateIds.size !== ids.length) {
+    throw new Error('Alguna incidencia ya no tiene reportes pendientes. Actualiza la lista e intentalo de nuevo.');
+  }
+
+  for (const id of ids) {
+    if (action === 'delete') {
+      await deleteIncidencia(id, actingAdminId, 'ELIMINAR');
+    } else {
+      await clearInadequateReports(id, actingAdminId);
+    }
+  }
+
+  return { action, total: ids.length };
+}
+
 async function deleteIncidencia(incidenciaId, actingAdminId, confirmationText) {
   if (String(confirmationText || '').trim() !== 'ELIMINAR') {
     throw new Error('Escribe ELIMINAR para confirmar el borrado definitivo.');
@@ -1027,6 +1070,7 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
 
   const whereSql = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const allowedSorts = {
+    id: 'i.id',
     fecha: 'datetime(i.fecha)',
     tipo: 'lower(t.nombre)',
     estado: 'lower(i.estado)',
@@ -1370,6 +1414,7 @@ module.exports = {
   getPendingSolutionIncidencias,
   getTipoSummary,
   mergeTipos,
+  moderateInadequateIncidencias,
   previewOldSolvable,
   processMissingLocationIncidencias,
   renameTipo,

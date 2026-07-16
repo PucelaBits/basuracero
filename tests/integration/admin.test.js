@@ -203,6 +203,8 @@ describe('Panel admin', () => {
     expect(response.text).toContain('/admin/incidencias');
     expect(response.text).toContain('Contenedor desbordado junto al parque');
     expect(response.text).toContain('Categorias');
+    expect(response.text).toContain('data-number-sortable');
+    expect(response.text).toContain('number-sort-button');
     expect(response.text).not.toContain('IncidenciaEntity');
   });
 
@@ -230,18 +232,20 @@ describe('Panel admin', () => {
     expect(adminPage.text).toContain('Administradores');
     expect(adminPage.text).toContain('Nuevo administrador');
     expect(adminPage.text).not.toContain('AdminJS');
-    expect(adminPage.text).not.toContain('List');
 
     const categoriasPage = await agent.get('/admin/categorias');
     expect(categoriasPage.status).toBe(200);
     expect(categoriasPage.text).toContain('Categorias');
     expect(categoriasPage.text).toContain('Fusionar categorias');
+    expect(categoriasPage.text).toContain('>Activas <span class="number-sort-indicator"');
+    expect(categoriasPage.text).toContain('>Total <span class="number-sort-indicator"');
     expect(categoriasPage.text).not.toContain('>Filter<');
 
     const auditoriaPage = await agent.get('/admin/auditoria');
     expect(auditoriaPage.status).toBe(200);
     expect(auditoriaPage.text).toContain('Auditoria');
     expect(auditoriaPage.text).toContain('Actividad reciente');
+    expect(auditoriaPage.text).toContain('data-sort-number aria-sort="none"');
     expect(auditoriaPage.text).not.toContain('Dashboard');
   });
 
@@ -803,6 +807,8 @@ describe('Panel admin', () => {
     expect(response.text).toContain('Accion masiva');
     expect(response.text).toContain('Foto');
     expect(response.text).toContain('sortBy=fecha');
+    expect(response.text).toContain('sortBy=id');
+    expect(response.text).toContain(`#${incidencia.lastID}`);
     expect(response.text).toContain('ops-mobile-check');
     expect(response.text).toContain('Ver ficha');
     expect(response.text).not.toContain('tipo_id');
@@ -1057,8 +1063,10 @@ describe('Panel admin', () => {
 
     const page = await agent.get('/admin/maintenance');
     expect(page.status).toBe(200);
-    expect(page.text).toContain('Moderacion de reportes inadecuados');
+    expect(page.text).toContain('Reportes inadecuados');
     expect(page.text).toContain('Incidencia moderacion spam');
+    expect(page.text).toContain('data-number-sortable');
+    expect(page.text).toContain('>Reportes <span class="number-sort-indicator"');
 
     const clearResponse = await postWithCsrf(
       '/admin/maintenance/clear-inadequate-reports',
@@ -1091,6 +1099,68 @@ describe('Panel admin', () => {
     );
     expect(updated.estado).toBe('spam');
     expect(updated.fecha_spam).toBeTruthy();
+  });
+
+  it('permite seleccionar, limpiar y borrar varias incidencias con reportes inadecuados', async () => {
+    const first = await dbAsync.run(
+      `INSERT INTO incidencias (
+        tipo_id, descripcion, latitud, longitud, nombre, fecha, estado, barrio, direccion
+      ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
+      [1, 'Primera incidencia para moderacion masiva', 41.65, -4.72, 'Vecina', 'activa', 'Centro', 'Calle Uno 1']
+    );
+    const second = await dbAsync.run(
+      `INSERT INTO incidencias (
+        tipo_id, descripcion, latitud, longitud, nombre, fecha, estado, barrio, direccion
+      ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
+      [1, 'Segunda incidencia para moderacion masiva', 41.66, -4.73, 'Vecino', 'activa', 'Centro', 'Calle Dos 2']
+    );
+
+    for (const [incidenciaId, ip] of [[first.lastID, '127.0.0.40'], [second.lastID, '127.0.0.41']]) {
+      await dbAsync.run(
+        `INSERT INTO reportes_inadecuado (incidencia_id, ip, fecha) VALUES (?, ?, datetime('now', 'localtime'))`,
+        [incidenciaId, ip]
+      );
+    }
+
+    const page = await agent.get('/admin/maintenance');
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('id="inadequate-moderation-form"');
+    expect(page.text).toContain(`href="/admin/incidencias/${first.lastID}">#${first.lastID}</a>`);
+    expect(page.text).toContain('Limpiar reportes');
+    expect(page.text).toContain('Borrar incidencias');
+
+    const clearResponse = await postWithCsrf(
+      '/admin/maintenance/moderate-inadequate-reports',
+      { action: 'clear', incidenciaIds: [String(first.lastID), String(second.lastID)] },
+      '/admin/maintenance'
+    );
+    expect(clearResponse.status).toBe(302);
+
+    let remainingReports = await dbAsync.get(
+      'SELECT COUNT(*) AS total FROM reportes_inadecuado WHERE incidencia_id IN (?, ?)',
+      [first.lastID, second.lastID]
+    );
+    expect(remainingReports.total).toBe(0);
+
+    for (const [incidenciaId, ip] of [[first.lastID, '127.0.0.42'], [second.lastID, '127.0.0.43']]) {
+      await dbAsync.run(
+        `INSERT INTO reportes_inadecuado (incidencia_id, ip, fecha) VALUES (?, ?, datetime('now', 'localtime'))`,
+        [incidenciaId, ip]
+      );
+    }
+
+    const deleteResponse = await postWithCsrf(
+      '/admin/maintenance/moderate-inadequate-reports',
+      { action: 'delete', incidenciaIds: [String(first.lastID), String(second.lastID)] },
+      '/admin/maintenance'
+    );
+    expect(deleteResponse.status).toBe(302);
+
+    const remainingIncidencias = await dbAsync.get(
+      'SELECT COUNT(*) AS total FROM incidencias WHERE id IN (?, ?)',
+      [first.lastID, second.lastID]
+    );
+    expect(remainingIncidencias.total).toBe(0);
   });
 
   it('previsualiza y procesa incidencias con ubicacion incompleta desde mantenimiento', async () => {

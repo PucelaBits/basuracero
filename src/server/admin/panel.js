@@ -33,6 +33,7 @@ const {
   getMissingLocationIncidencias,
   getTipoSummary,
   mergeTipos,
+  moderateInadequateIncidencias,
   previewOldSolvable,
   processMissingLocationIncidencias,
   renameTipo,
@@ -1055,6 +1056,21 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     try {
       await clearInadequateReports(req.body.incidenciaId, req.currentAdmin.id);
       res.redirect('/admin/maintenance?message=Reportes%20inadecuados%20limpiados');
+    } catch (error) {
+      await renderMaintenanceError(req, res, error);
+    }
+  });
+
+  router.post('/maintenance/moderate-inadequate-reports', async (req, res) => {
+    try {
+      const result = await moderateInadequateIncidencias({
+        action: req.body.action,
+        incidenciaIds: req.body.incidenciaIds
+      }, req.currentAdmin.id);
+      const message = result.action === 'delete'
+        ? `${result.total} ${result.total === 1 ? 'incidencia eliminada' : 'incidencias eliminadas'}`
+        : `Reportes limpiados en ${result.total} ${result.total === 1 ? 'incidencia' : 'incidencias'}`;
+      res.redirect(`/admin/maintenance?message=${encodeURIComponent(message)}`);
     } catch (error) {
       await renderMaintenanceError(req, res, error);
     }
