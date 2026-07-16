@@ -1,13 +1,12 @@
 {
-  "version": "2.0.1",
-  "ref": "v2.0.1",
+  "version": "2.0.2",
+  "ref": "v2.0.2",
   "publishedAt": "2026-07-16",
-  "title": "Actualizaciones más claras y accesibles",
+  "title": "Mapa corregido y actualizaciones más rápidas",
   "notes": [
-    "Actualizaciones pasa a tener una sección propia en el menú, justo después de Auditoría.",
-    "Los canales Estable y Beta se explican con lenguaje más claro para personas no técnicas.",
-    "El nuevo botón Comprobar ahora permite buscar versiones sin esperar a la comprobación automática.",
-    "El asistente reconstruye Docker si detecta que el código y el contenedor ejecutan revisiones distintas."
+    "El mapa de configuración vuelve a cargar correctamente sus teselas.",
+    "Las actualizaciones reutilizan las dependencias de Docker cuando estas no han cambiado.",
+    "La compilación de SQLite se reutiliza entre actualizaciones mientras sus dependencias no cambien."
   ],
-  "url": "https://github.com/PucelaBits/basuracero/tree/v2.0.1"
+  "url": "https://github.com/PucelaBits/basuracero/tree/v2.0.2"
 }

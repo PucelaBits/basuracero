@@ -114,7 +114,7 @@ En ambos casos el administrador ve en el panel el título y las novedades dispon
 
 El botón **Comprobar ahora** de esa sección vacía la caché y consulta inmediatamente el canal guardado, sin esperar al intervalo automático de seis horas.
 
-`release.json` es la fuente de verdad para las versiones distribuibles. Cuando una tanda de cambios esté estable, incrementa su versión `major.minor.patch`, actualiza `ref`, `publishedAt`, `title`, `notes` y el enlace de publicación, confirma el cambio y crea sobre ese mismo commit la etiqueta indicada en `ref` —por ejemplo, `v1.1.0`—. Publica el commit y la etiqueta juntos. Esta comprobación es informativa: una caída de GitHub no afecta al panel y el proceso web nunca recibe permisos para controlar Git o Docker.
+`release.json` es la fuente de verdad para las versiones distribuibles. Cuando una tanda de cambios esté estable, incrementa su versión `major.minor.patch`, actualiza `ref`, `publishedAt`, `title`, `notes` y el enlace de publicación, confirma el cambio y crea sobre ese mismo commit la etiqueta indicada en `ref` —por ejemplo, `v1.1.0`—. Publica el commit y la etiqueta juntos. No cambies la versión privada de `package.json`: mantenerla fija permite que Docker reutilice la capa de dependencias cuando una versión solo contiene cambios de la aplicación. Esta comprobación es informativa: una caída de GitHub no afecta al panel y el proceso web nunca recibe permisos para controlar Git o Docker.
 
 ## Qué continúa gestionándose en el servidor
 

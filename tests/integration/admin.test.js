@@ -2,6 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const request = require('supertest');
+const release = require('../../release.json');
 
 jest.mock('axios');
 
@@ -545,7 +546,7 @@ describe('Panel admin', () => {
     expect(page.text).toContain('href="/admin/updates"');
     expect(page.text.indexOf('href="/admin/updates"')).toBeGreaterThan(page.text.indexOf('href="/admin/auditoria"'));
     expect(page.text).toContain('Versión instalada');
-    expect(page.text).toContain('2.0.1');
+    expect(page.text).toContain(release.version);
     expect(page.text).toContain('Estable');
     expect(page.text).toContain('Recomendado');
     expect(page.text).toContain('últimas novedades en pruebas');
