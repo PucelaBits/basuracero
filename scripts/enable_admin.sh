@@ -19,23 +19,61 @@ restore_on_error() {
   if [[ $exit_code -ne 0 && "$activation_completed" != true ]]; then
     echo "La activacion no se completo; restaurando el servicio publico anterior..." >&2
     if [[ "$marker_preexisted" != true ]]; then
-      node -e "require('fs').rmSync('data/.admin-enabled', { force: true })" 2>/dev/null || true
+      rm -f data/.admin-enabled 2>/dev/null || true
     fi
     docker compose up -d >/dev/null 2>&1 || true
   fi
 }
 trap restore_on_error EXIT
 
-for command_name in docker node; do
-  if ! command -v "$command_name" >/dev/null 2>&1; then
-    echo "Error: se necesita $command_name para activar el panel." >&2
-    exit 1
-  fi
-done
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Error: se necesita docker para activar el panel." >&2
+  exit 1
+fi
 
 if ! docker compose version >/dev/null 2>&1; then
   echo "Error: se necesita Docker Compose v2 (docker compose)." >&2
   exit 1
+fi
+
+node_image="${ADMIN_ACTIVATION_NODE_IMAGE:-node:22-slim}"
+
+docker_node() {
+  docker run --rm \
+    --user "$(id -u):$(id -g)" \
+    --volume "$ROOT_DIR:/app" \
+    --workdir /app \
+    "$node_image" node "$@"
+}
+
+docker_node_with_env() {
+  docker run --rm \
+    --user "$(id -u):$(id -g)" \
+    --env-file "$ROOT_DIR/.env" \
+    --volume "$ROOT_DIR:/app" \
+    --workdir /app \
+    "$node_image" node "$@"
+}
+
+read_env_value() {
+  docker_node -e '
+    const fs = require("fs");
+    const key = process.argv[1];
+    const fallback = process.argv[2];
+    const source = fs.existsSync(".env") ? fs.readFileSync(".env", "utf8") : "";
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = source.match(new RegExp(`^\\s*${escapedKey}\\s*=\\s*(.*)$`, "m"));
+    let value = match ? match[1].trim() : fallback;
+    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("\u0027") && value.endsWith("\u0027"))) {
+      value = value.slice(1, -1);
+    }
+    process.stdout.write(value || fallback);
+  ' "$1" "$2"
+}
+
+if ! docker image inspect "$node_image" >/dev/null 2>&1; then
+  echo "Preparando el contenedor auxiliar de activacion..."
+  docker pull "$node_image"
 fi
 
 docker compose stop basuracero-app >/dev/null 2>&1 || true
@@ -54,14 +92,14 @@ if [[ -f .env ]]; then
   cp .env "$backup_dir/env.backup"
 fi
 
-node scripts/ensureAdminEnv.js
-node -e "require('./src/server/admin/activation').enableAdmin()"
-base_url="$(node -e "require('dotenv').config(); process.stdout.write(process.env.BASE_URL || 'http://localhost:5050')")"
-bootstrap_username="$(node -e "require('dotenv').config(); process.stdout.write(process.env.ADMIN_BOOTSTRAP_USERNAME || 'admin')")"
+docker_node scripts/ensureAdminEnv.js
+docker_node_with_env -e "require('./src/server/admin/activation').enableAdmin()"
+base_url="$(read_env_value BASE_URL http://localhost:5050)"
+bootstrap_username="$(read_env_value ADMIN_BOOTSTRAP_USERNAME admin)"
 
 status_file="data/.admin-bootstrap-created"
-node -e "require('fs').rmSync('data/.admin-bootstrap-created', { force: true })"
-temporary_password="BCero-$(node -e "process.stdout.write(require('crypto').randomBytes(12).toString('base64url'))")!"
+rm -f "$status_file"
+temporary_password="BCero-$(docker_node -e "process.stdout.write(require('crypto').randomBytes(12).toString('base64url'))")!"
 
 echo "Construyendo la version actualizada..."
 docker compose build
@@ -75,7 +113,7 @@ docker compose run --rm \
   basuracero-app npm run admin:bootstrap
 unset ADMIN_BOOTSTRAP_PASSWORD ADMIN_BOOTSTRAP_STATUS_FILE
 
-node scripts/clearAdminBootstrapEnv.js
+docker_node scripts/clearAdminBootstrapEnv.js
 docker compose up -d
 activation_completed=true
 
@@ -86,7 +124,7 @@ if [[ -f "$status_file" ]]; then
   echo "Usuario: $bootstrap_username"
   echo "Contrasena temporal: $temporary_password"
   echo "Se solicitara cambiarla en el primer acceso."
-  node -e "require('fs').rmSync('data/.admin-bootstrap-created', { force: true })"
+  rm -f "$status_file"
 else
   echo "Ya existia un administrador activo; conserva sus credenciales actuales."
 fi

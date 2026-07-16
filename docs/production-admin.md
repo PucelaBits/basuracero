@@ -14,6 +14,10 @@ Desde la raíz del repositorio actualizado ejecuta:
 ./scripts/enable_admin.sh
 ```
 
+El servidor anfitrión solo necesita Docker y Docker Compose v2. Las tareas auxiliares
+de Node se ejecutan en un contenedor temporal `node:22-slim`; no es necesario instalar
+Node ni npm en el servidor.
+
 El asistente:
 
 1. Detiene el servicio para obtener una copia coherente.

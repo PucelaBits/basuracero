@@ -44,6 +44,14 @@ describe('Activacion del panel administrativo', () => {
 
     expect(activation.isAdminEnabled(env)).toBe(true);
   });
+
+  it('permite activar con Docker sin exigir Node en el servidor anfitrion', () => {
+    const script = fs.readFileSync(path.join(__dirname, '../../scripts/enable_admin.sh'), 'utf8');
+
+    expect(script).not.toMatch(/command_name in docker node/);
+    expect(script).toContain('node_image="${ADMIN_ACTIVATION_NODE_IMAGE:-node:22-slim}"');
+    expect(script).toContain('docker run --rm');
+  });
 });
 
 describe('Aplicacion con panel desactivado', () => {

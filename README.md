@@ -173,7 +173,7 @@ El panel administrativo vive en `/admin`, pero su activación depende del tipo d
   ./scripts/enable_admin.sh
   ```
 
-  El asistente detiene el servicio, crea un backup en `backups/`, genera `SESSION_SECRET` si falta, aplica las migraciones, crea el primer administrador mediante un contenedor efímero y vuelve a levantar la aplicación. Las credenciales temporales se muestran una sola vez en la terminal, no en la web pública ni en los logs persistentes.
+  El asistente solo requiere Docker y Docker Compose v2 en el servidor; no hace falta instalar Node o npm en el anfitrión. Detiene el servicio, crea un backup en `backups/`, genera `SESSION_SECRET` si falta, aplica las migraciones, crea el primer administrador mediante un contenedor efímero y vuelve a levantar la aplicación. Las credenciales temporales se muestran una sola vez en la terminal, no en la web pública ni en los logs persistentes.
 
 Consulta la [guía verificada de activación, backup, migración, despliegue y rollback](docs/production-admin.md) antes de actualizar una instancia existente.
 
