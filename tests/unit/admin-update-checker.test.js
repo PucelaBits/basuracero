@@ -162,6 +162,7 @@ describe('Comprobacion de actualizaciones del panel', () => {
       },
       updateStatus: {
         updateAvailable: true,
+        currentVersion: '1.0.0',
         release: {
           version: '1.1.0',
           title: 'Mejoras de mantenimiento',
@@ -171,7 +172,8 @@ describe('Comprobacion de actualizaciones del panel', () => {
       }
     });
 
-    expect(html).toContain('Versión 1.1.0 disponible');
+    expect(html).toContain('Tienes la versión 1.0.0. La versión 1.1.0 está disponible.');
+    expect(html).not.toContain('Mejoras de mantenimiento');
     expect(html).toContain('Correcciones de seguridad');
     expect(html).toContain('./scripts/upgrade.sh');
     expect(html).toContain('class="dashboard-update-link"');

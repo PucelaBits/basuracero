@@ -520,6 +520,20 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     next();
   });
 
+  router.use(async (req, _res, next) => {
+    if (req.method !== 'GET') {
+      next();
+      return;
+    }
+    try {
+      const settings = await getAppSettings();
+      req.currentAdmin.updateStatus = await getUpdateStatus({ logger, channel: settings.UPDATE_CHANNEL });
+    } catch (error) {
+      logger.warn(`No se ha podido cargar el indicador de actualizaciones: ${error.message}`);
+    }
+    next();
+  });
+
   router.get(['/pages/dashboard', '/resources/:resource(*)'], (_req, res) => {
     res.status(404).send('Not found');
   });

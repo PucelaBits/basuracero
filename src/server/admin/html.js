@@ -120,6 +120,9 @@ function renderPostFormsWithCsrf(html, csrfToken) {
 
 function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
   const safeBody = renderPostFormsWithCsrf(body, csrfToken);
+  const pendingUpdate = currentAdmin?.updateStatus?.updateAvailable
+    ? currentAdmin.updateStatus.release
+    : null;
   return `<!DOCTYPE html>
   <html lang="es">
     <head>
@@ -168,6 +171,28 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           margin-bottom: 18px;
           padding: 10px 2px 18px;
           border-bottom: 1px solid rgba(216, 224, 232, 0.95);
+        }
+        .topbar-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .topbar-update-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 48px;
+          min-width: 48px;
+          min-height: 48px;
+          border: 1px solid #d9d4c7;
+          border-radius: 14px;
+          background: #faf8f2;
+          color: #625b4d;
+          font-size: 22px;
+          text-decoration: none;
+        }
+        .topbar-update-link:hover {
+          background: #f1ede4;
         }
         .brand {
           font-size: 22px;
@@ -2376,6 +2401,10 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             flex-direction: column;
             padding: 0 0 16px;
           }
+          .topbar-actions {
+            width: 100%;
+            justify-content: flex-end;
+          }
           .panel {
             padding: 18px 14px;
             border-radius: 18px;
@@ -2766,7 +2795,12 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             <div class="brand">Basura Cero Admin</div>
             <div class="meta">${currentAdmin ? `Sesion iniciada como <strong>${escapeHtml(currentAdmin.username)}</strong>` : 'Acceso de administracion'}</div>
           </div>
-          ${currentAdmin ? `<form method="post" action="/admin/logout"><input type="hidden" name="_csrf" value="${escapeAttr(csrfToken || '')}"><button class="button-ghost" type="submit">Cerrar sesion</button></form>` : ''}
+          ${currentAdmin ? `
+            <div class="topbar-actions">
+              ${pendingUpdate ? `<a class="topbar-update-link" href="/admin/updates" aria-label="Actualización ${escapeAttr(pendingUpdate.version || '')} disponible. Ver actualizaciones"><i class="mdi mdi-update" aria-hidden="true"></i></a>` : ''}
+              <form method="post" action="/admin/logout"><input type="hidden" name="_csrf" value="${escapeAttr(csrfToken || '')}"><button class="button-ghost" type="submit">Cerrar sesion</button></form>
+            </div>
+          ` : ''}
         </div>
         <div class="panel">
           ${notice?.type === 'error' ? `<div class="notice error" role="alert" aria-live="assertive">${escapeHtml(notice.message)}</div>` : ''}
@@ -3459,7 +3493,9 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
   const updateRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
   const updateHeading = updateStatus?.channel === 'beta'
     ? `Actualización beta ${updateRelease?.version || ''} disponible`
-    : `Versión ${updateRelease?.version || ''} disponible`;
+    : updateStatus?.currentVersion
+      ? `Tienes la versión ${updateStatus.currentVersion}. La versión ${updateRelease?.version || ''} está disponible.`
+      : `Versión ${updateRelease?.version || ''} disponible`;
   const updateNotes = updateRelease?.notes?.length
     ? `<ul class="dashboard-update-notes">${updateRelease.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
     : '';
@@ -3519,7 +3555,6 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
               <div class="dashboard-update-icon" aria-hidden="true"><i class="mdi mdi-update"></i></div>
               <div class="dashboard-update-copy">
                 <strong>${escapeHtml(updateHeading)}</strong>
-                ${updateRelease.title ? `<p>${escapeHtml(updateRelease.title)}</p>` : ''}
                 ${updateNotes}
                 <p class="dashboard-update-command">Ejecuta <code>./scripts/upgrade.sh</code> desde el servidor para instalarla.</p>
               </div>
@@ -3674,7 +3709,7 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
   const availableRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
   const availableTitle = updateStatus?.channel === 'beta'
     ? `Actualización beta ${availableRelease?.version || ''} disponible`
-    : `Versión ${availableRelease?.version || ''} disponible`;
+    : `Tienes la versión ${installedVersion}. La versión ${availableRelease?.version || ''} está disponible.`;
   const availableNotes = availableRelease?.notes?.length
     ? `<ul class="dashboard-update-notes">${availableRelease.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
     : '';
@@ -3704,7 +3739,6 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
           <div class="dashboard-update-icon" aria-hidden="true"><i class="mdi mdi-update"></i></div>
           <div class="dashboard-update-copy">
             <strong>${escapeHtml(availableTitle)}</strong>
-            ${availableRelease.title ? `<p>${escapeHtml(availableRelease.title)}</p>` : ''}
             ${availableNotes}
             <p class="dashboard-update-command">Ejecuta <code>./scripts/upgrade.sh</code> desde el servidor para instalarla.</p>
           </div>

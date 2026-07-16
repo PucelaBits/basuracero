@@ -613,6 +613,40 @@ describe('Panel admin', () => {
     }
   });
 
+  it('muestra un acceso global a actualizaciones desde cualquier seccion', async () => {
+    const originalFetch = global.fetch;
+    const checker = require('../../src/server/admin/updateChecker');
+
+    try {
+      process.env.APP_UPDATE_CHECK_IN_TESTS = 'true';
+      checker.resetUpdateStatusCache();
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          tag_name: 'v2.1.2',
+          name: 'Mejora del aviso',
+          body: '- Indicador global',
+          draft: false,
+          prerelease: false,
+          published_at: '2026-07-16T10:00:00Z',
+          html_url: 'https://github.com/PucelaBits/basuracero/releases/tag/v2.1.2'
+        })
+      });
+
+      const page = await agent.get('/admin/configuracion');
+
+      expect(page.status).toBe(200);
+      expect(page.text).toContain('class="topbar-update-link"');
+      expect(page.text).toContain('href="/admin/updates"');
+      expect(page.text).toContain('Actualización 2.1.2 disponible. Ver actualizaciones');
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    } finally {
+      checker.resetUpdateStatusCache();
+      global.fetch = originalFetch;
+      delete process.env.APP_UPDATE_CHECK_IN_TESTS;
+    }
+  });
+
   it('impide activar servicios externos con una configuración incompleta', async () => {
     const settingsService = require('../../src/server/admin/settings');
     const current = await settingsService.getAppSettings();
