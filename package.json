@@ -1,6 +1,6 @@
 {
   "name": "basura-cero",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Sistema de reporte de incidencias urbanas",
   "main": "src/server/server.js",
   "scripts": {

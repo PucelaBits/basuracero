@@ -53,10 +53,11 @@ const {
   renderLayout,
   renderLoginPage,
   renderMaintenancePage,
-  renderSettingsPage
+  renderSettingsPage,
+  renderUpdatesPage
 } = require('./html');
-const { getAppSettings, updateAppSettings, updateAppSettingsSection } = require('./settings');
-const { getUpdateStatus } = require('./updateChecker');
+const { SETTING_DEFINITIONS, getAppSettings, updateAppSettings, updateAppSettingsSection } = require('./settings');
+const { getInstalledRelease, getUpdateStatus, resetUpdateStatusCache } = require('./updateChecker');
 
 const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
@@ -547,6 +548,67 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
   router.get('/', renderAdminHome);
   router.get('/home', renderAdminHome);
 
+  router.get('/updates', async (req, res, next) => {
+    try {
+      const settings = await getAppSettings();
+      const updateStatus = await getUpdateStatus({ logger, channel: settings.UPDATE_CHANNEL });
+      res.send(renderUpdatesPage({
+        currentAdmin: req.currentAdmin,
+        notice: req.query.saved
+          ? { type: 'success', message: 'Canal de actualizaciones guardado.' }
+          : req.query.check === 'current'
+            ? { type: 'success', message: 'Comprobación completada. Ya tienes instalada la última versión disponible.' }
+            : req.query.check === 'available'
+              ? { type: 'success', message: 'Comprobación completada. Hay una actualización disponible.' }
+              : req.query.check === 'error'
+                ? { type: 'error', message: 'No se han podido comprobar las actualizaciones. Inténtalo de nuevo más tarde.' }
+                : null,
+        channel: settings.UPDATE_CHANNEL,
+        installedRelease: getInstalledRelease(),
+        updateStatus,
+        csrfToken: req.session.csrfToken
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post('/updates/channel', async (req, res) => {
+    try {
+      await updateAppSettingsSection('updates', req.body, req.currentAdmin.id);
+      resetUpdateStatusCache();
+      res.redirect('/admin/updates?saved=1');
+    } catch (error) {
+      const settings = await getAppSettings();
+      res.status(400).send(renderUpdatesPage({
+        currentAdmin: req.currentAdmin,
+        notice: toActionNotice(error),
+        channel: settings.UPDATE_CHANNEL,
+        installedRelease: getInstalledRelease(),
+        updateStatus: { checked: false, updateAvailable: false },
+        csrfToken: req.session.csrfToken
+      }));
+    }
+  });
+
+  router.post('/updates/check', async (req, res) => {
+    try {
+      const settings = await getAppSettings();
+      resetUpdateStatusCache();
+      const updateStatus = await getUpdateStatus({ logger, channel: settings.UPDATE_CHANNEL });
+      if (!updateStatus.checked) {
+        res.redirect('/admin/updates?check=error');
+        return;
+      }
+      res.redirect(updateStatus.updateAvailable
+        ? '/admin/updates?check=available'
+        : '/admin/updates?check=current');
+    } catch (error) {
+      logger.error('Error al comprobar actualizaciones:', error);
+      res.redirect('/admin/updates?check=error');
+    }
+  });
+
   router.get('/administradores', async (req, res, next) => {
     try {
       const admins = await getAdminUsersList();
@@ -586,7 +648,8 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       if (section) {
         await updateAppSettingsSection(section, req.body, req.currentAdmin.id);
       } else {
-        await updateAppSettings(req.body, req.currentAdmin.id);
+        const submittedSettingKeys = Object.keys(req.body).filter((key) => SETTING_DEFINITIONS[key]);
+        await updateAppSettings(req.body, req.currentAdmin.id, { keys: submittedSettingKeys });
       }
       if (wantsJson) {
         res.json({ ok: true, section: section || 'all', message: 'Cambios guardados.' });

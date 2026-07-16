@@ -69,7 +69,7 @@ function isCommitSha(value) {
 }
 
 async function getUpdateStatus({ env = process.env, fetchImpl = global.fetch, logger = console, now = Date.now, localRelease, channel } = {}) {
-  if (env.NODE_ENV === 'test' && localRelease === undefined) {
+  if (env.NODE_ENV === 'test' && env.APP_UPDATE_CHECK_IN_TESTS !== 'true' && localRelease === undefined) {
     return { checked: false, updateAvailable: false };
   }
   const installedRelease = localRelease === undefined ? readLocalRelease() : normalizeRelease(localRelease);
@@ -165,6 +165,7 @@ function resetUpdateStatusCache() {
 
 module.exports = {
   compareVersions,
+  getInstalledRelease: readLocalRelease,
   getUpdateStatus,
   normalizeRelease,
   resetUpdateStatusCache

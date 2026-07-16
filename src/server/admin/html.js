@@ -994,6 +994,92 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .settings-service-heading h3 {
           margin: 0;
         }
+        .updates-summary {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px 44px;
+          padding: 4px 0 20px;
+          border-bottom: 1px solid var(--line);
+        }
+        .updates-summary-item {
+          display: grid;
+          gap: 4px;
+        }
+        .updates-summary-item span {
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .updates-summary-item strong {
+          font-size: 20px;
+          line-height: 1.3;
+        }
+        .updates-channel-options {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+          margin: 0;
+          padding: 0;
+          border: 0;
+        }
+        .updates-channel-option {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          min-height: 104px;
+          padding: 16px;
+          border: 1px solid var(--line);
+          border-radius: 16px;
+          background: #fff;
+          cursor: pointer;
+        }
+        .updates-channel-option:has(input:checked) {
+          border-color: #8d99a5;
+          background: var(--accent-soft);
+          box-shadow: inset 0 0 0 1px #8d99a5;
+        }
+        .updates-channel-option input {
+          flex: 0 0 auto;
+          width: 20px;
+          height: 20px;
+          min-height: 20px;
+          margin: 2px 0 0;
+        }
+        .updates-channel-copy {
+          display: grid;
+          gap: 4px;
+          min-width: 0;
+        }
+        .updates-channel-copy strong {
+          line-height: 1.4;
+        }
+        .updates-channel-copy span {
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .updates-recommended {
+          color: var(--success) !important;
+          font-size: 12px !important;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          text-transform: uppercase;
+        }
+        .updates-form-actions,
+        .updates-check-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+        .updates-check-copy {
+          display: grid;
+          gap: 4px;
+        }
+        .updates-check-copy p {
+          margin: 0;
+          line-height: 1.5;
+        }
         .settings-external-link {
           display: inline-flex;
           align-items: center;
@@ -2333,6 +2419,18 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .settings-coordinate-grid {
             grid-template-columns: 1fr;
           }
+          .updates-channel-options {
+            grid-template-columns: 1fr;
+          }
+          .updates-form-actions,
+          .updates-check-row {
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .updates-form-actions button,
+          .updates-check-row button {
+            width: 100%;
+          }
           .settings-preview-panel {
             position: static;
           }
@@ -3493,7 +3591,8 @@ function renderAdminNavigation(activeNav) {
     ['/admin/maintenance', 'Mantenimiento', 'maintenance'],
     ['/admin/configuracion', 'Configuración', 'configuracion'],
     ['/admin/administradores', 'Administradores', 'administradores'],
-    ['/admin/auditoria', 'Auditoría', 'auditoria']
+    ['/admin/auditoria', 'Auditoría', 'auditoria'],
+    ['/admin/updates', 'Actualizaciones', 'updates']
   ];
   const activeItem = items.find(([, , key]) => key === activeNav) || items[0];
   const links = items
@@ -3546,6 +3645,103 @@ function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro,
           ${content}
         </div>
       </section>
+    `
+  });
+}
+
+function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, updateStatus, csrfToken }) {
+  const installedVersion = installedRelease?.version || 'Desconocida';
+  const availableRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
+  const availableTitle = updateStatus?.channel === 'beta'
+    ? `Actualización beta ${availableRelease?.version || ''} disponible`
+    : `Versión ${availableRelease?.version || ''} disponible`;
+  const availableNotes = availableRelease?.notes?.length
+    ? `<ul class="dashboard-update-notes">${availableRelease.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
+    : '';
+
+  return renderAdminSectionLayout({
+    currentAdmin,
+    notice,
+    csrfToken,
+    title: 'Actualizaciones',
+    eyebrow: 'Sistema',
+    intro: 'Elige cuándo recibir nuevas versiones y revisa si hay alguna disponible.',
+    activeNav: 'updates',
+    content: `
+      <section class="updates-summary" aria-label="Estado de la instalación">
+        <div class="updates-summary-item">
+          <span>Versión instalada</span>
+          <strong>${escapeHtml(installedVersion)}</strong>
+        </div>
+        <div class="updates-summary-item">
+          <span>Canal activo</span>
+          <strong>${channel === 'beta' ? 'Beta' : 'Estable'}</strong>
+        </div>
+      </section>
+
+      ${availableRelease ? `
+        <section class="dashboard-update" role="status" aria-label="Actualización disponible">
+          <div class="dashboard-update-icon" aria-hidden="true"><i class="mdi mdi-update"></i></div>
+          <div class="dashboard-update-copy">
+            <strong>${escapeHtml(availableTitle)}</strong>
+            ${availableRelease.title ? `<p>${escapeHtml(availableRelease.title)}</p>` : ''}
+            ${availableNotes}
+            <p class="dashboard-update-command">Ejecuta <code>./scripts/upgrade.sh</code> desde el servidor para instalarla.</p>
+          </div>
+          ${availableRelease.url ? `<a class="dashboard-update-link" href="${escapeAttr(availableRelease.url)}" target="_blank" rel="noopener noreferrer">Ver publicación</a>` : ''}
+        </section>
+      ` : ''}
+
+      <section class="dashboard-section" aria-labelledby="updates-channel-title">
+        <div class="dashboard-section-header">
+          <div>
+            <h2 id="updates-channel-title" style="margin-bottom:6px">Canal de actualizaciones</h2>
+            <p class="small">Estable es la opción adecuada para la mayoría de instalaciones.</p>
+          </div>
+        </div>
+        <form method="post" action="/admin/updates/channel">
+          <fieldset class="updates-channel-options">
+            <legend class="sr-only">Selecciona un canal de actualizaciones</legend>
+            <label class="updates-channel-option">
+              <input type="radio" name="UPDATE_CHANNEL" value="stable" ${channel === 'stable' ? 'checked' : ''} required>
+              <span class="updates-channel-copy">
+                <strong>Estable</strong>
+                <span class="updates-recommended">Recomendado</span>
+                <span>Recibe solo versiones publicadas y recomendadas para el uso habitual.</span>
+              </span>
+            </label>
+            <label class="updates-channel-option">
+              <input type="radio" name="UPDATE_CHANNEL" value="beta" ${channel === 'beta' ? 'checked' : ''} required>
+              <span class="updates-channel-copy">
+                <strong>Beta</strong>
+                <span>Recibe antes las últimas novedades en pruebas. Puede incluir funciones que todavía se están validando.</span>
+              </span>
+            </label>
+          </fieldset>
+          <div class="updates-form-actions" style="margin-top:16px">
+            <span class="small">Cambiar de canal no instala nada automáticamente.</span>
+            <button type="submit">Guardar canal</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="dashboard-section" aria-labelledby="updates-check-title">
+        <div class="updates-check-row">
+          <div class="updates-check-copy">
+            <h2 id="updates-check-title">Buscar actualizaciones</h2>
+            <p class="small">La comprobación automática se realiza cada seis horas.</p>
+          </div>
+          <form method="post" action="/admin/updates/check">
+            <button type="submit" class="button-ghost" data-update-check>Comprobar ahora</button>
+          </form>
+        </div>
+      </section>
+      <script>
+        document.querySelector('[data-update-check]')?.closest('form')?.addEventListener('submit', (event) => {
+          const button = event.submitter;
+          if (button) button.textContent = 'Comprobando…';
+        });
+      </script>
     `
   });
 }
@@ -3803,25 +3999,6 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
               </div>
             </div>
             ${sectionSaveButton('Servicios externos', 'services')}
-          </section>
-          <section class="settings-section" data-settings-section="updates">
-            <div>
-              <h2>Actualizaciones</h2>
-              <p class="small">Elige qué versiones debe anunciar e instalar esta instancia.</p>
-            </div>
-            <div class="settings-fields">
-              ${selectField('UPDATE_CHANNEL', 'Canal de actualizaciones', [
-                ['stable', 'Estable (recomendado)'],
-                ['beta', 'Beta (todos los cambios de la rama)']
-              ])}
-            </div>
-            <div class="settings-service">
-              <strong>${settings.UPDATE_CHANNEL === 'beta' ? 'Canal beta activo' : 'Canal estable activo'}</strong>
-              <p class="small">${settings.UPDATE_CHANNEL === 'beta'
-                ? 'Recibirás avisos por cada nueva revisión. Puede incluir cambios todavía no validados para producción.'
-                : 'Solo recibirás avisos de versiones publicadas expresamente y etiquetadas como estables.'}</p>
-            </div>
-            ${sectionSaveButton('Actualizaciones', 'updates')}
           </section>
         </div>
       </form>
@@ -5011,5 +5188,6 @@ module.exports = {
   renderLayout,
   renderLoginPage,
   renderMaintenancePage,
-  renderSettingsPage
+  renderSettingsPage,
+  renderUpdatesPage
 };

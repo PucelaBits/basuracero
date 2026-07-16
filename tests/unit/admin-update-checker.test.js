@@ -104,6 +104,31 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(result.release.notes).toEqual(['Nuevo cambio experimental']);
   });
 
+  it('permite vaciar la cache para comprobar de nuevo inmediatamente', async () => {
+    const fetchImpl = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ version: '2.0.1', ref: 'v2.0.1', notes: ['Primera comprobación'] })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ version: '2.0.2', ref: 'v2.0.2', notes: ['Segunda comprobación'] })
+      });
+    const options = {
+      localRelease: { version: '2.0.0', ref: 'v2.0.0' },
+      fetchImpl,
+      now: () => 1000
+    };
+
+    const first = await checker.getUpdateStatus(options);
+    checker.resetUpdateStatusCache();
+    const second = await checker.getUpdateStatus(options);
+
+    expect(first.latestVersion).toBe('2.0.1');
+    expect(second.latestVersion).toBe('2.0.2');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it('muestra la version y sus novedades como aviso operativo', () => {
     const { renderDashboardPage } = require('../../src/server/admin/html');
     const html = renderDashboardPage({

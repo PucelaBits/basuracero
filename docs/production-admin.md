@@ -30,7 +30,9 @@ El upgrade solo acepta avances rápidos sobre `main`, rechaza cambios locales ve
 
 El canal **estable**, recomendado y predeterminado, compara el `release.json` incluido en la imagen con el publicado en la rama configurada. Solo admite versiones `major.minor.patch` cuya referencia sea `vMAJOR.MINOR.PATCH`; `upgrade.sh` instala esa etiqueta exacta, evitando commits posteriores. El título y `notes` se muestran en el aviso, así que no incrementes la versión ni publiques la etiqueta hasta que la entrega esté lista para producción.
 
-El canal **beta** es opt-in desde `/admin/configuracion`. Compara el SHA incluido al construir la imagen con la punta de la rama y avisa ante cualquier cambio; el upgrade instala esa rama mediante avance rápido. La selección se guarda en SQLite y se refleja en `data/update-channel` para que el script de servidor respete la misma preferencia.
+El canal **beta** es opt-in desde `/admin/updates`. Compara el SHA incluido al construir la imagen con la punta de la rama y avisa ante cualquier cambio; el upgrade instala esa rama mediante avance rápido. La selección se guarda en SQLite y se refleja en `data/update-channel` para que el script de servidor respete la misma preferencia.
+
+La sección **Actualizaciones** aparece como entrada independiente del menú, debajo de **Auditoría**. El administrador puede usar **Comprobar ahora** para invalidar la caché y consultar inmediatamente el canal guardado. La acción está autenticada y protegida mediante CSRF; no ejecuta el upgrade.
 
 ### Activar una instalación Docker existente
 

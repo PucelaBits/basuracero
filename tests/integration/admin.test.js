@@ -381,7 +381,7 @@ describe('Panel admin', () => {
     expect(page.text).toContain('id="whatsapp-dependent-fields" hidden');
     expect(page.text).toContain("dependentFields.hidden = !enabled");
     expect(page.text).not.toContain('<h2>Apariencia</h2>');
-    expect((page.text.match(/data-settings-save aria-label/g) || []).length).toBe(6);
+    expect((page.text.match(/data-settings-save aria-label/g) || []).length).toBe(5);
     expect(page.text).not.toContain('Guardar configuración');
     expect(page.text).toContain('Reporte por WhatsApp');
     expect(page.text).toContain('Votos mínimos para considerar una incidencia como solucionada');
@@ -400,8 +400,7 @@ describe('Panel admin', () => {
     expect(page.text).toContain('rel="noopener noreferrer"');
     expect(page.text).not.toContain('Ruta del logotipo');
     expect(page.text).not.toContain('SESSION_SECRET');
-    expect(page.text).toContain('Canal de actualizaciones');
-    expect(page.text).toContain('Estable (recomendado)');
+    expect(page.text).not.toContain('Canal de actualizaciones');
 
     const response = await agent
       .post('/admin/configuracion')
@@ -450,8 +449,7 @@ describe('Panel admin', () => {
         MAPA_ZOOM_INICIAL: '13',
         SEARCH_REGION_LIMIT_ENABLED: 'true',
         SEARCH_REGION_QUERY: '+Valladolid+España',
-        DISTANCIA_MAXIMA_CERCANAS: '1500',
-        UPDATE_CHANNEL: 'stable'
+        DISTANCIA_MAXIMA_CERCANAS: '1500'
       });
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe('/admin/configuracion?saved=1');
@@ -475,22 +473,6 @@ describe('Panel admin', () => {
     expect(savedSettings.REPORTES_PARA_SOLUCIONAR).toBe('4');
     expect(savedSettings.DIAS_PARA_CONSIDERAR_ANTIGUA).toBe('30');
     expect(savedSettings.REPORTES_PARA_SOLUCIONAR_ANTIGUA).toBe('2');
-    expect(savedSettings.UPDATE_CHANNEL).toBe('stable');
-    expect(fs.readFileSync(path.join(path.dirname(process.env.SQLITE_DB_PATH), 'update-channel'), 'utf8').trim()).toBe('stable');
-
-    const updateChannelResponse = await agent
-      .post('/admin/configuracion')
-      .set('accept', 'application/json')
-      .set('x-csrf-token', extractCsrfToken(page.text))
-      .type('form')
-      .send({
-        _csrf: extractCsrfToken(page.text),
-        _section: 'updates',
-        UPDATE_CHANNEL: 'beta'
-      });
-    expect(updateChannelResponse.status).toBe(200);
-    expect((await settingsService.getAppSettings()).UPDATE_CHANNEL).toBe('beta');
-    expect(fs.readFileSync(path.join(path.dirname(process.env.SQLITE_DB_PATH), 'update-channel'), 'utf8').trim()).toBe('beta');
 
     const partialResponse = await agent
       .post('/admin/configuracion')
@@ -552,6 +534,67 @@ describe('Panel admin', () => {
     expect(oldSolutionResponse.body.solucionada).toBe(true);
     expect(oldSolutionResponse.body.reportes_solucion).toBe(2);
     expect(solvedOldIncidencia.estado).toBe('solucionada');
+  });
+
+  it('muestra las actualizaciones como seccion independiente y permite elegir canal', async () => {
+    const page = await agent.get('/admin/updates');
+
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('<h1 class="dashboard-section-title">Actualizaciones</h1>');
+    expect(page.text).toContain('href="/admin/auditoria"');
+    expect(page.text).toContain('href="/admin/updates"');
+    expect(page.text.indexOf('href="/admin/updates"')).toBeGreaterThan(page.text.indexOf('href="/admin/auditoria"'));
+    expect(page.text).toContain('Versión instalada');
+    expect(page.text).toContain('2.0.1');
+    expect(page.text).toContain('Estable');
+    expect(page.text).toContain('Recomendado');
+    expect(page.text).toContain('últimas novedades en pruebas');
+    expect(page.text).not.toContain('todos los cambios de la rama');
+    expect(page.text).toContain('action="/admin/updates/channel"');
+    expect(page.text).toContain('action="/admin/updates/check"');
+    expect(page.text).toContain('Comprobar ahora');
+
+    const response = await agent
+      .post('/admin/updates/channel')
+      .type('form')
+      .send({
+        _csrf: extractCsrfToken(page.text),
+        UPDATE_CHANNEL: 'beta'
+      });
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/admin/updates?saved=1');
+
+    const settingsService = require('../../src/server/admin/settings');
+    expect((await settingsService.getAppSettings()).UPDATE_CHANNEL).toBe('beta');
+    expect(fs.readFileSync(path.join(path.dirname(process.env.SQLITE_DB_PATH), 'update-channel'), 'utf8').trim()).toBe('beta');
+  });
+
+  it('permite comprobar actualizaciones manualmente sin esperar a la cache', async () => {
+    const settingsService = require('../../src/server/admin/settings');
+    await settingsService.updateAppSettingsSection('updates', { UPDATE_CHANNEL: 'stable' }, 1);
+    const originalFetch = global.fetch;
+
+    try {
+      const page = await agent.get('/admin/updates');
+      process.env.APP_UPDATE_CHECK_IN_TESTS = 'true';
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ version: '2.0.1', ref: 'v2.0.1', notes: ['Versión instalada'] })
+      });
+      const response = await agent
+        .post('/admin/updates/check')
+        .type('form')
+        .send({ _csrf: extractCsrfToken(page.text) });
+
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toBe('/admin/updates?check=current');
+      const updatesPage = await agent.get(response.headers.location);
+      expect(updatesPage.text).toContain('Ya tienes instalada la última versión disponible.');
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    } finally {
+      global.fetch = originalFetch;
+      delete process.env.APP_UPDATE_CHECK_IN_TESTS;
+    }
   });
 
   it('impide activar servicios externos con una configuración incompleta', async () => {

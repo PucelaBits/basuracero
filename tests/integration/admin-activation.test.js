@@ -68,6 +68,7 @@ describe('Activacion del panel administrativo', () => {
 
     expect(script).toContain('git merge --ff-only');
     expect(script).toContain('data/update-channel');
+    expect(script).toContain("process.env.APP_GIT_SHA");
     expect(script).toContain('v[0-9]+\\.[0-9]+\\.[0-9]+');
     expect(script).toContain('backups/upgrade-');
     expect(script).toContain("health_status");
