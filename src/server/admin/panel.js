@@ -272,7 +272,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     res.set({
       'Cache-Control': 'no-store',
       'Content-Security-Policy': "default-src 'self'; img-src 'self' data: https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'",
-      'Referrer-Policy': 'no-referrer',
+      'Referrer-Policy': 'same-origin',
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY'
     });
@@ -340,20 +340,22 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
     const originHeader = req.get('origin');
     const refererHeader = req.get('referer');
-    const hasSourceHeader = Boolean(originHeader || refererHeader);
+    const normalizedOriginHeader = String(originHeader || '').trim().toLowerCase();
+    const sourceHeader = normalizedOriginHeader && normalizedOriginHeader !== 'null'
+      ? originHeader
+      : refererHeader;
+    const hasVerifiableSourceHeader = Boolean(sourceHeader);
     let requestOrigin = null;
 
     try {
-      if (originHeader) {
-        requestOrigin = new URL(originHeader).origin;
-      } else if (refererHeader) {
-        requestOrigin = new URL(refererHeader).origin;
+      if (sourceHeader) {
+        requestOrigin = new URL(sourceHeader).origin;
       }
     } catch (_error) {
       requestOrigin = null;
     }
 
-    if (hasSourceHeader && requestOrigin !== allowedOrigin) {
+    if (hasVerifiableSourceHeader && requestOrigin !== allowedOrigin) {
       res.status(403).send(buildForbiddenPage({
         currentAdmin: req.currentAdmin,
         csrfToken: req.session?.csrfToken || '',

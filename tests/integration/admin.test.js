@@ -1129,6 +1129,29 @@ describe('Panel admin', () => {
     await loadFreshApp();
   });
 
+  it('usa Referer cuando Origin es opaco y mantiene la validacion CSRF', async () => {
+    await loadFreshApp({ nodeEnv: 'production' });
+    const loginPage = await agent.get('/admin/login').set('X-Forwarded-Proto', 'https');
+    const cookie = getSessionCookie(loginPage)?.split(';')[0];
+    const response = await request(app)
+      .post('/admin/login')
+      .set('X-Forwarded-Proto', 'https')
+      .set('Origin', 'null')
+      .set('Referer', 'http://localhost:5050/admin/login')
+      .set('Cookie', cookie)
+      .type('form')
+      .send({
+        username: 'admin',
+        password: 'credencial-incorrecta',
+        _csrf: extractCsrfToken(loginPage.text)
+      });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/admin/login?error=1');
+    expect(loginPage.headers['referrer-policy']).toBe('same-origin');
+    await loadFreshApp();
+  });
+
   it('exige un SESSION_SECRET robusto en produccion', () => {
     const previousEnv = process.env.NODE_ENV;
     const previousSecret = process.env.SESSION_SECRET;
