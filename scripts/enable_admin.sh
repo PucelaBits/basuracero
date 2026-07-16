@@ -46,15 +46,6 @@ docker_node() {
     "$node_image" node "$@"
 }
 
-docker_node_with_env() {
-  docker run --rm \
-    --user "$(id -u):$(id -g)" \
-    --env-file "$ROOT_DIR/.env" \
-    --volume "$ROOT_DIR:/app" \
-    --workdir /app \
-    "$node_image" node "$@"
-}
-
 read_env_value() {
   docker_node -e '
     const fs = require("fs");
@@ -69,6 +60,23 @@ read_env_value() {
     }
     process.stdout.write(value || fallback);
   ' "$1" "$2"
+}
+
+docker_node_with_database_path() {
+  local sqlite_db_path
+  local docker_args
+  sqlite_db_path="$(read_env_value SQLITE_DB_PATH '')"
+  docker_args=(
+    run --rm
+    --user "$(id -u):$(id -g)"
+    --volume "$ROOT_DIR:/app"
+    --workdir /app
+  )
+  if [[ -n "$sqlite_db_path" ]]; then
+    docker_args+=(--env "SQLITE_DB_PATH=$sqlite_db_path")
+  fi
+  docker_args+=("$node_image" node "$@")
+  docker "${docker_args[@]}"
 }
 
 if ! docker image inspect "$node_image" >/dev/null 2>&1; then
@@ -93,7 +101,7 @@ if [[ -f .env ]]; then
 fi
 
 docker_node scripts/ensureAdminEnv.js
-docker_node_with_env -e "require('./src/server/admin/activation').enableAdmin()"
+docker_node_with_database_path -e "require('./src/server/admin/activation').enableAdmin()"
 base_url="$(read_env_value BASE_URL http://localhost:5050)"
 bootstrap_username="$(read_env_value ADMIN_BOOTSTRAP_USERNAME admin)"
 
