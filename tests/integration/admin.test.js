@@ -431,6 +431,8 @@ describe('Panel admin', () => {
         WHATSAPP_SHARE_PHONE: '34600100100',
         WHATSAPP_REQUIRE_ACTIVATION: 'false',
         WHATSAPP_SHARE_BUTTON_TEXT: 'Informar por WhatsApp',
+        WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR: '1 persona informó al servicio municipal',
+        WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL: '{count} personas informaron al servicio municipal',
         WHATSAPP_SHARE_DIALOG_TITLE: 'Enviar incidencia',
         WHATSAPP_SHARE_DIALOG_TEXT: 'Se abrirá WhatsApp.',
         WHATSAPP_SHARE_DIALOG_NOTE: 'Revisa el mensaje antes de enviarlo.',
@@ -463,6 +465,7 @@ describe('Panel admin', () => {
     expect(config.body.WHATSAPP_SHARE_PHONE).toBe('34600100100');
     expect(config.body.WHATSAPP_REQUIRE_ACTIVATION).toBe('false');
     expect(config.body.WHATSAPP_SHARE_BUTTON_TEXT).toBe('Informar por WhatsApp');
+    expect(config.body.WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL).toBe('{count} personas informaron al servicio municipal');
     expect(config.body.DISTANCIA_MAXIMA_CERCANAS).toBe('1500');
     expect(config.body.APP_SOCIAL_LINKS).toContain('Comunidad');
     expect(config.body.REPORTES_PARA_SOLUCIONAR).toBeUndefined();

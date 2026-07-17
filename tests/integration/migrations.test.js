@@ -46,9 +46,10 @@ describe('Migraciones SQLite', () => {
     await db.close();
 
     expect(tables.map((item) => item.name)).toEqual(expect.arrayContaining([
-      'incidencias', 'admin_users', 'admin_sessions', 'admin_audit_log', 'app_settings', 'schema_migrations'
+      'incidencias', 'admin_users', 'admin_sessions', 'admin_audit_log', 'app_settings', 'schema_migrations',
+      'external_report_events', 'external_report_imports'
     ]));
-    expect(migrations.total).toBe(5);
+    expect(migrations.total).toBe(7);
     expect(indexes.map((item) => item.name)).toContain('idx_incidencias_estado_fecha');
     expect(integrity.integrity_check).toBe('ok');
     expect(foreignKeyErrors).toHaveLength(0);
@@ -85,7 +86,7 @@ describe('Migraciones SQLite', () => {
 
     expect(columns.map((item) => item.name)).toEqual(expect.arrayContaining(['direccion_json', 'fecha_spam']));
     expect(preserved).toEqual({ descripcion: 'Dato que debe conservarse', tipo_id: 1 });
-    expect(migrations.total).toBe(5);
+    expect(migrations.total).toBe(7);
     expect(integrity.integrity_check).toBe('ok');
     expect(foreignKeyErrors).toHaveLength(0);
   });

@@ -1,4 +1,5 @@
 import { computed } from 'vue';
+import axios from 'axios';
 import { enviarEventoMatomo } from '../utils/analytics';
 import { getRuntimeConfig } from '../utils/runtimeConfig';
 
@@ -8,6 +9,9 @@ export function useWhatsAppShare() {
   const requiresActivation = computed(() => config.WHATSAPP_REQUIRE_ACTIVATION === 'true');
   const phoneNumber = computed(() => config.WHATSAPP_SHARE_PHONE);
   const buttonText = computed(() => config.WHATSAPP_SHARE_BUTTON_TEXT);
+  const reportCountText = (count) => (count === 1
+    ? config.WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR
+    : config.WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL.replaceAll('{count}', count));
   const dialogTitle = computed(() => config.WHATSAPP_SHARE_DIALOG_TITLE);
   const dialogText = computed(() => requiresActivation.value
     ? config.WHATSAPP_SHARE_DIALOG_TEXT
@@ -28,6 +32,12 @@ export function useWhatsAppShare() {
       navigator.clipboard.writeText(mensaje).catch(() => {});
     }
 
+    // No bloqueamos la apertura: si la telemetría propia falla, WhatsApp debe
+    // conservar exactamente el comportamiento actual para la persona usuaria.
+    void axios.post(`/api/incidencias/${incidencia.id}/external-report`, {
+      channel: 'whatsapp'
+    }).catch(() => {});
+
     enviarEventoMatomo('Incidencia', 'Informe WhatsApp', `ID: ${incidencia.id}`);
     
     window.open(url, '_blank');
@@ -36,6 +46,7 @@ export function useWhatsAppShare() {
   return {
     isEnabled,
     buttonText,
+    reportCountText,
     dialogTitle,
     dialogText,
     dialogNote,

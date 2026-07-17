@@ -51,6 +51,7 @@ Estos valores no se muestran en el panel:
 | `BASE_URL` | Origen público exacto, sin una ruta final. |
 | `HOST`, `PORT` | Interfaz y puerto de escucha. |
 | `SESSION_SECRET` | Firma de las sesiones administrativas; mínimo 32 caracteres en producción. |
+| `EXTERNAL_REPORT_FINGERPRINT_SECRET` | Opcional. Permite aportar un secreto propio para pseudonimizar y deduplicar los avisos externos. Si falta, la aplicación genera y guarda uno automáticamente junto a la base de datos. |
 | `ADMIN_ENABLED` | Sobrescritura explícita de la activación del panel. Normalmente se usa el marcador de `data/`. |
 | `ADMIN_BOOTSTRAP_USERNAME` | Usuario que se crea si todavía no existe un administrador activo. |
 | `ADMIN_BOOTSTRAP_PASSWORD` | Contraseña temporal para bootstrap manual. `scripts/install.sh` la gestiona y retira automáticamente. |
@@ -123,6 +124,19 @@ npm run incidencia -- remove ID_INCIDENCIA
 ```
 
 El borrado es destructivo. El panel ofrece más contexto, gestiona relaciones e imágenes y debe ser la primera opción.
+
+### Importar avisos históricos de Matomo
+
+Los avisos que se registren desde esta versión se guardan directamente en SQLite. Para conservar el histórico anterior de Matomo, exporta un agregado por incidencia y guárdalo temporalmente fuera del repositorio, con permisos solo para el administrador:
+
+```bash
+chmod 600 /ruta/privada/matomo-avisos.json
+node scripts/importExternalReportHistory.js --file /ruta/privada/matomo-avisos.json
+```
+
+El fichero contiene solo totales por incidencia, no datos personales. Elimínalo cuando termine la importación. Para automatizaciones también están disponibles `--json` y `--base64`.
+
+El script solamente acepta totales positivos y actualiza la importación identificada como `matomo`; al repetirlo sustituye esos totales sin duplicarlos. Las incidencias inexistentes se omiten y se indican al final. También admite el mismo JSON codificado en base64 con `--base64`, útil para automatizaciones que no deban exponer los datos en la línea de comandos.
 
 ### Incidencias antiguas
 

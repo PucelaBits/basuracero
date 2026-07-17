@@ -155,6 +155,14 @@
               </div>
             </v-col>
           </v-row>
+          <v-row v-if="incidencia.avisos_externos > 0 && incidencia.estado !== 'spam'" align="center" class="mt-1">
+            <v-col cols="auto">
+              <div class="d-flex align-center text-caption text--secondary">
+                <v-icon small class="mr-2">mdi-account-group-outline</v-icon>
+                <span>{{ whatsAppShare.reportCountText(incidencia.avisos_externos) }}</span>
+              </div>
+            </v-col>
+          </v-row>
 
           <!-- Mapa -->
           <div class="mapa-container mt-4">
@@ -196,10 +204,18 @@
           @click="mostrarDialogoWhatsApp = true"
           v-if="showWhatsAppButton"
           color="primary"
-          class="w-100"
+          class="w-100 whatsapp-report-button"
         >
-          <v-icon left>mdi-whatsapp</v-icon>
-          <span style="margin-left: 5px;">{{ whatsAppShare.buttonText }}</span>
+          <v-icon size="20" class="whatsapp-action-icon">mdi-whatsapp</v-icon>
+          <span>{{ whatsAppShare.buttonText }}</span>
+          <span
+            v-if="incidencia.avisos_externos > 0"
+            class="whatsapp-report-count"
+            :aria-label="whatsAppShare.reportCountText(incidencia.avisos_externos)"
+          >
+            <v-icon size="20">mdi-account-group-outline</v-icon>
+            <span>{{ incidencia.avisos_externos }}</span>
+          </span>
         </v-btn>
       </v-card-actions>
 
@@ -1034,6 +1050,37 @@ a {
 
 .w-100 {
   width: 100%;
+}
+
+.whatsapp-report-button :deep(.v-btn__content) {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  line-height: 20px;
+}
+
+.whatsapp-action-icon {
+  flex: 0 0 20px;
+  margin-right: 4px;
+  line-height: 20px;
+}
+
+.whatsapp-report-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.38);
+  font-size: 0.875em;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+  opacity: 0.84;
+}
+
+.whatsapp-report-count :deep(.v-icon) {
+  flex: 0 0 20px;
+  line-height: 20px;
 }
 
 .mapa-container {

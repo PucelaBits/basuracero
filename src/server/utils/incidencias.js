@@ -96,7 +96,10 @@ function eliminarRegistrosRelacionados(id, db) {
       if (err) return reject(err);
       db.run('DELETE FROM reportes_inadecuado WHERE incidencia_id = ?', [id], (err) => {
         if (err) return reject(err);
-        resolve();
+        db.run('DELETE FROM external_report_events WHERE incidencia_id = ?', [id], (externalErr) => {
+          if (externalErr) return reject(externalErr);
+          resolve();
+        });
       });
     });
   });

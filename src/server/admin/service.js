@@ -11,6 +11,13 @@ const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, '..', '..', '..', 'uploads');
 const DUMMY_PASSWORD_HASH = '$2b$12$C6UzMDM.H6dfI/f/IKcEe.9wksZ1w1q1OReP4bIu4hB7F7Lr7oB4K';
+const WHATSAPP_REPORT_TOTAL_SQL = `
+  (SELECT COUNT(*)
+   FROM external_report_events ere
+   WHERE ere.incidencia_id = i.id AND ere.channel = 'whatsapp')
+  + COALESCE((SELECT SUM(eri.total)
+              FROM external_report_imports eri
+              WHERE eri.incidencia_id = i.id AND eri.channel = 'whatsapp'), 0)`;
 
 function normalizeFlag(value) {
   return value ? 1 : 0;
@@ -796,9 +803,10 @@ async function deleteIncidencia(incidenciaId, actingAdminId, confirmationText) {
     throw new Error('Incidencia no encontrada.');
   }
 
-  const [solutionReports, inadequateReports, images] = await Promise.all([
+  const [solutionReports, inadequateReports, externalReports, images] = await Promise.all([
     all('SELECT id FROM reportes_solucion WHERE incidencia_id = ?', [incidenciaId]),
     all('SELECT id FROM reportes_inadecuado WHERE incidencia_id = ?', [incidenciaId]),
+    all('SELECT id FROM external_report_events WHERE incidencia_id = ?', [incidenciaId]),
     all('SELECT id, ruta_imagen FROM imagenes_incidencias WHERE incidencia_id = ?', [incidenciaId])
   ]);
 
@@ -806,6 +814,7 @@ async function deleteIncidencia(incidenciaId, actingAdminId, confirmationText) {
   try {
     await run('DELETE FROM reportes_solucion WHERE incidencia_id = ?', [incidenciaId]);
     await run('DELETE FROM reportes_inadecuado WHERE incidencia_id = ?', [incidenciaId]);
+    await run('DELETE FROM external_report_events WHERE incidencia_id = ?', [incidenciaId]);
     await run('DELETE FROM imagenes_incidencias WHERE incidencia_id = ?', [incidenciaId]);
     await run('DELETE FROM incidencias WHERE id = ?', [incidenciaId]);
 
@@ -813,6 +822,7 @@ async function deleteIncidencia(incidenciaId, actingAdminId, confirmationText) {
       ...current,
       solutionReports: solutionReports.length,
       inadequateReports: inadequateReports.length,
+      externalReports: externalReports.length,
       images: images.map((image) => image.ruta_imagen)
     }, null);
     await run('COMMIT');
@@ -990,7 +1000,8 @@ async function getIncidenciaDetail(incidenciaId) {
        t.nombre AS tipo,
        t.icono AS tipo_icono,
        (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) AS reportes_solucion,
-       (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) AS reportes_inadecuado
+       (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) AS reportes_inadecuado,
+       ${WHATSAPP_REPORT_TOTAL_SQL} AS avisos_ayuntamiento
      FROM incidencias i
      JOIN tipos_incidencias t ON t.id = i.tipo_id
      WHERE i.id = ?`,
@@ -1065,7 +1076,8 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
     fecha: 'datetime(i.fecha)',
     tipo: 'lower(t.nombre)',
     estado: 'lower(i.estado)',
-    barrio: 'lower(ifnull(i.barrio, \'\'))'
+    barrio: 'lower(ifnull(i.barrio, \'\'))',
+    avisos: WHATSAPP_REPORT_TOTAL_SQL
   };
   const sortColumn = allowedSorts[sortBy] || allowedSorts.fecha;
   const direction = String(sortDir).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
@@ -1081,6 +1093,7 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
        i.tipo_id,
        t.nombre AS tipo,
        t.icono AS tipo_icono,
+       ${WHATSAPP_REPORT_TOTAL_SQL} AS avisos_ayuntamiento,
        img.ruta_imagen
      FROM incidencias i
      JOIN tipos_incidencias t ON t.id = i.tipo_id
@@ -1102,8 +1115,64 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
   })));
 }
 
+async function getAdminExternalReportsList({ search = '', estado = '', tipoId = '', sortBy = 'avisos', sortDir = 'desc' } = {}) {
+  const clauses = ['COALESCE(r.total, 0) > 0'];
+  const params = [];
+
+  if (search) {
+    clauses.push('(lower(i.descripcion) LIKE lower(?) OR lower(ifnull(i.direccion, \'\')) LIKE lower(?) OR lower(ifnull(i.barrio, \'\')) LIKE lower(?))');
+    const term = `%${search}%`;
+    params.push(term, term, term);
+  }
+  if (estado) {
+    clauses.push('i.estado = ?');
+    params.push(estado);
+  }
+  if (tipoId) {
+    clauses.push('i.tipo_id = ?');
+    params.push(tipoId);
+  }
+
+  const allowedSorts = {
+    avisos: 'COALESCE(r.total, 0)',
+    fecha: 'datetime(i.fecha)',
+    tipo: 'lower(t.nombre)',
+    estado: 'lower(i.estado)',
+    barrio: 'lower(ifnull(i.barrio, \'\'))'
+  };
+  const sortColumn = allowedSorts[sortBy] || allowedSorts.avisos;
+  const direction = String(sortDir).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+  return all(
+    `WITH report_totals AS (
+       SELECT incidencia_id, COUNT(*) AS total
+       FROM external_report_events
+       WHERE channel = 'whatsapp'
+       GROUP BY incidencia_id
+       UNION ALL
+       SELECT incidencia_id, SUM(total) AS total
+       FROM external_report_imports
+       WHERE channel = 'whatsapp'
+       GROUP BY incidencia_id
+     ), aggregated_reports AS (
+       SELECT incidencia_id, SUM(total) AS total
+       FROM report_totals
+       GROUP BY incidencia_id
+     )
+     SELECT i.id, i.descripcion, i.fecha, i.direccion, i.barrio, i.estado,
+            t.nombre AS tipo, t.icono AS tipo_icono, COALESCE(r.total, 0) AS avisos_ayuntamiento
+     FROM incidencias i
+     JOIN tipos_incidencias t ON t.id = i.tipo_id
+     LEFT JOIN aggregated_reports r ON r.incidencia_id = i.id
+     WHERE ${clauses.join(' AND ')}
+     ORDER BY ${sortColumn} ${direction}, i.id DESC
+     LIMIT 100`,
+    params
+  ).then((rows) => rows.map((row) => ({ ...row, avisos_ayuntamiento: Number(row.avisos_ayuntamiento) })));
+}
+
 async function getAdminDashboardData() {
-  const [statsRow, pendingReview, recentWithPhoto, recentWithoutPhoto, byTipo] = await Promise.all([
+  const [statsRow, pendingReview, recentWithPhoto, recentWithoutPhoto, byTipo, externalReports] = await Promise.all([
     get(
       `SELECT
          COUNT(*) AS total,
@@ -1124,10 +1193,11 @@ async function getAdminDashboardData() {
          i.descripcion,
          i.estado,
         i.fecha,
-        i.barrio,
-        i.direccion,
+         i.barrio,
+         i.direccion,
         t.nombre AS tipo,
         t.icono AS tipo_icono,
+        ${WHATSAPP_REPORT_TOTAL_SQL} AS avisos_ayuntamiento,
         img.ruta_imagen
       FROM incidencias i
        JOIN tipos_incidencias t ON t.id = i.tipo_id
@@ -1175,6 +1245,29 @@ async function getAdminDashboardData() {
       HAVING COUNT(i.id) > 0
        ORDER BY COUNT(i.id) DESC, t.nombre COLLATE NOCASE ASC
        LIMIT 8`
+    ),
+    all(
+      `WITH report_totals AS (
+         SELECT incidencia_id, channel, COUNT(*) AS total
+         FROM external_report_events
+         GROUP BY incidencia_id, channel
+         UNION ALL
+         SELECT incidencia_id, channel, SUM(total) AS total
+         FROM external_report_imports
+         GROUP BY incidencia_id, channel
+       )
+       SELECT
+         r.incidencia_id AS incidenciaId,
+         r.channel,
+         SUM(r.total) AS total,
+         i.estado,
+         i.descripcion
+       FROM report_totals r
+       JOIN incidencias i ON i.id = r.incidencia_id
+       WHERE r.channel = 'whatsapp'
+       GROUP BY r.incidencia_id, r.channel, i.estado, i.descripcion
+       ORDER BY total DESC, r.incidencia_id DESC
+       LIMIT 5`
     )
   ]);
 
@@ -1191,7 +1284,11 @@ async function getAdminDashboardData() {
       imageUrl: item.ruta_imagen ? `/uploads/${item.ruta_imagen}` : null
     })),
     recentWithoutPhoto,
-    byTipo
+    byTipo,
+    externalReports: externalReports.map((item) => ({
+      ...item,
+      total: Number(item.total)
+    }))
   };
 }
 
@@ -1396,6 +1493,7 @@ module.exports = {
   getAdminDashboardData,
   getAdminById,
   getAdminIncidenciasList,
+  getAdminExternalReportsList,
   getAdminUsersList,
   getIncidenciaDetail,
   getInadequateReportedIncidencias,

@@ -13,6 +13,7 @@ const { bootstrapAdminIfNeeded } = require('./admin/service');
 const { getAppSettings } = require('./admin/settings');
 const { getSessionSecret, mountAdmin } = require('./admin/panel');
 const { getUpdateStatus } = require('./admin/updateChecker');
+const { ensureExternalReportFingerprintSecret } = require('./utils/externalReportFingerprintSecret');
 
 const DIST_INDEX_PATH = path.join(__dirname, '..', '..', 'dist', 'index.html');
 
@@ -176,6 +177,7 @@ function buildIncidenciaMeta(incidencia, baseUrl, appName) {
 
 async function createApp({ logger = console } = {}) {
   await db.ready;
+  ensureExternalReportFingerprintSecret();
   const initialSettings = await getAppSettings({ refresh: true });
   const adminEnabled = isAdminEnabled();
   if (adminEnabled) {

@@ -46,6 +46,8 @@ const SETTING_DEFINITIONS = {
   WHATSAPP_SHARE_PHONE: { fallback: () => process.env.VITE_WHATSAPP_SHARE_PHONE || '', type: 'optionalPhone', maxLength: 15 },
   WHATSAPP_REQUIRE_ACTIVATION: { fallback: () => process.env.VITE_WHATSAPP_REQUIRE_ACTIVATION || 'true', type: 'boolean' },
   WHATSAPP_SHARE_BUTTON_TEXT: { fallback: () => process.env.VITE_WHATSAPP_SHARE_BUTTON_TEXT || 'Compartir por WhatsApp', maxLength: 80 },
+  WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR: { fallback: () => process.env.VITE_WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR || '1 persona informó al ayuntamiento', maxLength: 160 },
+  WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL: { fallback: () => process.env.VITE_WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL || '{count} personas informaron al ayuntamiento', maxLength: 160 },
   WHATSAPP_SHARE_DIALOG_TITLE: { fallback: () => process.env.VITE_WHATSAPP_SHARE_DIALOG_TITLE || 'Compartir por WhatsApp', maxLength: 100 },
   WHATSAPP_SHARE_DIALOG_TEXT: { fallback: () => process.env.VITE_WHATSAPP_SHARE_DIALOG_TEXT || 'Se abrirá el WhatsApp del organismo responsable.', maxLength: 300 },
   WHATSAPP_SHARE_DIALOG_NOTE: { fallback: () => process.env.VITE_WHATSAPP_SHARE_DIALOG_NOTE || 'Después, pega la información de la incidencia.', maxLength: 300 },
@@ -87,7 +89,8 @@ const SETTING_SECTIONS = {
   resolution: ['REPORTES_PARA_SOLUCIONAR', 'DIAS_PARA_CONSIDERAR_ANTIGUA', 'REPORTES_PARA_SOLUCIONAR_ANTIGUA'],
   whatsapp: [
     'WHATSAPP_SHARE_ENABLED', 'WHATSAPP_SHARE_PHONE', 'WHATSAPP_REQUIRE_ACTIVATION',
-    'WHATSAPP_SHARE_BUTTON_TEXT', 'WHATSAPP_SHARE_DIALOG_TITLE',
+    'WHATSAPP_SHARE_BUTTON_TEXT', 'WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR',
+    'WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL', 'WHATSAPP_SHARE_DIALOG_TITLE',
     'WHATSAPP_SHARE_DIALOG_TEXT', 'WHATSAPP_SHARE_DIALOG_NOTE'
   ],
   services: [

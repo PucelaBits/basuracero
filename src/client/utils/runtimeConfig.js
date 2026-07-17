@@ -22,6 +22,8 @@ function buildDefaults() {
     WHATSAPP_SHARE_PHONE: import.meta.env.VITE_WHATSAPP_SHARE_PHONE || '',
     WHATSAPP_REQUIRE_ACTIVATION: import.meta.env.VITE_WHATSAPP_REQUIRE_ACTIVATION || 'true',
     WHATSAPP_SHARE_BUTTON_TEXT: import.meta.env.VITE_WHATSAPP_SHARE_BUTTON_TEXT || 'Compartir por WhatsApp',
+    WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR: import.meta.env.VITE_WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR || '1 persona informó al ayuntamiento',
+    WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL: import.meta.env.VITE_WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL || '{count} personas informaron al ayuntamiento',
     WHATSAPP_SHARE_DIALOG_TITLE: import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_TITLE || 'Compartir por WhatsApp',
     WHATSAPP_SHARE_DIALOG_TEXT: import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_TEXT || 'Se abrirá el WhatsApp del organismo responsable.',
     WHATSAPP_SHARE_DIALOG_NOTE: import.meta.env.VITE_WHATSAPP_SHARE_DIALOG_NOTE || 'Después, pega la información de la incidencia.',

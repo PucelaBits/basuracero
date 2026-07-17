@@ -27,6 +27,7 @@ const {
   getAdminDashboardData,
   getAdminById,
   getAdminIncidenciasList,
+  getAdminExternalReportsList,
   getAdminUsersList,
   getIncidenciaDetail,
   getInadequateReportedIncidencias,
@@ -48,6 +49,7 @@ const {
   renderCategoriasPage,
   renderChangePasswordPage,
   renderDashboardPage,
+  renderExternalReportsPage,
   renderIncidenciaDetailPage,
   renderIncidenciasListPage,
   renderLayout,
@@ -879,6 +881,32 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
         currentAdmin: req.currentAdmin,
         notice: req.query.message ? { type: 'success', message: String(req.query.message) } : null,
         incidencias,
+        tipos,
+        filters,
+        csrfToken: req.session.csrfToken
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get('/avisos-ayuntamiento', async (req, res, next) => {
+    try {
+      const filters = {
+        search: String(req.query.search || '').trim(),
+        estado: String(req.query.estado || '').trim(),
+        tipoId: String(req.query.tipoId || '').trim(),
+        sortBy: String(req.query.sortBy || 'avisos').trim(),
+        sortDir: String(req.query.sortDir || 'desc').trim()
+      };
+      const [reports, tipos] = await Promise.all([
+        getAdminExternalReportsList(filters),
+        all('SELECT id, nombre, icono FROM tipos_incidencias ORDER BY nombre COLLATE NOCASE ASC')
+      ]);
+      res.send(renderExternalReportsPage({
+        currentAdmin: req.currentAdmin,
+        notice: req.query.message ? { type: 'success', message: String(req.query.message) } : null,
+        reports,
         tipos,
         filters,
         csrfToken: req.session.csrfToken

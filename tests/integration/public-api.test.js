@@ -9,6 +9,7 @@ describe('API publica real', () => {
   let dbAsync;
   let tempDir;
   let uploadsDir;
+  let incidenciaId;
 
   beforeAll(async () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'basuracero-public-api-'));
@@ -17,6 +18,7 @@ describe('API publica real', () => {
     process.env.SQLITE_DB_PATH = path.join(tempDir, 'incidencias.sqlite');
     process.env.UPLOADS_DIR = uploadsDir;
     process.env.SESSION_SECRET = 'test-session-secret-at-least-32-characters';
+    process.env.EXTERNAL_REPORT_FINGERPRINT_SECRET = '';
     process.env.friendlycaptcha_enabled = 'false';
     process.env.CIUDAD_LAT_MIN = '41.54';
     process.env.CIUDAD_LAT_MAX = '41.72';
@@ -28,12 +30,14 @@ describe('API publica real', () => {
     db = require('../../src/server/config/database');
     dbAsync = require('../../src/server/utils/dbAsync');
     app = await createApp({ logger });
+    expect(fs.existsSync(path.join(tempDir, '.external-report-fingerprint-secret'))).toBe(true);
   });
 
   afterAll((done) => {
     delete process.env.SQLITE_DB_PATH;
     delete process.env.UPLOADS_DIR;
     delete process.env.SESSION_SECRET;
+    delete process.env.EXTERNAL_REPORT_FINGERPRINT_SECRET;
     delete process.env.friendlycaptcha_enabled;
     delete process.env.CIUDAD_LAT_MIN;
     delete process.env.CIUDAD_LAT_MAX;
@@ -75,12 +79,54 @@ describe('API publica real', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.id).toBeTruthy();
+    incidenciaId = response.body.id;
     const image = await dbAsync.get(
       'SELECT ruta_imagen FROM imagenes_incidencias WHERE incidencia_id = ?',
       [response.body.id]
     );
     expect(image.ruta_imagen).toMatch(/^[0-9a-f-]+\.jpg$/);
     expect(fs.existsSync(path.join(uploadsDir, image.ruta_imagen))).toBe(true);
+  });
+
+  it('registra una sola apertura externa por incidencia y huella, y expone solo agregados', async () => {
+    const first = await request(app)
+      .post(`/api/incidencias/${incidenciaId}/external-report`)
+      .set('User-Agent', 'Test Browser')
+      .send({ channel: 'whatsapp' });
+    const repeated = await request(app)
+      .post(`/api/incidencias/${incidenciaId}/external-report`)
+      .set('User-Agent', 'Test Browser')
+      .send({ channel: 'whatsapp' });
+
+    expect(first.status).toBe(201);
+    expect(first.body).toEqual({ recorded: true, eventType: 'redirect_opened' });
+    expect(repeated.status).toBe(200);
+    expect(repeated.body).toEqual({ recorded: false, eventType: 'redirect_opened' });
+
+    const stored = await dbAsync.get(
+      'SELECT COUNT(*) AS total, reporter_fingerprint FROM external_report_events WHERE incidencia_id = ?',
+      [incidenciaId]
+    );
+    expect(stored.total).toBe(1);
+    expect(stored.reporter_fingerprint).toMatch(/^[a-f0-9]{64}$/);
+
+    await dbAsync.run(
+      `INSERT INTO external_report_imports
+        (incidencia_id, channel, event_type, source, total)
+       VALUES (?, 'whatsapp', 'redirect_opened', 'matomo', 7)`,
+      [incidenciaId]
+    );
+
+    const ranking = await request(app).get('/api/incidencias/reportes-externos/ranking?channel=whatsapp');
+    expect(ranking.status).toBe(200);
+    expect(ranking.body.ranking).toEqual(expect.arrayContaining([
+      expect.objectContaining({ incidenciaId, total: 8, channel: 'whatsapp', url: `/i/${incidenciaId}` })
+    ]));
+    expect(JSON.stringify(ranking.body)).not.toContain('reporter_fingerprint');
+
+    const detail = await request(app).get(`/api/incidencias/${incidenciaId}`);
+    expect(detail.status).toBe(200);
+    expect(detail.body.avisos_externos).toBe(8);
   });
 
   it('rechaza archivos que no son imagen antes de crear datos', async () => {

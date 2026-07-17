@@ -6,7 +6,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const { obtenerIP } = require('../utils/ip');
+const { obtenerHuellaReportante, obtenerIP } = require('../utils/ip');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
@@ -60,6 +60,37 @@ const publicReadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
+
+const externalReportBurstLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Espera un minuto antes de volver a intentarlo.' }
+});
+
+const externalReportDailyLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Has alcanzado el límite diario de avisos externos.' }
+});
+
+const EXTERNAL_REPORT_CHANNELS = new Set(['whatsapp']);
+
+function isSameApplicationOrigin(req) {
+  if (process.env.NODE_ENV !== 'production') return true;
+
+  const source = req.get('origin') || req.get('referer');
+  if (!source) return false;
+
+  try {
+    return new URL(source).origin === new URL(process.env.BASE_URL).origin;
+  } catch (_error) {
+    return false;
+  }
+}
 
 function parseTiposQuery(tipoQuery) {
   const rawValues = Array.isArray(tipoQuery)
@@ -372,7 +403,9 @@ router.get('/', publicReadLimiter, (req, res) => {
            COALESCE(i.direccion, '') as direccion,
            i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
-           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
+           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado,
+           (SELECT COUNT(*) FROM external_report_events WHERE incidencia_id = i.id)
+             + COALESCE((SELECT SUM(total) FROM external_report_imports WHERE incidencia_id = i.id), 0) as avisos_externos
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     ${whereClause}
@@ -473,7 +506,9 @@ router.get('/todas', publicReadLimiter, (req, res) => {
            COALESCE(i.direccion, '') as direccion,
            i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
-           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
+           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado,
+           (SELECT COUNT(*) FROM external_report_events WHERE incidencia_id = i.id)
+             + COALESCE((SELECT SUM(total) FROM external_report_imports WHERE incidencia_id = i.id), 0) as avisos_externos
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     ${whereClause}
@@ -552,6 +587,101 @@ router.get('/ultima-actualizacion', publicReadLimiter, (req, res) => {
       res.json({ ultimaActualizacion: null });
     }
   });
+});
+
+// Registra una apertura de canal externo. El INSERT idempotente es la fuente de
+// verdad: una misma huella solo puede contabilizar una vez cada incidencia.
+router.post('/:id/external-report', externalReportBurstLimiter, externalReportDailyLimiter, async (req, res) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ error: 'El contenido debe enviarse como JSON.' });
+  }
+  if (!isSameApplicationOrigin(req)) {
+    return res.status(403).json({ error: 'Origen no permitido.' });
+  }
+
+  const incidenciaId = Number.parseInt(req.params.id, 10);
+  const channel = String(req.body?.channel || '').trim().toLowerCase();
+  if (!Number.isInteger(incidenciaId) || incidenciaId < 1 || !EXTERNAL_REPORT_CHANNELS.has(channel)) {
+    return res.status(400).json({ error: 'El aviso externo no es válido.' });
+  }
+
+  try {
+    const incidencia = await new Promise((resolve, reject) => {
+      db.get('SELECT id FROM incidencias WHERE id = ? AND estado = ?', [incidenciaId, 'activa'], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+    if (!incidencia) {
+      return res.status(404).json({ error: 'Incidencia activa no encontrada.' });
+    }
+
+    const result = await runAsync(
+      `INSERT OR IGNORE INTO external_report_events
+       (incidencia_id, channel, event_type, reporter_fingerprint, created_at)
+       VALUES (?, ?, 'redirect_opened', ?, datetime('now', 'localtime'))`,
+      [incidenciaId, channel, obtenerHuellaReportante(req)]
+    );
+
+    return res.status(result.changes ? 201 : 200).json({
+      recorded: Boolean(result.changes),
+      eventType: 'redirect_opened'
+    });
+  } catch (error) {
+    console.error('Error al registrar aviso externo:', error);
+    return res.status(500).json({ error: 'No se ha podido registrar el aviso externo.' });
+  }
+});
+
+router.get('/reportes-externos/ranking', publicReadLimiter, async (req, res) => {
+  const channel = String(req.query.channel || 'whatsapp').trim().toLowerCase();
+  const requestedLimit = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 20;
+  if (!EXTERNAL_REPORT_CHANNELS.has(channel)) {
+    return res.status(400).json({ error: 'Canal no válido.' });
+  }
+
+  try {
+    const rows = await new Promise((resolve, reject) => {
+      db.all(
+        `WITH report_totals AS (
+           SELECT incidencia_id, channel, COUNT(*) AS total
+           FROM external_report_events
+           WHERE channel = ?
+           GROUP BY incidencia_id, channel
+           UNION ALL
+           SELECT incidencia_id, channel, SUM(total) AS total
+           FROM external_report_imports
+           WHERE channel = ?
+           GROUP BY incidencia_id, channel
+         )
+         SELECT r.incidencia_id AS incidenciaId,
+                r.channel,
+                SUM(r.total) AS total,
+                i.estado
+         FROM report_totals r
+         JOIN incidencias i ON i.id = r.incidencia_id
+         GROUP BY r.incidencia_id, r.channel, i.estado
+         ORDER BY total DESC, r.incidencia_id DESC
+         LIMIT ?`,
+        [channel, channel, limit],
+        (err, result) => err ? reject(err) : resolve(result)
+      );
+    });
+    return res.json({
+      channel,
+      ranking: rows.map((row) => ({
+        incidenciaId: row.incidenciaId,
+        total: Number(row.total),
+        channel: row.channel,
+        estado: row.estado,
+        url: `/i/${row.incidenciaId}`
+      }))
+    });
+  } catch (error) {
+    console.error('Error al obtener ranking de avisos externos:', error);
+    return res.status(500).json({ error: 'No se ha podido obtener el ranking.' });
+  }
 });
 
 router.get('/usuarios/ranking', publicReadLimiter, (req, res) => {
@@ -707,7 +837,9 @@ router.get('/:id', publicReadLimiter, (req, res) => {
            COALESCE(i.direccion, '') as direccion,
            i.direccion_json,
            (SELECT COUNT(*) FROM reportes_solucion WHERE incidencia_id = i.id) as reportes_solucion,
-           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado
+           (SELECT COUNT(*) FROM reportes_inadecuado WHERE incidencia_id = i.id) as reportes_inadecuado,
+           (SELECT COUNT(*) FROM external_report_events WHERE incidencia_id = i.id)
+             + COALESCE((SELECT SUM(total) FROM external_report_imports WHERE incidencia_id = i.id), 0) as avisos_externos
     FROM incidencias i
     JOIN tipos_incidencias t ON i.tipo_id = t.id
     WHERE i.id = ?

@@ -2221,6 +2221,33 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .ops-table td:nth-child(7) {
           width: 104px;
         }
+        .external-report-table {
+          min-width: 0;
+        }
+        .external-report-table th:first-child,
+        .external-report-table td:first-child {
+          width: 30%;
+        }
+        .external-report-table th:nth-child(2),
+        .external-report-table td:nth-child(2) {
+          width: 16%;
+        }
+        .external-report-table th:nth-child(3),
+        .external-report-table td:nth-child(3) {
+          width: 11%;
+        }
+        .external-report-table th:nth-child(4),
+        .external-report-table td:nth-child(4) {
+          width: 12%;
+        }
+        .external-report-table th:nth-child(5),
+        .external-report-table td:nth-child(5) {
+          width: 17%;
+        }
+        .external-report-table th:nth-child(6),
+        .external-report-table td:nth-child(6) {
+          width: 14%;
+        }
         .ops-checkbox {
           text-align: center;
           vertical-align: middle;
@@ -2280,6 +2307,49 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         }
         .ops-mobile-list {
           display: none;
+        }
+        .external-report-mobile-list {
+          display: none;
+        }
+        .external-report-mobile-item {
+          display: grid;
+          gap: 7px;
+          padding: 14px 0;
+          border-top: 1px solid var(--line);
+        }
+        .external-report-mobile-item:first-child {
+          border-top: 0;
+        }
+        .external-report-mobile-topline,
+        .external-report-mobile-meta,
+        .external-report-mobile-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
+        .external-report-mobile-topline a {
+          color: var(--ink);
+          text-decoration: none;
+          font-weight: 650;
+          min-width: 0;
+        }
+        .external-report-mobile-meta {
+          justify-content: flex-start;
+          flex-wrap: wrap;
+        }
+        .external-report-mobile-footer {
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+        .external-report-mobile-count {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          flex: 0 0 auto;
+          color: var(--ink);
+          font-variant-numeric: tabular-nums;
         }
         .ops-mobile-item {
           display: grid;
@@ -2371,6 +2441,32 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .ops-table th:nth-child(4),
           .ops-table td:nth-child(4) {
             width: 24%;
+          }
+        }
+        @media (max-width: 1120px) and (min-width: 769px) {
+          .external-report-table th:nth-child(6),
+          .external-report-table td:nth-child(6) {
+            display: none;
+          }
+          .external-report-table th:first-child,
+          .external-report-table td:first-child {
+            width: 38%;
+          }
+          .external-report-table th:nth-child(2),
+          .external-report-table td:nth-child(2) {
+            width: 18%;
+          }
+          .external-report-table th:nth-child(3),
+          .external-report-table td:nth-child(3) {
+            width: 13%;
+          }
+          .external-report-table th:nth-child(4),
+          .external-report-table td:nth-child(4) {
+            width: 14%;
+          }
+          .external-report-table th:nth-child(5),
+          .external-report-table td:nth-child(5) {
+            width: 17%;
           }
         }
         @media (max-width: 1050px) {
@@ -2467,6 +2563,9 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             display: none;
           }
           .ops-mobile-list {
+            display: grid;
+          }
+          .external-report-mobile-list {
             display: grid;
           }
           .quick-links,
@@ -3032,6 +3131,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
             <span class="detail-stat"><i class="mdi mdi-check-decagram-outline" aria-hidden="true"></i>${escapeHtml(incidencia.estado || 'Sin estado')}</span>
             <span class="detail-stat"><i class="mdi mdi-check-circle-outline" aria-hidden="true"></i>${incidencia.reportes_solucion || 0}</span>
             <span class="detail-stat"><i class="mdi mdi-alert-circle-outline" aria-hidden="true"></i>${incidencia.reportes_inadecuado || 0}</span>
+            <span class="detail-stat" title="Avisos al ayuntamiento"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i>${incidencia.avisos_ayuntamiento || 0}</span>
           </div>
         </div>
       </div>
@@ -3314,10 +3414,11 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
         <td>${renderTipoBadge(incidencia.tipo, incidencia.tipo_icono, true)}</td>
         <td><span class="status-chip">${escapeHtml(incidencia.estado || 'Sin estado')}</span></td>
         <td>${escapeHtml(incidencia.barrio || 'Sin barrio')}</td>
+        <td>${incidencia.avisos_ayuntamiento || 0}</td>
         <td>${formatDate(incidencia.fecha)}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="7">No hay incidencias que coincidan con los filtros actuales.</td></tr>';
+    : '<tr><td colspan="8">No hay incidencias que coincidan con los filtros actuales.</td></tr>';
 
   const cards = incidencias.length
     ? incidencias.map((incidencia) => `
@@ -3334,6 +3435,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
           <div class="ops-mobile-meta">
             <span>${renderTipoBadge(incidencia.tipo, incidencia.tipo_icono, true)}</span>
             <span class="status-chip">${escapeHtml(incidencia.estado || 'Sin estado')}</span>
+            <span class="small"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i> ${incidencia.avisos_ayuntamiento || 0}</span>
           </div>
           <span class="ops-mobile-subline">${escapeHtml(incidencia.direccion || incidencia.barrio || 'Sin ubicacion')}</span>
           <div class="ops-mobile-actions">
@@ -3419,6 +3521,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
                     <th><a class="ops-sort${filters.sortBy === 'tipo' ? ' active' : ''}" href="${buildSortUrl('tipo')}">Categoria ${sortIndicator('tipo')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'estado' ? ' active' : ''}" href="${buildSortUrl('estado')}">Estado ${sortIndicator('estado')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'barrio' ? ' active' : ''}" href="${buildSortUrl('barrio')}">Barrio ${sortIndicator('barrio')}</a></th>
+                    <th><a class="ops-sort${filters.sortBy === 'avisos' ? ' active' : ''}" href="${buildSortUrl('avisos')}">Avisos al ayuntamiento ${sortIndicator('avisos')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'fecha' ? ' active' : ''}" href="${buildSortUrl('fecha')}">Fecha ${sortIndicator('fecha')}</a></th>
                   </tr>
                 </thead>
@@ -3480,6 +3583,120 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
   });
 }
 
+function renderExternalReportsPage({ currentAdmin, notice, reports, tipos, filters, csrfToken }) {
+  const buildSortUrl = (sortBy) => {
+    const nextDir = filters.sortBy === sortBy && filters.sortDir === 'asc' ? 'desc' : 'asc';
+    const params = new URLSearchParams();
+    if (filters.search) params.set('search', filters.search);
+    if (filters.estado) params.set('estado', filters.estado);
+    if (filters.tipoId) params.set('tipoId', filters.tipoId);
+    params.set('sortBy', sortBy);
+    params.set('sortDir', nextDir);
+    return `/admin/avisos-ayuntamiento?${params.toString()}`;
+  };
+  const sortIndicator = (sortBy) => {
+    if (filters.sortBy !== sortBy) return '<span class="arrow">↕</span>';
+    return `<span class="arrow">${filters.sortDir === 'asc' ? '↑' : '↓'}</span>`;
+  };
+  const rows = reports.length
+    ? reports.map((report) => `
+      <tr>
+        <td data-label="Incidencia">
+          <div class="ops-title">
+            <span class="small">#${report.id}</span>
+            <a href="/admin/incidencias/${report.id}">${escapeHtml(report.descripcion || 'Sin descripcion')}</a>
+            <span class="small">${escapeHtml(report.direccion || report.barrio || 'Sin ubicacion')}</span>
+          </div>
+        </td>
+        <td data-label="Categoría">${renderTipoBadge(report.tipo, report.tipo_icono, true)}</td>
+        <td data-label="Estado"><span class="status-chip">${escapeHtml(report.estado || 'Sin estado')}</span></td>
+        <td data-label="Barrio">${escapeHtml(report.barrio || 'Sin barrio')}</td>
+        <td data-label="Avisos al ayuntamiento"><strong>${report.avisos_ayuntamiento}</strong></td>
+        <td data-label="Fecha">${formatDate(report.fecha)}</td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="6">No hay avisos al ayuntamiento que coincidan con los filtros actuales.</td></tr>';
+  const cards = reports.length
+    ? reports.map((report) => `
+      <article class="external-report-mobile-item">
+        <div class="external-report-mobile-topline">
+          <a href="/admin/incidencias/${report.id}">#${report.id} · ${escapeHtml(report.descripcion || 'Sin descripcion')}</a>
+          <strong class="external-report-mobile-count"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i>${report.avisos_ayuntamiento}</strong>
+        </div>
+        <div class="external-report-mobile-meta">
+          ${renderTipoBadge(report.tipo, report.tipo_icono, true)}
+          <span class="status-chip">${escapeHtml(report.estado || 'Sin estado')}</span>
+        </div>
+        <div class="external-report-mobile-footer">
+          <span>${escapeHtml(report.barrio || report.direccion || 'Sin ubicación')}</span>
+          <span>${formatDate(report.fecha)}</span>
+        </div>
+      </article>
+    `).join('')
+    : '<div class="empty-state">No hay avisos al ayuntamiento que coincidan con los filtros actuales.</div>';
+
+  return renderAdminSectionLayout({
+    title: 'Avisos al ayuntamiento',
+    currentAdmin,
+    notice,
+    csrfToken,
+    eyebrow: 'Participación',
+    intro: 'Explora las incidencias cuyo botón de WhatsApp se ha abierto. Cada persona solo cuenta una vez por incidencia; el dato no confirma el envío del mensaje.',
+    activeNav: 'avisos-ayuntamiento',
+    content: `
+      <div class="ops-page">
+        <form method="get" action="/admin/avisos-ayuntamiento" class="ops-toolbar">
+          <div class="ops-filters">
+            <label>Buscar
+              <input name="search" value="${escapeAttr(filters.search || '')}" placeholder="Descripción, dirección o barrio">
+            </label>
+            <label>Estado
+              <select name="estado">
+                <option value="">Todos</option>
+                <option value="activa"${filters.estado === 'activa' ? ' selected' : ''}>Activa</option>
+                <option value="solucionada"${filters.estado === 'solucionada' ? ' selected' : ''}>Solucionada</option>
+                <option value="spam"${filters.estado === 'spam' ? ' selected' : ''}>Spam</option>
+              </select>
+            </label>
+            <label>Categoría
+              ${renderTipoSelect({
+                name: 'tipoId',
+                tipos,
+                selectedValue: filters.tipoId || '',
+                id: 'avisos-filter-tipo',
+                includeEmptyOption: 'Todas'
+              })}
+            </label>
+            <button type="submit">Aplicar filtros</button>
+          </div>
+          <div class="ops-actions">
+            <a class="button-link button-ghost" href="/admin/avisos-ayuntamiento">Limpiar filtros</a>
+          </div>
+        </form>
+        <section class="ops-surface">
+          <div class="ops-table-wrap">
+            <table class="responsive-table admin-list-table ops-table external-report-table">
+              <thead>
+                <tr>
+                  <th>Incidencia</th>
+                  <th><a class="ops-sort${filters.sortBy === 'tipo' ? ' active' : ''}" href="${buildSortUrl('tipo')}">Categoría ${sortIndicator('tipo')}</a></th>
+                  <th><a class="ops-sort${filters.sortBy === 'estado' ? ' active' : ''}" href="${buildSortUrl('estado')}">Estado ${sortIndicator('estado')}</a></th>
+                  <th><a class="ops-sort${filters.sortBy === 'barrio' ? ' active' : ''}" href="${buildSortUrl('barrio')}">Barrio ${sortIndicator('barrio')}</a></th>
+                  <th><a class="ops-sort${filters.sortBy === 'avisos' ? ' active' : ''}" href="${buildSortUrl('avisos')}" title="Avisos al ayuntamiento">Avisos ${sortIndicator('avisos')}</a></th>
+                  <th><a class="ops-sort${filters.sortBy === 'fecha' ? ' active' : ''}" href="${buildSortUrl('fecha')}">Fecha ${sortIndicator('fecha')}</a></th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+          <div class="external-report-mobile-list">${cards}</div>
+        </section>
+      </div>
+      ${renderTipoSelectScript()}
+    `
+  });
+}
+
 function renderChangePasswordPage({ currentAdmin, notice, minLength, csrfToken }) {
   return renderLayout({
     title: 'Cambiar contraseña',
@@ -3508,7 +3725,7 @@ function renderChangePasswordPage({ currentAdmin, notice, minLength, csrfToken }
 }
 
 function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, csrfToken }) {
-  const { stats, recentWithPhoto, byTipo } = dashboard;
+  const { stats, recentWithPhoto, byTipo, externalReports = [] } = dashboard;
   const updateRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
   const updateHeading = updateStatus?.channel === 'beta'
     ? `Actualización beta ${updateRelease?.version || ''} disponible`
@@ -3526,6 +3743,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
         <td data-label="Categoria">${renderTipoBadge(item.tipo || '-', item.tipo_icono, true)}</td>
         <td data-label="Estado"><span class="status-chip">${escapeHtml(item.estado || '-')}</span></td>
         <td data-label="Zona">${escapeHtml(item.barrio || item.direccion || '-')}</td>
+        <td data-label="Avisos al ayuntamiento">${item.avisos_ayuntamiento || 0}</td>
       </tr>
     `).join('')
     : '<tr><td colspan="5">Todavia no hay incidencias recientes disponibles.</td></tr>';
@@ -3538,6 +3756,15 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
       </div>
     `).join('')
     : '<div class="empty-state">Todavia no hay datos por categoria.</div>';
+  const externalReportRows = externalReports.length
+    ? externalReports.map((report) => `
+      <tr>
+        <td data-label="Incidencia"><a href="/admin/incidencias/${report.incidenciaId}">#${report.incidenciaId} · ${escapeHtml(report.descripcion || 'Sin descripcion')}</a></td>
+        <td data-label="Avisos al ayuntamiento">${report.total}</td>
+        <td data-label="Estado"><span class="status-chip">${escapeHtml(report.estado || '-')}</span></td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="3">Todavia no hay avisos al ayuntamiento registrados.</td></tr>';
 
   return renderLayout({
     title: 'Panel de administracion',
@@ -3605,9 +3832,24 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
                   <th>Categoria</th>
                   <th>Estado</th>
                   <th>Zona</th>
+                  <th>Avisos al ayuntamiento</th>
                 </tr>
               </thead>
               <tbody>${recentRows}</tbody>
+            </table>
+          </section>
+
+          <section class="dashboard-section">
+            <div class="dashboard-section-header">
+              <div>
+                <h2 style="margin-bottom:6px">Avisos al ayuntamiento</h2>
+                <p class="small">Una muestra de las incidencias con más aperturas únicas; no confirma que el mensaje se haya enviado.</p>
+              </div>
+              <a class="dashboard-muted-link" href="/admin/avisos-ayuntamiento">Ver todos</a>
+            </div>
+            <table class="dashboard-table">
+              <thead><tr><th>Incidencia</th><th>Avisos</th><th>Estado</th></tr></thead>
+              <tbody>${externalReportRows}</tbody>
             </table>
           </section>
 
@@ -3658,6 +3900,7 @@ function renderAdminNavigation(activeNav) {
   const items = [
     ['/admin', 'Vista general', 'dashboard'],
     ['/admin/incidencias', 'Incidencias', 'incidencias'],
+    ['/admin/avisos-ayuntamiento', 'Avisos al ayuntamiento', 'avisos-ayuntamiento'],
     ['/admin/categorias', 'Categorías', 'categorias'],
     ['/admin/maintenance', 'Mantenimiento', 'maintenance'],
     ['/admin/configuracion', 'Configuración', 'configuracion'],
@@ -4039,6 +4282,11 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                 <span class="small" id="whatsapp-mode-description"></span>
               </div>
               ${field('WHATSAPP_SHARE_BUTTON_TEXT', 'Texto del botón', { maxLength: 80 })}
+              ${field('WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR', 'Texto del contador (una persona)', { maxLength: 160 })}
+              <label>Texto del contador (varias personas)
+                <input name="WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL" type="text" maxlength="160" value="${escapeAttr(settings.WHATSAPP_SHARE_REPORT_COUNT_TEXT_PLURAL)}" required aria-describedby="whatsapp-report-count-help">
+                <span class="small" id="whatsapp-report-count-help">Usa <code>{count}</code> para insertar la cantidad. Ejemplo: <code>{count} personas informaron al ayuntamiento</code>.</span>
+              </label>
               ${field('WHATSAPP_SHARE_DIALOG_TITLE', 'Título del aviso', { maxLength: 100 })}
               ${field('WHATSAPP_SHARE_DIALOG_TEXT', 'Mensaje antes de abrir WhatsApp', { textarea: true, maxLength: 300, wide: true })}
               ${field('WHATSAPP_SHARE_DIALOG_NOTE', 'Indicación para pegar la incidencia', { textarea: true, maxLength: 300, wide: true })}
@@ -5256,6 +5504,7 @@ module.exports = {
   renderCategoriasPage,
   renderChangePasswordPage,
   renderDashboardPage,
+  renderExternalReportsPage,
   renderIncidenciaDetailPage,
   renderIncidenciasListPage,
   renderLayout,
