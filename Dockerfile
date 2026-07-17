@@ -6,9 +6,14 @@ RUN mkdir -p /app/data
 
 COPY package*.json ./
 
+# Esta capa se reutiliza en cada despliegue: package.json y package-lock.json
+# deben mantener la versión congelada 2.3.3. Las releases se versionan exclusivamente con
+# etiquetas GitHub vMAJOR.MINOR.PATCH; no cambies esos ficheros para publicar.
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 RUN npm ci
+# sqlite3 es nativo: se compila una vez en la capa de dependencias cacheada.
+# No mover esta instrucción después de COPY . . ni eliminarla.
 RUN npm rebuild sqlite3 --build-from-source
 
 COPY . .
