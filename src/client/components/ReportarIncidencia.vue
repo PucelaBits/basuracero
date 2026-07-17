@@ -164,10 +164,6 @@
               </v-col>
             </v-row>
 
-            <v-alert v-if="procesandoImagenes" type="info" variant="tonal" density="compact" class="mt-3 mb-0">
-              Optimizando la foto para poder enviarla…
-            </v-alert>
-
             <v-list v-if="incidencia.imagenes.length > 0" class="mt-3">
               <v-list-item v-for="(imagen, index) in incidencia.imagenes" :key="index">
                 <template v-slot:prepend>
@@ -217,7 +213,7 @@
 
             <div class="subtitle-text d-flex align-center justify-center mt-4">
               <v-icon color="grey" class="mr-2">mdi-information</v-icon>
-              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal). Si hace falta, las reducimos automáticamente.<br/>No incluyas caras, matrículas o info personal</span>
+              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal)<br/>No incluyas caras, matrículas o info personal</span>
             </div>
 
             <v-divider class="my-4"><span style="color: grey;">Tus datos</span></v-divider>
@@ -539,15 +535,10 @@ export default {
         incidencia.value.imagenes = [...incidencia.value.imagenes, ...imagenesPreparadas].slice(0, 2)
         if (imagenesPreparadas.length) updatePreviewUrls()
 
-        const optimizadas = resultados.filter((resultado) => resultado.optimizada).length
         const fallidas = resultados.filter((resultado) => resultado.error).length
         if (fallidas) {
           notificacionMensaje.value = 'No se pudo preparar una foto. Prueba con otra imagen en formato JPG, PNG o WebP.'
           notificacionTipo.value = 'error'
-          mostrarNotificacion.value = true
-        } else if (optimizadas) {
-          notificacionMensaje.value = optimizadas === 1 ? 'Hemos reducido la foto para enviarla.' : 'Hemos reducido las fotos para enviarlas.'
-          notificacionTipo.value = 'success'
           mostrarNotificacion.value = true
         }
       } finally {
