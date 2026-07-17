@@ -175,6 +175,36 @@ function buildIncidenciaMeta(incidencia, baseUrl, appName) {
   };
 }
 
+function buildRankingMeta(ranking, settings, baseUrl) {
+  const rankings = {
+    usuarios: {
+      title: `Ranking de usuarios | ${settings.APP_NAME}`,
+      description: `Las personas que más han colaborado en ${settings.APP_NAME}.`,
+      path: '/ranking'
+    },
+    barrios: {
+      title: `Ranking de zonas | ${settings.APP_NAME}`,
+      description: `Las zonas con más incidencias registradas en ${settings.APP_NAME}.`,
+      path: '/ranking/barrios'
+    },
+    avisos: {
+      title: `Incidencias más avisadas al Ayuntamiento | ${settings.APP_NAME}`,
+      description: `Las incidencias que más personas han informado al Ayuntamiento desde ${settings.APP_NAME}.`,
+      path: '/ranking/avisos'
+    }
+  };
+  const metadata = rankings[ranking];
+  const imagePath = settings.APP_LOGO_PATH || settings.APP_FAVICON_PATH;
+
+  return {
+    title: metadata.title,
+    description: metadata.description,
+    url: new URL(metadata.path, baseUrl).href,
+    image: imagePath ? new URL(imagePath, baseUrl).href : '',
+    imageAlt: `Logo de ${settings.APP_NAME}`
+  };
+}
+
 async function createApp({ logger = console } = {}) {
   await db.ready;
   ensureExternalReportFingerprintSecret();
@@ -353,6 +383,22 @@ async function createApp({ logger = console } = {}) {
 
   app.get('/i/:id', dynamicPageLimiter, renderIncidenciaMeta);
   app.get('/incidencia/:id', dynamicPageLimiter, renderIncidenciaMeta);
+  const rankingRoutes = {
+    '/ranking': 'usuarios',
+    '/ranking/barrios': 'barrios',
+    '/ranking/avisos': 'avisos'
+  };
+  Object.entries(rankingRoutes).forEach(([route, ranking]) => {
+    app.get(route, dynamicPageLimiter, async (_req, res, next) => {
+      try {
+        const settings = await getAppSettings();
+        const html = injectAppSettings(fs.readFileSync(DIST_INDEX_PATH, 'utf8'), settings, BASE_URL);
+        res.send(injectCategoryMeta(html, buildRankingMeta(ranking, settings, BASE_URL)));
+      } catch (error) {
+        next(error);
+      }
+    });
+  });
   app.get('*', dynamicPageLimiter, async (_req, res, next) => {
     try {
       const settings = await getAppSettings();

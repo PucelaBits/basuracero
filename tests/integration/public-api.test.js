@@ -63,6 +63,25 @@ describe('API publica real', () => {
     expect(config.headers['cache-control']).toContain('no-store');
   });
 
+  it('sirve previsualizaciones sociales específicas para cada ranking', async () => {
+    const rankings = [
+      ['/ranking', 'Ranking de usuarios | Basura Cero', 'Las personas que más han colaborado'],
+      ['/ranking/barrios', 'Ranking de zonas | Basura Cero', 'Las zonas con más incidencias registradas'],
+      ['/ranking/avisos', 'Incidencias más avisadas al Ayuntamiento | Basura Cero', 'Las incidencias que más personas han informado al Ayuntamiento']
+    ];
+
+    for (const [route, title, description] of rankings) {
+      const response = await request(app).get(route);
+      expect(response.status).toBe(200);
+      expect(response.text).toContain(`<title>${title}</title>`);
+      expect(response.text).toContain(`property="og:title" content="${title}"`);
+      expect(response.text).toContain(description);
+      expect(response.text).toContain(`<link rel="canonical" href="http://localhost:5050${route}">`);
+      expect(response.text).toContain('property="og:image" content="http://localhost:5050/img/default/logo.png"');
+      expect(response.text).not.toContain('content="undefined"');
+    }
+  });
+
   it('crea una incidencia con imagen validada y la persiste', async () => {
     const png = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
