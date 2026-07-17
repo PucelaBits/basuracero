@@ -194,7 +194,9 @@ function buildRankingMeta(ranking, settings, baseUrl) {
     }
   };
   const metadata = rankings[ranking];
-  const imagePath = settings.APP_LOGO_PATH || settings.APP_FAVICON_PATH;
+  // La cabecera puede usar una marca apaisada; la vista previa social debe usar
+  // el icono/logo cuadrado de la aplicación.
+  const imagePath = settings.APP_FAVICON_PATH;
 
   return {
     title: metadata.title,

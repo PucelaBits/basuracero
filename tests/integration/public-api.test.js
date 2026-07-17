@@ -77,7 +77,7 @@ describe('API publica real', () => {
       expect(response.text).toContain(`property="og:title" content="${title}"`);
       expect(response.text).toContain(description);
       expect(response.text).toContain(`<link rel="canonical" href="http://localhost:5050${route}">`);
-      expect(response.text).toContain('property="og:image" content="http://localhost:5050/img/default/logo.png"');
+      expect(response.text).toContain('property="og:image" content="http://localhost:5050/img/default/favicon.png"');
       expect(response.text).not.toContain('content="undefined"');
     }
   });
