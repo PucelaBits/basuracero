@@ -37,9 +37,9 @@
                 <th class="avisos-ranking__rank">#</th>
                 <th class="avisos-ranking__image">Imagen</th>
                 <th><button type="button" @click="ordenarPor('descripcion')">Incidencia <SortIcon campo="descripcion" :actual="ordenacion" /></button></th>
-                <th><button type="button" @click="ordenarPor('tipo')">Categoría <SortIcon campo="tipo" :actual="ordenacion" /></button></th>
-                <th><button type="button" @click="ordenarPor('barrio')">Zona <SortIcon campo="barrio" :actual="ordenacion" /></button></th>
-                <th><button type="button" @click="ordenarPor('estado')">Estado <SortIcon campo="estado" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__optional"><button type="button" @click="ordenarPor('tipo')">Categoría <SortIcon campo="tipo" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__optional"><button type="button" @click="ordenarPor('barrio')">Zona <SortIcon campo="barrio" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__optional"><button type="button" @click="ordenarPor('estado')">Estado <SortIcon campo="estado" :actual="ordenacion" /></button></th>
                 <th class="avisos-ranking__total"><button type="button" @click="ordenarPor('total')">Avisos <SortIcon campo="total" :actual="ordenacion" /></button></th>
               </tr>
             </thead>
@@ -51,9 +51,9 @@
                   <span v-else><v-icon>mdi-image-outline</v-icon></span>
                 </td>
                 <td class="avisos-ranking__description"><strong>#{{ incidencia.incidenciaId }} · {{ incidencia.descripcion }}</strong><small>{{ incidencia.direccion || 'Sin dirección' }}</small></td>
-                <td><span class="avisos-ranking__category"><v-icon size="16">{{ incidencia.icono || 'mdi-tag-outline' }}</v-icon>{{ incidencia.tipo || 'Sin categoría' }}</span></td>
-                <td>{{ incidencia.barrio || 'Sin zona' }}</td>
-                <td><span class="avisos-ranking__status" :class="`is-${incidencia.estado}`">{{ textoEstado(incidencia.estado) }}</span></td>
+                <td class="avisos-ranking__optional"><span class="avisos-ranking__category"><v-icon size="16">{{ incidencia.icono || 'mdi-tag-outline' }}</v-icon>{{ incidencia.tipo || 'Sin categoría' }}</span></td>
+                <td class="avisos-ranking__optional">{{ incidencia.barrio || 'Sin zona' }}</td>
+                <td class="avisos-ranking__optional"><span class="avisos-ranking__status" :class="`is-${incidencia.estado}`">{{ textoEstado(incidencia.estado) }}</span></td>
                 <td class="avisos-ranking__total"><span><v-icon size="19">mdi-account-group-outline</v-icon>{{ incidencia.total }}</span></td>
               </tr>
             </tbody>
@@ -136,7 +136,7 @@ export default {
 </script>
 
 <style scoped>
-.avisos-ranking { min-height: 100%; background: #f8faf9; color: #1e2931; }
+.avisos-ranking { height: 100vh; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: #f8faf9; color: #1e2931; }
 .avisos-ranking__content { max-width: 1180px; margin: 0 auto; padding: 40px 28px 64px; }
 .avisos-ranking__intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; margin-bottom: 28px; }
 .avisos-ranking__eyebrow { margin: 0 0 8px; color: #567367; font-size: .72rem; font-weight: 800; letter-spacing: .08em; }
@@ -163,5 +163,18 @@ export default {
 .avisos-ranking__total { text-align: right !important; }
 .avisos-ranking__total span { display: inline-flex; align-items: center; gap: 5px; color: #245d54; font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .avisos-ranking__empty { display: flex; min-height: 180px; align-items: center; justify-content: center; gap: 10px; color: #687571; }
-@media (max-width: 700px) { .avisos-ranking__content { padding: 24px 16px 44px; } .avisos-ranking__intro { display: block; } .avisos-ranking__toggle { margin-top: 20px; } .avisos-ranking__table { min-width: 700px; } .avisos-ranking__table th, .avisos-ranking__table td { padding-left: 8px; padding-right: 8px; } }
+@media (max-width: 700px) {
+  .avisos-ranking__content { padding: 24px 16px 44px; }
+  .avisos-ranking__intro { display: block; }
+  .avisos-ranking__toggle { margin-top: 20px; }
+  .avisos-ranking__table-wrap { overflow-x: hidden; }
+  .avisos-ranking__table { min-width: 0; table-layout: fixed; }
+  .avisos-ranking__optional, .avisos-ranking__image { display: none; }
+  .avisos-ranking__table th, .avisos-ranking__table td { padding: 13px 6px; }
+  .avisos-ranking__rank { width: 28px; }
+  .avisos-ranking__description { min-width: 0; max-width: none; }
+  .avisos-ranking__description strong { -webkit-line-clamp: 2; font-size: .9rem; }
+  .avisos-ranking__description small { display: none; }
+  .avisos-ranking__total { width: 74px; }
+}
 </style>
