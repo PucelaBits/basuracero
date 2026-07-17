@@ -14,7 +14,7 @@
           <div>
             <p class="avisos-ranking__eyebrow">PARTICIPACIÓN CIUDADANA</p>
             <h1>Incidencias más avisadas</h1>
-            <p>Ordenadas por las personas que han informado al ayuntamiento. Por defecto solo se muestran las que siguen abiertas.</p>
+            <p>Ordenadas por las personas que han informado al ayuntamiento. Se muestran incidencias con al menos dos avisos y, por defecto, solo las que siguen abiertas.</p>
           </div>
           <v-switch
             v-model="incluirSolucionadas"
@@ -105,7 +105,7 @@ export default {
       }
     }
 
-    const filasOrdenadas = computed(() => [...incidencias.value].sort((a, b) => {
+    const filasOrdenadas = computed(() => incidencias.value.filter((incidencia) => Number(incidencia.total) > 1).sort((a, b) => {
       const { campo, direccion } = ordenacion.value
       const izquierda = a[campo] ?? ''
       const derecha = b[campo] ?? ''
