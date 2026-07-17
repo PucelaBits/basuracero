@@ -53,6 +53,15 @@ function formatDate(value) {
   }).format(date);
 }
 
+function formatDateTime(value) {
+  if (!value) return 'Sin fecha';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return escapeHtml(value);
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  }).format(date);
+}
+
 function formatDateInput(value) {
   if (!value) {
     return '';
@@ -1605,10 +1614,62 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           display: grid;
           grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
           gap: 18px;
+          align-items: start;
         }
         .photo-stack {
           display: grid;
-          gap: 12px;
+          gap: 16px;
+          align-content: start;
+        }
+        .detail-section-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          min-height: 44px;
+        }
+        .detail-section-heading h2 {
+          margin: 0;
+        }
+        .photo-upload-form,
+        .photo-replace-form {
+          margin: 0;
+        }
+        .photo-file-input {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+        .photo-file-trigger {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 42px;
+          padding: 0 14px;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: #fff;
+          color: var(--ink);
+          font: inherit;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background .16s ease, border-color .16s ease, transform .16s ease;
+        }
+        .photo-file-trigger:hover {
+          border-color: var(--accent);
+          background: var(--accent-soft);
+        }
+        .photo-file-trigger:focus-within,
+        .photo-icon-button:focus-within {
+          outline: 3px solid rgba(35, 117, 140, .22);
+          outline-offset: 2px;
         }
         .photo-stage {
           position: relative;
@@ -1640,6 +1701,11 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           display: flex;
           gap: 8px;
           align-items: center;
+          padding: 5px;
+          border: 1px solid rgba(255, 255, 255, 0.24);
+          border-radius: 999px;
+          background: rgba(23, 32, 42, 0.32);
+          backdrop-filter: blur(10px);
         }
         .photo-icon-button {
           display: inline-flex;
@@ -1647,15 +1713,18 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           justify-content: center;
           width: 42px;
           height: 42px;
+          position: relative;
           border: 1px solid rgba(255, 255, 255, 0.28);
           border-radius: 999px;
           background: rgba(23, 32, 42, 0.76);
           color: #fff;
           cursor: pointer;
           backdrop-filter: blur(8px);
+          transition: background .16s ease, transform .16s ease;
         }
         .photo-icon-button:hover {
           background: rgba(23, 32, 42, 0.9);
+          transform: translateY(-1px);
         }
         .photo-icon-button.photo-delete-button {
           background: rgba(163, 50, 42, 0.88);
@@ -1683,6 +1752,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           right: 8px;
           bottom: 8px;
           gap: 6px;
+          padding: 4px;
         }
         .thumb-item .photo-icon-button {
           width: 34px;
@@ -1854,6 +1924,60 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .detail-edit-fields .full {
           grid-column: 1 / -1;
         }
+        .location-picker {
+          display: grid;
+          gap: 10px;
+        }
+        .location-picker-actions {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px;
+        }
+        .location-picker-actions button {
+          width: auto;
+        }
+        .location-search-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 8px;
+          position: relative;
+        }
+        .location-search-row button {
+          width: auto;
+        }
+        .location-search-results {
+          position: absolute;
+          z-index: 1200;
+          top: calc(100% + 6px);
+          right: 0;
+          left: 0;
+          display: grid;
+          gap: 6px;
+          max-height: 240px;
+          padding: 6px;
+          overflow-y: auto;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: var(--panel);
+          box-shadow: 0 12px 28px rgba(23, 32, 42, 0.14);
+        }
+        .location-search-results:empty { display: none; }
+        .location-result {
+          width: 100%;
+          min-height: 40px;
+          padding: 8px 10px;
+          text-align: left;
+          color: var(--ink);
+          background: var(--accent-soft);
+          border: 1px solid var(--line);
+        }
+        .location-picker-map {
+          height: 280px;
+          overflow: hidden;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+        }
         .detail-actions {
           display: flex;
           flex-wrap: wrap;
@@ -1879,6 +2003,69 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           display: grid;
           gap: 4px;
           min-width: 0;
+        }
+        details.subtle-panel > summary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          cursor: pointer;
+          font-weight: 700;
+          list-style: none;
+        }
+        details.subtle-panel > summary::-webkit-details-marker {
+          display: none;
+        }
+        details.subtle-panel > summary::before {
+          content: '›';
+          font-size: 24px;
+          line-height: 1;
+          color: var(--muted);
+          transition: transform .16s ease;
+        }
+        details.subtle-panel[open] > summary::before {
+          transform: rotate(90deg);
+        }
+        .timeline-toolbar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid var(--line);
+        }
+        .timeline-toolbar label {
+          display: grid;
+          gap: 6px;
+          font-weight: 600;
+        }
+        .timeline-toolbar select {
+          min-width: 190px;
+        }
+        .timeline-icon {
+          display: grid;
+          place-items: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: var(--surface-soft);
+          color: var(--primary);
+          font-size: 16px;
+        }
+        .timeline-table {
+          min-width: 0;
+        }
+        .timeline-table th:first-child,
+        .timeline-table td:first-child {
+          width: 48px;
+        }
+        .timeline-table th:nth-child(2),
+        .timeline-table td:nth-child(2) {
+          width: 44%;
+        }
+        .timeline-detail {
+          display: block;
+          margin-top: 3px;
         }
         .danger-zone {
           margin-top: 18px;
@@ -2855,6 +3042,128 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .responsive-table {
             display: none;
           }
+          .table-scroll:has(.external-event-table) {
+            overflow: visible;
+          }
+          .external-event-table.responsive-table {
+            display: block;
+            min-width: 0;
+            width: 100%;
+          }
+          .external-event-table thead {
+            display: none;
+          }
+          .external-event-table tbody {
+            display: grid;
+            gap: 10px;
+          }
+          .external-event-table tr {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px 12px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+          }
+          .external-event-table td {
+            display: block;
+            width: auto !important;
+            padding: 0;
+            border: 0;
+          }
+          .external-event-table td:nth-child(2) {
+            grid-row: 2;
+            grid-column: 1 / -1;
+            color: var(--muted);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+          }
+          .external-event-table td:nth-child(3) {
+            grid-row: 1;
+            grid-column: 2;
+            color: var(--muted);
+            font-size: 13px;
+          }
+          .external-event-table td:nth-child(4) {
+            grid-row: 3;
+            grid-column: 1 / -1;
+          }
+          .external-event-table td:nth-child(4) button {
+            width: auto;
+          }
+          .timeline-table-wrap {
+            overflow: visible;
+          }
+          .timeline-table.responsive-table {
+            display: block;
+            min-width: 0;
+            width: 100%;
+          }
+          .timeline-table thead {
+            display: none;
+          }
+          .timeline-table tbody {
+            display: grid;
+            gap: 10px;
+          }
+          .timeline-table tr {
+            display: grid;
+            grid-template-columns: 28px minmax(0, 1fr);
+            gap: 5px 10px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+          }
+          .timeline-table td {
+            display: block;
+            width: auto !important;
+            padding: 0;
+            border: 0;
+          }
+          .timeline-table td:first-child {
+            grid-row: 1 / span 3;
+          }
+          .timeline-table td:nth-child(2) {
+            grid-column: 2;
+          }
+          .timeline-table td:nth-child(3),
+          .timeline-table td:nth-child(4) {
+            grid-column: 2;
+            color: var(--muted);
+            font-size: 13px;
+          }
+          .timeline-toolbar {
+            display: grid;
+            grid-template-columns: 1fr;
+          }
+          .location-search-row {
+            grid-template-columns: 1fr;
+          }
+          .location-search-row button {
+            width: 100%;
+          }
+          .location-picker-actions {
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .location-picker-actions button {
+            width: 100%;
+          }
+          .location-picker-map {
+            height: 240px;
+          }
+          .timeline-toolbar select {
+            width: 100%;
+            min-width: 0;
+          }
+          details.subtle-panel > summary {
+            align-items: flex-start;
+          }
+          details.subtle-panel > summary > span:last-child {
+            text-align: right;
+          }
           .table-cards {
             display: grid;
           }
@@ -3084,6 +3393,32 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
   const images = incidencia.images || [];
   const solutionReports = incidencia.solutionReports || [];
   const inadequateReports = incidencia.inadequateReports || [];
+  const externalReports = incidencia.externalReports || [];
+  const timeline = incidencia.timeline || [];
+  const timelineActions = [...new Map(timeline.map((entry) => [entry.action, entry.label])).entries()];
+  const timelineIcon = (entry) => {
+    const icons = {
+      incidencia_creada: 'mdi-plus-circle-outline',
+      reporte_solucion: 'mdi-check-circle-outline',
+      reporte_inadecuado: 'mdi-alert-circle-outline',
+      aviso_ayuntamiento: 'mdi-whatsapp',
+      aviso_importado: 'mdi-database-import-outline',
+      update_incidencia: 'mdi-pencil-outline',
+      set_incidencia_activa: 'mdi-play-circle-outline',
+      set_incidencia_solucionada: 'mdi-check-decagram-outline',
+      set_incidencia_spam: 'mdi-alert-octagon-outline',
+      change_incidencia_tipo: 'mdi-tag-edit-outline',
+      clear_solution_reports: 'mdi-broom',
+      clear_inadequate_reports: 'mdi-broom',
+      delete_solution_report: 'mdi-trash-can-outline',
+      delete_inadequate_report: 'mdi-trash-can-outline',
+      delete_incidencia_image: 'mdi-image-remove-outline',
+      delete_external_report_event: 'mdi-trash-can-outline',
+      auto_solve_old_incidencia: 'mdi-auto-fix',
+      hydrate_location_data: 'mdi-map-marker-edit-outline'
+    };
+    return icons[entry.action] || (entry.type === 'sistema' ? 'mdi-cog-outline' : 'mdi-information-outline');
+  };
   const statusOptions = ['activa', 'solucionada', 'spam']
     .map((estado) => `<option value="${estado}"${incidencia.estado === estado ? ' selected' : ''}>${escapeHtml(estado.charAt(0).toUpperCase() + estado.slice(1))}</option>`)
     .join('');
@@ -3094,6 +3429,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
     notice,
     csrfToken,
     body: `
+      <link rel="stylesheet" href="/admin-assets/leaflet/leaflet.css">
       <section class="dashboard-shell">
         <aside class="dashboard-sidebar">
           <div>
@@ -3137,7 +3473,16 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
       </div>
       <section class="detail-grid" style="margin-bottom:18px">
         <div class="subtle-panel photo-stack">
-          <h2>Fotos</h2>
+          <div class="detail-section-heading">
+            <h2>Fotos</h2>
+            <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/add" enctype="multipart/form-data" class="photo-upload-form" data-photo-file-form>
+              <label class="photo-file-trigger">
+                <i class="mdi mdi-plus" aria-hidden="true"></i>
+                <span>Añadir foto</span>
+                <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
+              </label>
+            </form>
+          </div>
           ${images.length
             ? `
               <div class="photo-stage">
@@ -3152,6 +3497,12 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
                     <button type="submit" class="photo-icon-button photo-delete-button" aria-label="Borrar foto principal">
                       <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
                     </button>
+                  </form>
+                  <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/${images[0].id}/replace" enctype="multipart/form-data" class="photo-replace-form" data-photo-file-form>
+                    <label class="photo-icon-button" title="Reemplazar foto principal" aria-label="Reemplazar foto principal">
+                      <i class="mdi mdi-image-sync-outline" aria-hidden="true"></i>
+                      <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
+                    </label>
                   </form>
                 </div>
               </div>
@@ -3169,6 +3520,12 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
                           <button type="submit" class="photo-icon-button photo-delete-button" aria-label="Borrar foto ${index + 2}">
                             <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
                           </button>
+                        </form>
+                        <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/${image.id}/replace" enctype="multipart/form-data" class="photo-replace-form" data-photo-file-form>
+                          <label class="photo-icon-button" title="Reemplazar foto ${index + 2}" aria-label="Reemplazar foto ${index + 2}">
+                            <i class="mdi mdi-image-sync-outline" aria-hidden="true"></i>
+                            <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
+                          </label>
                         </form>
                       </div>
                     </div>
@@ -3208,6 +3565,27 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
               <label class="full">Direccion
                 <textarea name="direccion">${escapeHtml(incidencia.direccion || '')}</textarea>
               </label>
+              <label>Latitud
+                <input name="latitud" id="incidencia-latitud" type="number" step="any" value="${escapeAttr(incidencia.latitud ?? '')}" placeholder="41.652">
+              </label>
+              <label>Longitud
+                <input name="longitud" id="incidencia-longitud" type="number" step="any" value="${escapeAttr(incidencia.longitud ?? '')}" placeholder="-4.728">
+              </label>
+              <div class="full location-picker">
+                <label>Buscar dirección
+                  <div class="location-search-row">
+                    <input id="incidencia-location-search" type="search" placeholder="Calle, plaza o barrio en Valladolid" autocomplete="off">
+                    <button type="button" class="button-ghost" id="incidencia-location-search-button">Buscar</button>
+                <div class="location-search-results" id="incidencia-location-results" aria-live="polite"></div>
+                  </div>
+                </label>
+                <div class="location-picker-actions">
+                  <button type="button" class="button-ghost" id="incidencia-location-edit-toggle" aria-pressed="false">Ajustar punto en el mapa</button>
+                  <span class="small" id="incidencia-location-edit-status">El mapa es solo de consulta.</span>
+                </div>
+                <div id="incidencia-location-map" class="location-picker-map" aria-label="Mapa para ajustar la ubicación"></div>
+                <p class="small">Busca una dirección o activa el ajuste para mover el marcador. Al guardar se normalizan dirección y barrio.</p>
+              </div>
             </div>
             <div class="detail-actions">
               <button type="submit">Guardar cambios</button>
@@ -3270,6 +3648,62 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
             : '<div class="empty-state">No hay reportes inadecuados asociados.</div>'}
         </div>
       </section>
+      <details class="subtle-panel" style="margin-top:18px">
+        <summary><span>Avisos al ayuntamiento</span><span class="small"><strong>${incidencia.avisos_ayuntamiento || 0}</strong> en total</span></summary>
+        <p class="small">Cada fila corresponde a una persona distinta. La huella se muestra recortada y solo sirve para identificar el aviso al moderarlo.</p>
+        ${externalReports.length
+          ? `<div class="table-scroll" style="margin-top:16px">
+              <table class="responsive-table admin-list-table ops-table external-event-table" data-number-sortable data-sort-column="2" data-sort-direction="desc">
+                <thead><tr>
+                  <th>Canal</th>
+                  <th>Huella</th>
+                  <th data-sort-number aria-sort="descending"><button class="number-sort-button" type="button" aria-pressed="true">Fecha <span class="number-sort-indicator">↓</span></button></th>
+                  <th><span class="sr-only">Acciones</span></th>
+                </tr></thead>
+                <tbody>${externalReports.map((report) => `
+                  <tr>
+                    <td data-label="Canal"><strong>${escapeHtml(report.channel === 'whatsapp' ? 'WhatsApp' : report.channel)}</strong></td>
+                    <td data-label="Huella">${escapeHtml(report.fingerprintShort)}</td>
+                    <td data-label="Fecha" data-sort-value="${new Date(report.created_at).getTime() || 0}">${formatDateTime(report.created_at)}</td>
+                    <td data-label="Acciones"><form method="post" action="/admin/incidencias/${incidencia.id}/avisos-ayuntamiento/${report.id}/delete" data-confirm="Este aviso se eliminara del contador y del ranking. ¿Continuar?"><button class="button-ghost detail-mini-button" type="submit">Borrar</button></form></td>
+                  </tr>
+                `).join('')}</tbody>
+              </table>
+            </div>`
+          : '<div class="empty-state">No hay avisos individuales registrados en la aplicación.</div>'}
+      </details>
+      <details class="subtle-panel" style="margin-top:18px" data-incidencia-timeline>
+        <summary><span>Historial de la incidencia</span><span class="small">${timeline.length} acciones</span></summary>
+        <div class="timeline-toolbar">
+          <label>Quién
+            <select data-timeline-filter>
+              <option value="">Todas</option>
+              <option value="usuario">Usuarios</option>
+              <option value="admin">Administración</option>
+              <option value="sistema">Sistema</option>
+            </select>
+          </label>
+          <label>Acción
+            <select data-timeline-action-filter>
+              <option value="">Todas las acciones</option>
+              ${timelineActions.map(([action, label]) => `<option value="${escapeAttr(action)}">${escapeHtml(label)}</option>`).join('')}
+            </select>
+          </label>
+        </div>
+        ${timeline.length ? `<div class="table-scroll timeline-table-wrap">
+          <table class="responsive-table admin-list-table ops-table timeline-table" data-number-sortable data-sort-column="3" data-sort-direction="desc">
+            <thead><tr><th><span class="sr-only">Tipo</span></th><th>Acción</th><th>Quién</th><th data-sort-number aria-sort="descending"><button class="number-sort-button" type="button" aria-pressed="true">Fecha <span class="number-sort-indicator">↓</span></button></th></tr></thead>
+            <tbody>${timeline.map((entry) => `
+              <tr data-timeline-type="${escapeAttr(entry.type)}" data-timeline-action="${escapeAttr(entry.action)}">
+                <td data-label="Tipo"><i class="mdi ${escapeAttr(timelineIcon(entry))} timeline-icon" aria-hidden="true"></i></td>
+                <td data-label="Acción"><strong>${escapeHtml(entry.label)}</strong></td>
+                <td data-label="Quién">${escapeHtml(entry.type === 'admin' ? 'Administración' : entry.type === 'sistema' ? 'Sistema' : 'Usuario')}${entry.detail ? `<span class="small timeline-detail">${escapeHtml(entry.detail)}</span>` : ''}</td>
+                <td data-label="Fecha" data-sort-value="${new Date(entry.date).getTime() || 0}">${formatDateTime(entry.date)}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table>
+        </div>` : '<div class="empty-state">Aún no hay actividad registrada.</div>'}
+      </details>
       <div class="modal-backdrop" id="delete-incidencia-modal" aria-hidden="true">
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-incidencia-title">
           <div class="modal-header">
@@ -3318,6 +3752,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
           const closePhotoButtons = document.querySelectorAll('[data-close-photo-modal]');
           const photoButtons = document.querySelectorAll('[data-open-photo-modal]');
           const deleteForms = document.querySelectorAll('form[data-photo-delete]');
+          const photoFileForms = document.querySelectorAll('form[data-photo-file-form]');
           const photoMap = ${JSON.stringify(images.reduce((acc, image) => {
             acc[image.id] = {
               url: image.url,
@@ -3373,6 +3808,91 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
                 event.preventDefault();
               }
             });
+          });
+          photoFileForms.forEach((form) => {
+            const input = form.querySelector('[data-photo-file-input]');
+            input?.addEventListener('change', () => {
+              if (input.files?.length) form.requestSubmit();
+            });
+          });
+          const timelineFilter = document.querySelector('[data-timeline-filter]');
+          const timelineActionFilter = document.querySelector('[data-timeline-action-filter]');
+          const applyTimelineFilters = () => {
+            document.querySelectorAll('[data-timeline-type]').forEach((row) => {
+              const actorMatches = !timelineFilter?.value || row.dataset.timelineType === timelineFilter.value;
+              const actionMatches = !timelineActionFilter?.value || row.dataset.timelineAction === timelineActionFilter.value;
+              row.hidden = !actorMatches || !actionMatches;
+            });
+          };
+          timelineFilter?.addEventListener('change', applyTimelineFilters);
+          timelineActionFilter?.addEventListener('change', applyTimelineFilters);
+        })();
+      </script>
+      <script src="/admin-assets/leaflet/leaflet.js"></script>
+      <script>
+        (() => {
+          const mapElement = document.getElementById('incidencia-location-map');
+          const latitude = document.getElementById('incidencia-latitud');
+          const longitude = document.getElementById('incidencia-longitud');
+          const search = document.getElementById('incidencia-location-search');
+          const searchButton = document.getElementById('incidencia-location-search-button');
+          const results = document.getElementById('incidencia-location-results');
+          const editToggle = document.getElementById('incidencia-location-edit-toggle');
+          const editStatus = document.getElementById('incidencia-location-edit-status');
+          if (!mapElement || !latitude || !longitude || !window.L) return;
+          const fallback = [41.6523, -4.7245];
+          const initial = [Number(latitude.value), Number(longitude.value)];
+          const start = Number.isFinite(initial[0]) && Number.isFinite(initial[1]) ? initial : fallback;
+          const map = L.map(mapElement, { scrollWheelZoom: false }).setView(start, 16);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20,
+            subdomains: 'abcd',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          }).addTo(map);
+          let marker;
+          let editingMap = false;
+          const updateEditingState = () => {
+            editToggle?.setAttribute('aria-pressed', String(editingMap));
+            if (editToggle) editToggle.textContent = editingMap ? 'Terminar ajuste en el mapa' : 'Ajustar punto en el mapa';
+            if (editStatus) editStatus.textContent = editingMap ? 'Pulsa o arrastra el marcador para cambiar el punto.' : 'El mapa es solo de consulta.';
+            if (marker?.dragging) editingMap ? marker.dragging.enable() : marker.dragging.disable();
+          };
+          const setLocation = (lat, lng, pan = true) => {
+            latitude.value = Number(lat).toFixed(6);
+            longitude.value = Number(lng).toFixed(6);
+            if (!marker) marker = L.marker([lat, lng], { draggable: false }).addTo(map);
+            else marker.setLatLng([lat, lng]);
+            if (pan) map.setView([lat, lng], 16);
+            marker.off('dragend').on('dragend', () => { const point = marker.getLatLng(); setLocation(point.lat, point.lng, false); });
+          };
+          setLocation(start[0], start[1], false);
+          map.on('click', (event) => { if (editingMap) setLocation(event.latlng.lat, event.latlng.lng); });
+          editToggle?.addEventListener('click', () => { editingMap = !editingMap; updateEditingState(); });
+          updateEditingState();
+          const performSearch = async () => {
+            const query = search.value.trim();
+            if (query.length < 3) { results.textContent = 'Escribe al menos 3 caracteres.'; return; }
+            results.textContent = 'Buscando…';
+            try {
+              const response = await fetch('/admin/geocode/search?q=' + encodeURIComponent(query), { headers: { Accept: 'application/json' } });
+              const payload = await response.json();
+              if (!response.ok) throw new Error(payload.error || 'Búsqueda no disponible');
+              const matches = payload.results || [];
+              results.innerHTML = '';
+              if (!matches.length) { results.textContent = 'No se han encontrado direcciones.'; return; }
+              matches.forEach((match) => {
+                const button = document.createElement('button');
+                button.type = 'button'; button.className = 'location-result'; button.textContent = match.displayName;
+                button.addEventListener('click', () => { setLocation(match.latitud, match.longitud); results.innerHTML = ''; });
+                results.appendChild(button);
+              });
+            } catch (_error) { results.textContent = 'No se ha podido buscar la dirección. Puedes mover el marcador en el mapa.'; }
+          };
+          searchButton?.addEventListener('click', performSearch);
+          search?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); performSearch(); } });
+          search?.addEventListener('keydown', (event) => { if (event.key === 'Escape') results.innerHTML = ''; });
+          document.addEventListener('click', (event) => {
+            if (!event.target.closest('.location-search-row')) results.innerHTML = '';
           });
         })();
       </script>

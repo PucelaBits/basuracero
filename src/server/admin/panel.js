@@ -9,6 +9,7 @@ const sharp = require('sharp');
 const { all, get, run } = require('../utils/dbAsync');
 const {
   PASSWORD_MIN_LENGTH,
+  addIncidenciaImage,
   authenticateAdmin,
   changeAdminPassword,
   changeIncidenciaTipo,
@@ -19,6 +20,7 @@ const {
   deleteIncidencia,
   deleteIncidenciaImage,
   deleteInadequateReport,
+  deleteExternalReportEvent,
   deleteSolutionReport,
   deleteTipoIfUnused,
   executeOldSolvable,
@@ -38,6 +40,8 @@ const {
   previewOldSolvable,
   processMissingLocationIncidencias,
   renameTipo,
+  replaceIncidenciaImage,
+  searchGeocodeLocation,
   setAdminActiveState,
   updateAdminUser,
   updateIncidencia,
@@ -77,6 +81,21 @@ const uploadBrandImage = multer({
     callback(null, true);
   }
 });
+const uploadIncidenciaImage = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 2, parts: 4 },
+  fileFilter: (_req, file, callback) => callback(null, allowedBrandImageTypes.has(String(file.mimetype || '').toLowerCase()))
+});
+
+async function saveIncidenciaImage(file) {
+  if (!file?.buffer) throw new Error('Selecciona una imagen válida.');
+  await fs.promises.mkdir(uploadsDir, { recursive: true });
+  const filename = `${crypto.randomUUID()}.jpg`;
+  await sharp(file.buffer, { failOn: 'error', limitInputPixels: 25_000_000 })
+    .rotate().resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 86, mozjpeg: true }).toFile(path.join(uploadsDir, filename));
+  return filename;
+}
 
 async function saveBrandImage(file, kind) {
   if (!file?.buffer || !['logo', 'favicon'].includes(kind)) {
@@ -1014,6 +1033,19 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     }
   });
 
+  router.get('/geocode/search', async (req, res) => {
+    try {
+      const settings = await getAppSettings();
+      const regionQuery = settings.SEARCH_REGION_LIMIT_ENABLED === 'true'
+        ? settings.SEARCH_REGION_QUERY
+        : '';
+      const results = await searchGeocodeLocation(req.query.q, regionQuery);
+      res.json({ results });
+    } catch (error) {
+      res.status(400).json({ error: error.message || 'No se ha podido buscar la dirección.' });
+    }
+  });
+
   router.post('/incidencias/:id/state', async (req, res, next) => {
     try {
       await updateIncidenciaState(req.params.id, req.body.state, req.currentAdmin.id);
@@ -1057,6 +1089,22 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     }
   });
 
+  router.post('/incidencias/:id/imagenes/add', uploadIncidenciaImage.single('imagen'), async (req, res, next) => {
+    try {
+      const filename = await saveIncidenciaImage(req.file);
+      await addIncidenciaImage(req.params.id, filename, req.currentAdmin.id);
+      res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent('Foto añadida')}`);
+    } catch (error) { next(error); }
+  });
+
+  router.post('/incidencias/:id/imagenes/:imageId/replace', uploadIncidenciaImage.single('imagen'), async (req, res, next) => {
+    try {
+      const filename = await saveIncidenciaImage(req.file);
+      await replaceIncidenciaImage(req.params.id, req.params.imageId, filename, req.currentAdmin.id);
+      res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent('Foto reemplazada')}`);
+    } catch (error) { next(error); }
+  });
+
   router.post('/incidencias/:id/tipo', async (req, res, next) => {
     try {
       await changeIncidenciaTipo(req.params.id, req.body.tipoId, req.currentAdmin.id);
@@ -1088,6 +1136,15 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     try {
       await deleteInadequateReport(req.params.reportId, req.currentAdmin.id);
       res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent('Reporte inadecuado eliminado')}`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post('/incidencias/:id/avisos-ayuntamiento/:eventId/delete', async (req, res, next) => {
+    try {
+      await deleteExternalReportEvent(req.params.id, req.params.eventId, req.currentAdmin.id);
+      res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent('Aviso al ayuntamiento eliminado')}`);
     } catch (error) {
       next(error);
     }

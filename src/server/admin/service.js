@@ -116,6 +116,23 @@ async function reverseGeocodeLocation(lat, lon) {
   };
 }
 
+async function searchGeocodeLocation(query, regionQuery = '') {
+  const term = String(query || '').trim();
+  if (term.length < 3 || term.length > 200) {
+    throw new Error('Escribe entre 3 y 200 caracteres para buscar una dirección.');
+  }
+  const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+    params: { format: 'json', limit: 5, q: `${term}${regionQuery}` },
+    headers: { 'User-Agent': getGeocodingUserAgent() },
+    timeout: 8000
+  });
+  return Array.isArray(response.data) ? response.data.map((result) => ({
+    displayName: result.display_name,
+    latitud: Number(result.lat),
+    longitud: Number(result.lon)
+  })).filter((result) => Number.isFinite(result.latitud) && Number.isFinite(result.longitud)) : [];
+}
+
 function sanitizeAdmin(row) {
   if (!row) {
     return null;
@@ -512,7 +529,10 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
        nombre,
        fecha,
        direccion,
+       direccion_json,
        barrio,
+       latitud,
+       longitud,
        estado,
        fecha_solucion,
        fecha_spam
@@ -529,6 +549,8 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
   const nextNombre = String(updates.nombre || '').trim();
   const nextDireccion = String(updates.direccion || '').trim();
   const nextBarrio = String(updates.barrio || '').trim();
+  const rawLatitud = String(updates.latitud || '').trim();
+  const rawLongitud = String(updates.longitud || '').trim();
   const nextEstado = String(updates.estado || '').trim();
   const nextTipoId = String(updates.tipoId || '').trim();
   const nextFecha = normalizeEditableDate(updates.fecha);
@@ -541,6 +563,14 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
   }
   if (nextNombre.length > 100 || nextDireccion.length > 300 || nextBarrio.length > 120) {
     throw new Error('Uno de los campos de texto supera la longitud permitida.');
+  }
+  if (Boolean(rawLatitud) !== Boolean(rawLongitud)) {
+    throw new Error('Indica latitud y longitud juntas.');
+  }
+  const nextLatitud = rawLatitud ? Number(rawLatitud) : current.latitud;
+  const nextLongitud = rawLongitud ? Number(rawLongitud) : current.longitud;
+  if ((rawLatitud || rawLongitud) && (!Number.isFinite(nextLatitud) || !Number.isFinite(nextLongitud) || Math.abs(nextLatitud) > 90 || Math.abs(nextLongitud) > 180)) {
+    throw new Error('Las coordenadas no son válidas.');
   }
 
   const allowedStates = new Set(['activa', 'solucionada', 'spam']);
@@ -564,13 +594,22 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
       : new Date().toISOString().slice(0, 19).replace('T', ' '))
     : null;
 
+  const locationChanged = nextLatitud !== current.latitud || nextLongitud !== current.longitud;
+  const geocoded = locationChanged ? await reverseGeocodeLocation(nextLatitud, nextLongitud) : null;
+  const resolvedDireccion = geocoded?.direccion || nextDireccion || null;
+  const resolvedBarrio = geocoded?.barrio || nextBarrio || null;
+  const resolvedDireccionJson = geocoded?.direccion_json || current.direccion_json || null;
+
   await run(
     `UPDATE incidencias
      SET tipo_id = ?,
          descripcion = ?,
          nombre = ?,
          fecha = ?,
+         latitud = ?,
+         longitud = ?,
          direccion = ?,
+         direccion_json = ?,
          barrio = ?,
          estado = ?,
          fecha_solucion = ?,
@@ -581,8 +620,11 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
       nextDescripcion,
       nextNombre || null,
       nextFecha,
-      nextDireccion || null,
-      nextBarrio || null,
+      nextLatitud,
+      nextLongitud,
+      resolvedDireccion,
+      resolvedDireccionJson,
+      resolvedBarrio,
       nextEstado,
       fechaSolucion,
       fechaSpam,
@@ -597,7 +639,10 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
        descripcion,
        nombre,
        fecha,
+       latitud,
+       longitud,
        direccion,
+       direccion_json,
        barrio,
        estado,
        fecha_solucion,
@@ -647,6 +692,25 @@ async function deleteIncidenciaImage(incidenciaId, imageId, actingAdminId) {
     console.error(`No se pudo eliminar el archivo ${path.basename(image.ruta_imagen)}:`, error.message);
   });
   return image;
+}
+
+async function addIncidenciaImage(incidenciaId, filename, actingAdminId) {
+  const incidencia = await get('SELECT id FROM incidencias WHERE id = ?', [incidenciaId]);
+  if (!incidencia) throw new Error('Incidencia no encontrada.');
+  const result = await run('INSERT INTO imagenes_incidencias (incidencia_id, ruta_imagen) VALUES (?, ?)', [incidenciaId, filename]);
+  const image = await get('SELECT id, incidencia_id, ruta_imagen, fecha_creacion FROM imagenes_incidencias WHERE id = ?', [result.lastID]);
+  await createAuditLog(actingAdminId, 'add_incidencia_image', 'incidencia_image', image.id, null, image);
+  return image;
+}
+
+async function replaceIncidenciaImage(incidenciaId, imageId, filename, actingAdminId) {
+  const image = await get('SELECT id, incidencia_id, ruta_imagen, fecha_creacion FROM imagenes_incidencias WHERE id = ? AND incidencia_id = ?', [imageId, incidenciaId]);
+  if (!image) throw new Error('Imagen no encontrada.');
+  await run('UPDATE imagenes_incidencias SET ruta_imagen = ?, fecha_creacion = datetime(\'now\', \'localtime\') WHERE id = ?', [filename, imageId]);
+  const updated = await get('SELECT id, incidencia_id, ruta_imagen, fecha_creacion FROM imagenes_incidencias WHERE id = ?', [imageId]);
+  await createAuditLog(actingAdminId, 'replace_incidencia_image', 'incidencia_image', imageId, image, updated);
+  await deleteImageFile(image.ruta_imagen).catch((error) => console.error(`No se pudo eliminar la foto reemplazada:`, error.message));
+  return updated;
 }
 
 async function clearSolutionReports(incidenciaId, actingAdminId) {
@@ -980,6 +1044,82 @@ async function getInadequateReportedIncidencias() {
   );
 }
 
+function summarizeAuditAction(action) {
+  const labels = {
+    update_incidencia: 'Editó los datos de la incidencia',
+    set_incidencia_activa: 'Marcó la incidencia como activa',
+    set_incidencia_solucionada: 'Marcó la incidencia como solucionada',
+    set_incidencia_spam: 'Marcó la incidencia como spam',
+    change_incidencia_tipo: 'Cambió la categoría',
+    clear_solution_reports: 'Limpió los reportes de solución',
+    clear_inadequate_reports: 'Limpió los reportes inadecuados',
+    delete_solution_report: 'Eliminó un reporte de solución',
+    delete_inadequate_report: 'Eliminó un reporte inadecuado',
+    delete_incidencia_image: 'Eliminó una foto',
+    delete_external_report_event: 'Eliminó un aviso al ayuntamiento',
+    auto_solve_old_incidencia: 'Marcó como solucionada automáticamente',
+    hydrate_location_data: 'Actualizó la ubicación'
+  };
+  return labels[action] || action.replaceAll('_', ' ');
+}
+
+async function getIncidenciaTimeline(incidenciaId) {
+  const [solutionReports, inadequateReports, externalReports, imports, auditEntries, incidencia] = await Promise.all([
+    all('SELECT id, fecha, usuario FROM reportes_solucion WHERE incidencia_id = ?', [incidenciaId]),
+    all('SELECT id, fecha FROM reportes_inadecuado WHERE incidencia_id = ?', [incidenciaId]),
+    all(`SELECT id, channel, event_type, created_at FROM external_report_events WHERE incidencia_id = ?`, [incidenciaId]),
+    all(`SELECT id, channel, total, source, first_reported_at, imported_at FROM external_report_imports WHERE incidencia_id = ?`, [incidenciaId]),
+    all(
+      `SELECT l.action, l.entity_type, l.entity_id, l.before_json, l.after_json, l.created_at, u.username
+       FROM admin_audit_log l
+       LEFT JOIN admin_users u ON u.id = l.admin_user_id
+       WHERE (l.entity_type = 'incidencia' AND l.entity_id = ?)
+          OR l.before_json LIKE ? OR l.after_json LIKE ?
+       ORDER BY datetime(l.created_at) ASC, l.id ASC`,
+      [String(incidenciaId), `%"incidencia_id":${incidenciaId}%`, `%"incidencia_id":${incidenciaId}%`]
+    ),
+    get('SELECT fecha, nombre FROM incidencias WHERE id = ?', [incidenciaId])
+  ]);
+
+  const entries = [];
+  if (incidencia) {
+    entries.push({ type: 'usuario', action: 'incidencia_creada', label: 'Envió la incidencia', detail: incidencia.nombre || null, date: incidencia.fecha });
+  }
+  solutionReports.forEach((report) => entries.push({ type: 'usuario', action: 'reporte_solucion', label: 'Indicó que estaba solucionada', detail: report.usuario || null, date: report.fecha }));
+  inadequateReports.forEach((report) => entries.push({ type: 'usuario', action: 'reporte_inadecuado', label: 'Reportó contenido inadecuado', date: report.fecha }));
+  externalReports.forEach((report) => entries.push({ type: 'usuario', action: 'aviso_ayuntamiento', label: `Abrió el aviso por ${report.channel === 'whatsapp' ? 'WhatsApp' : report.channel}`, date: report.created_at }));
+  imports.forEach((report) => entries.push({
+    type: 'sistema',
+    action: 'aviso_importado',
+    label: 'Importación de avisos',
+    detail: `${report.total} aviso${report.total === 1 ? '' : 's'}${report.source ? ` · ${report.source}` : ''}`,
+    date: report.imported_at || report.first_reported_at
+  }));
+  auditEntries.forEach((entry) => entries.push({ type: 'admin', action: entry.action, label: summarizeAuditAction(entry.action), detail: entry.username || 'Administrador eliminado', date: entry.created_at }));
+
+  return entries.sort((left, right) => new Date(right.date || 0) - new Date(left.date || 0));
+}
+
+async function deleteExternalReportEvent(incidenciaId, eventId, actingAdminId) {
+  const event = await get(
+    `SELECT id, incidencia_id, channel, event_type, reporter_fingerprint, created_at
+     FROM external_report_events WHERE id = ? AND incidencia_id = ?`,
+    [eventId, incidenciaId]
+  );
+  if (!event) throw new Error('Aviso al ayuntamiento no encontrado.');
+
+  await run('BEGIN');
+  try {
+    await run('DELETE FROM external_report_events WHERE id = ?', [event.id]);
+    await createAuditLog(actingAdminId, 'delete_external_report_event', 'external_report_event', event.id, event, null);
+    await run('COMMIT');
+  } catch (error) {
+    await run('ROLLBACK').catch(() => {});
+    throw error;
+  }
+  return event;
+}
+
 async function getIncidenciaDetail(incidenciaId) {
   const incidencia = await get(
     `SELECT
@@ -1020,7 +1160,7 @@ async function getIncidenciaDetail(incidenciaId) {
     [incidenciaId]
   );
 
-  const [solutionReports, inadequateReports] = await Promise.all([
+  const [solutionReports, inadequateReports, externalReports, timeline] = await Promise.all([
     all(
       `SELECT id, ip, fecha, usuario
        FROM reportes_solucion
@@ -1034,7 +1174,15 @@ async function getIncidenciaDetail(incidenciaId) {
        WHERE incidencia_id = ?
        ORDER BY datetime(fecha) DESC, id DESC`,
       [incidenciaId]
-    )
+    ),
+    all(
+      `SELECT id, channel, event_type, reporter_fingerprint, created_at
+       FROM external_report_events
+       WHERE incidencia_id = ?
+       ORDER BY datetime(created_at) DESC, id DESC`,
+      [incidenciaId]
+    ),
+    getIncidenciaTimeline(incidenciaId)
   ]);
 
   return {
@@ -1046,7 +1194,12 @@ async function getIncidenciaDetail(incidenciaId) {
     })),
     imageUrls: imagenes.map((image) => `/uploads/${image.ruta_imagen}`),
     solutionReports,
-    inadequateReports
+    inadequateReports,
+    externalReports: externalReports.map((report) => ({
+      ...report,
+      fingerprintShort: `${String(report.reporter_fingerprint || '').slice(0, 10)}…`
+    })),
+    timeline
   };
 }
 
@@ -1480,11 +1633,13 @@ module.exports = {
   clearSolutionReports,
   countActiveAdmins,
   createTipo,
+  addIncidenciaImage,
   createAdminUser,
   createAuditLog,
   deleteIncidencia,
   deleteIncidenciaImage,
   deleteInadequateReport,
+  deleteExternalReportEvent,
   deleteSolutionReport,
   deleteTipoIfUnused,
   executeOldSolvable,
@@ -1507,7 +1662,9 @@ module.exports = {
   previewOldSolvable,
   processMissingLocationIncidencias,
   renameTipo,
+  replaceIncidenciaImage,
   reverseGeocodeLocation,
+  searchGeocodeLocation,
   sanitizeAdmin,
   setAdminActiveState,
   updateAdminPassword: changeAdminPassword,

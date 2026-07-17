@@ -863,6 +863,41 @@ describe('Panel admin', () => {
     expect(inadequateCount.total).toBe(0);
   });
 
+  it('muestra, audita y permite borrar avisos individuales al ayuntamiento', async () => {
+    const incidencia = await dbAsync.run(
+      `INSERT INTO incidencias (tipo_id, descripcion, fecha, estado)
+       VALUES (?, ?, datetime('now', 'localtime'), ?)`,
+      [1, 'Incidencia con aviso externo', 'activa']
+    );
+    const event = await dbAsync.run(
+      `INSERT INTO external_report_events (incidencia_id, channel, event_type, reporter_fingerprint, created_at)
+       VALUES (?, 'whatsapp', 'redirect_opened', '0123456789abcdef', datetime('now', 'localtime'))`,
+      [incidencia.lastID]
+    );
+
+    const detail = await agent.get(`/admin/incidencias/${incidencia.lastID}`);
+    expect(detail.status).toBe(200);
+    expect(detail.text).toContain('Avisos al ayuntamiento');
+    expect(detail.text).toContain('>0123456789…</td>');
+    expect(detail.text).toContain('Historial de la incidencia');
+    expect(detail.text).toContain('Abrió el aviso por WhatsApp');
+
+    const response = await postWithCsrf(
+      `/admin/incidencias/${incidencia.lastID}/avisos-ayuntamiento/${event.lastID}/delete`,
+      {},
+      `/admin/incidencias/${incidencia.lastID}`
+    );
+    expect(response.status).toBe(302);
+
+    const remaining = await dbAsync.get('SELECT id FROM external_report_events WHERE id = ?', [event.lastID]);
+    expect(remaining).toBeUndefined();
+    const audit = await dbAsync.get(
+      `SELECT action FROM admin_audit_log WHERE entity_type = 'external_report_event' AND entity_id = ?`,
+      [String(event.lastID)]
+    );
+    expect(audit.action).toBe('delete_external_report_event');
+  });
+
   it('permite borrar definitivamente una incidencia con confirmacion explicita', async () => {
     const incidencia = await dbAsync.run(
       `INSERT INTO incidencias (
