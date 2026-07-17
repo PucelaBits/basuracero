@@ -182,6 +182,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         event_type TEXT NOT NULL,
         source TEXT NOT NULL,
         total INTEGER NOT NULL CHECK (total >= 0),
+        first_reported_at DATETIME,
         imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (incidencia_id) REFERENCES incidencias(id) ON DELETE CASCADE,
         UNIQUE (incidencia_id, channel, event_type, source)

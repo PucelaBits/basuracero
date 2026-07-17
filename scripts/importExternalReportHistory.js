@@ -30,7 +30,10 @@ function readImportRows() {
   }
   return parsed.map((row) => ({
     incidenciaId: Number.parseInt(row.incidenciaId, 10),
-    total: Number.parseInt(row.total, 10)
+    total: Number.parseInt(row.total, 10),
+    firstReportedAt: typeof row.firstReportedAt === 'string' && !Number.isNaN(Date.parse(row.firstReportedAt))
+      ? row.firstReportedAt
+      : null
   })).filter((row) => Number.isInteger(row.incidenciaId) && row.incidenciaId > 0 && Number.isInteger(row.total) && row.total > 0);
 }
 
@@ -50,11 +53,13 @@ async function main() {
       }
       await run(
         `INSERT INTO external_report_imports
-          (incidencia_id, channel, event_type, source, total, imported_at)
-         VALUES (?, 'whatsapp', 'redirect_opened', 'matomo', ?, datetime('now', 'localtime'))
+          (incidencia_id, channel, event_type, source, total, first_reported_at, imported_at)
+         VALUES (?, 'whatsapp', 'redirect_opened', 'matomo', ?, ?, datetime('now', 'localtime'))
          ON CONFLICT(incidencia_id, channel, event_type, source)
-         DO UPDATE SET total = excluded.total, imported_at = excluded.imported_at`,
-        [row.incidenciaId, row.total]
+         DO UPDATE SET total = excluded.total,
+                       first_reported_at = COALESCE(excluded.first_reported_at, external_report_imports.first_reported_at),
+                       imported_at = excluded.imported_at`,
+        [row.incidenciaId, row.total, row.firstReportedAt]
       );
       imported += 1;
     }

@@ -647,19 +647,24 @@ router.get('/reportes-externos/ranking', publicReadLimiter, async (req, res) => 
     const rows = await new Promise((resolve, reject) => {
       db.all(
         `WITH report_totals AS (
-           SELECT incidencia_id, channel, COUNT(*) AS total
+           SELECT incidencia_id, channel, COUNT(*) AS total, MIN(created_at) AS primer_aviso_at
            FROM external_report_events
            WHERE channel = ?
            GROUP BY incidencia_id, channel
            UNION ALL
-           SELECT incidencia_id, channel, SUM(total) AS total
+           SELECT incidencia_id, channel, SUM(total) AS total, MIN(first_reported_at) AS primer_aviso_at
            FROM external_report_imports
            WHERE channel = ?
+           GROUP BY incidencia_id, channel
+         ), aggregated_reports AS (
+           SELECT incidencia_id, channel, SUM(total) AS total, MIN(primer_aviso_at) AS primer_aviso_at
+           FROM report_totals
            GROUP BY incidencia_id, channel
          )
          SELECT r.incidencia_id AS incidenciaId,
                 r.channel,
                 SUM(r.total) AS total,
+                r.primer_aviso_at AS primerAvisoAt,
                 i.estado,
                 i.descripcion,
                 i.direccion,
@@ -692,6 +697,7 @@ router.get('/reportes-externos/ranking', publicReadLimiter, async (req, res) => 
         incidenciaId: row.incidenciaId,
         total: Number(row.total),
         channel: row.channel,
+        primerAvisoAt: row.primerAvisoAt,
         estado: row.estado,
         url: `/i/${row.incidenciaId}`,
         ...(incluirDetalles ? {

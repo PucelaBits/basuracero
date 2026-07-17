@@ -41,6 +41,7 @@ describe('Migraciones SQLite', () => {
     const tables = await db.all("SELECT name FROM sqlite_master WHERE type = 'table'");
     const migrations = await db.get('SELECT COUNT(*) AS total FROM schema_migrations');
     const indexes = await db.all("SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_%'");
+    const importedReportColumns = await db.all('PRAGMA table_info(external_report_imports)');
     const integrity = await db.get('PRAGMA integrity_check');
     const foreignKeyErrors = await db.all('PRAGMA foreign_key_check');
     await db.close();
@@ -49,8 +50,9 @@ describe('Migraciones SQLite', () => {
       'incidencias', 'admin_users', 'admin_sessions', 'admin_audit_log', 'app_settings', 'schema_migrations',
       'external_report_events', 'external_report_imports'
     ]));
-    expect(migrations.total).toBe(7);
+    expect(migrations.total).toBe(8);
     expect(indexes.map((item) => item.name)).toContain('idx_incidencias_estado_fecha');
+    expect(importedReportColumns.map((item) => item.name)).toContain('first_reported_at');
     expect(integrity.integrity_check).toBe('ok');
     expect(foreignKeyErrors).toHaveLength(0);
   });
@@ -86,7 +88,7 @@ describe('Migraciones SQLite', () => {
 
     expect(columns.map((item) => item.name)).toEqual(expect.arrayContaining(['direccion_json', 'fecha_spam']));
     expect(preserved).toEqual({ descripcion: 'Dato que debe conservarse', tipo_id: 1 });
-    expect(migrations.total).toBe(7);
+    expect(migrations.total).toBe(8);
     expect(integrity.integrity_check).toBe('ok');
     expect(foreignKeyErrors).toHaveLength(0);
   });

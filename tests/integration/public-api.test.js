@@ -126,7 +126,7 @@ describe('API publica real', () => {
 
     const rankingDetallado = await request(app).get('/api/incidencias/reportes-externos/ranking?channel=whatsapp&incluirDetalles=true');
     expect(rankingDetallado.body.ranking).toEqual(expect.arrayContaining([
-      expect.objectContaining({ incidenciaId, descripcion: expect.any(String), rutaImagen: expect.any(String) })
+      expect.objectContaining({ incidenciaId, descripcion: expect.any(String), rutaImagen: expect.any(String), primerAvisoAt: expect.any(String) })
     ]));
 
     await dbAsync.run('UPDATE incidencias SET estado = ? WHERE id = ?', ['solucionada', incidenciaId]);

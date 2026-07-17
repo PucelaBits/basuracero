@@ -14,7 +14,7 @@
           <div>
             <p class="avisos-ranking__eyebrow">PARTICIPACIÓN CIUDADANA</p>
             <h1>Incidencias más avisadas</h1>
-            <p>Ordenadas por las personas que han informado al ayuntamiento. Se muestran incidencias con al menos dos avisos y, por defecto, solo las que siguen abiertas.</p>
+            <p>Incidencias que se han informado al Ayuntamiento.</p>
           </div>
           <v-switch
             v-model="incluirSolucionadas"
@@ -37,9 +37,9 @@
                 <th class="avisos-ranking__rank">#</th>
                 <th class="avisos-ranking__image">Imagen</th>
                 <th><button type="button" @click="ordenarPor('descripcion')">Incidencia <SortIcon campo="descripcion" :actual="ordenacion" /></button></th>
-                <th class="avisos-ranking__optional"><button type="button" @click="ordenarPor('tipo')">Categoría <SortIcon campo="tipo" :actual="ordenacion" /></button></th>
-                <th class="avisos-ranking__optional"><button type="button" @click="ordenarPor('barrio')">Zona <SortIcon campo="barrio" :actual="ordenacion" /></button></th>
-                <th class="avisos-ranking__optional"><button type="button" @click="ordenarPor('estado')">Estado <SortIcon campo="estado" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__desktop-only"><button type="button" @click="ordenarPor('tipo')">Categoría <SortIcon campo="tipo" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__desktop-only"><button type="button" @click="ordenarPor('barrio')">Zona <SortIcon campo="barrio" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__date"><button type="button" @click="ordenarPor('primerAvisoAt')">Fecha <SortIcon campo="primerAvisoAt" :actual="ordenacion" /></button></th>
                 <th class="avisos-ranking__total"><button type="button" @click="ordenarPor('total')">Avisos <SortIcon campo="total" :actual="ordenacion" /></button></th>
               </tr>
             </thead>
@@ -50,10 +50,10 @@
                   <img v-if="incidencia.rutaImagen" :src="incidencia.rutaImagen" alt="" loading="lazy">
                   <span v-else><v-icon>mdi-image-outline</v-icon></span>
                 </td>
-                <td class="avisos-ranking__description"><strong>#{{ incidencia.incidenciaId }} · {{ incidencia.descripcion }}</strong><small>{{ incidencia.direccion || 'Sin dirección' }}</small></td>
-                <td class="avisos-ranking__optional"><span class="avisos-ranking__category"><v-icon size="16">{{ incidencia.icono || 'mdi-tag-outline' }}</v-icon>{{ incidencia.tipo || 'Sin categoría' }}</span></td>
-                <td class="avisos-ranking__optional">{{ incidencia.barrio || 'Sin zona' }}</td>
-                <td class="avisos-ranking__optional"><span class="avisos-ranking__status" :class="`is-${incidencia.estado}`">{{ textoEstado(incidencia.estado) }}</span></td>
+                <td class="avisos-ranking__description"><strong>{{ incidencia.descripcion }} <span v-if="incidencia.estado === 'solucionada'" class="avisos-ranking__status">Solucionada</span></strong><small>{{ incidencia.direccion || 'Sin dirección' }}</small></td>
+                <td class="avisos-ranking__desktop-only"><span class="avisos-ranking__category"><v-icon size="16">{{ incidencia.icono || 'mdi-tag-outline' }}</v-icon>{{ incidencia.tipo || 'Sin categoría' }}</span></td>
+                <td class="avisos-ranking__desktop-only">{{ incidencia.barrio || 'Sin zona' }}</td>
+                <td class="avisos-ranking__date" :title="incidencia.primerAvisoAt ? 'Fecha del primer aviso al Ayuntamiento' : 'Fecha de publicación de la incidencia'">{{ formatearFecha(incidencia.primerAvisoAt || incidencia.fecha) }}</td>
                 <td class="avisos-ranking__total"><span><v-icon size="19">mdi-account-group-outline</v-icon>{{ incidencia.total }}</span></td>
               </tr>
             </tbody>
@@ -107,10 +107,12 @@ export default {
 
     const filasOrdenadas = computed(() => incidencias.value.filter((incidencia) => Number(incidencia.total) > 1).sort((a, b) => {
       const { campo, direccion } = ordenacion.value
-      const izquierda = a[campo] ?? ''
-      const derecha = b[campo] ?? ''
+      const izquierda = campo === 'primerAvisoAt' ? (a.primerAvisoAt || a.fecha || '') : (a[campo] ?? '')
+      const derecha = campo === 'primerAvisoAt' ? (b.primerAvisoAt || b.fecha || '') : (b[campo] ?? '')
       const comparacion = campo === 'total'
         ? Number(izquierda) - Number(derecha)
+        : campo === 'primerAvisoAt'
+          ? new Date(String(izquierda).replace(' ', 'T')).getTime() - new Date(String(derecha).replace(' ', 'T')).getTime()
         : String(izquierda).localeCompare(String(derecha), 'es', { sensitivity: 'base' })
       return direccion === 'asc' ? comparacion : -comparacion
     }))
@@ -118,7 +120,12 @@ export default {
     const ordenarPor = (campo) => {
       ordenacion.value = { campo, direccion: ordenacion.value.campo === campo && ordenacion.value.direccion === 'desc' ? 'asc' : 'desc' }
     }
-    const textoEstado = (estado) => estado === 'solucionada' ? 'Solucionada' : 'Abierta'
+    const formatearFecha = (fecha) => {
+      if (!fecha) return '—'
+      const date = new Date(String(fecha).replace(' ', 'T'))
+      if (Number.isNaN(date.getTime())) return '—'
+      return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
+    }
     const abrirIncidencia = (incidencia) => router.push(incidencia.url)
     const cerrar = () => router.push({ name: 'Home' })
 
@@ -130,7 +137,7 @@ export default {
     watch(() => route.name, (nombre) => { dialogVisible.value = nombre === 'RankingAvisos' })
     watch(dialogVisible, (visible) => { if (!visible && route.name === 'RankingAvisos') cerrar() })
 
-    return { dialogVisible, incluirSolucionadas, cargando, error, ordenacion, filasOrdenadas, ordenarPor, textoEstado, abrirIncidencia, cerrar }
+    return { dialogVisible, incluirSolucionadas, cargando, error, ordenacion, filasOrdenadas, ordenarPor, formatearFecha, abrirIncidencia, cerrar }
   }
 }
 </script>
@@ -144,7 +151,7 @@ export default {
 .avisos-ranking__intro > div > p:last-child { max-width: 670px; margin: 12px 0 0; color: #5e6a70; line-height: 1.55; }
 .avisos-ranking__toggle { flex: 0 0 auto; min-width: 210px; font-size: .92rem; }
 .avisos-ranking__table-wrap { overflow-x: auto; border-top: 1px solid #d7dfdb; border-bottom: 1px solid #d7dfdb; }
-.avisos-ranking__table { width: 100%; min-width: 780px; border-collapse: collapse; }
+.avisos-ranking__table { width: 100%; min-width: 840px; border-collapse: collapse; }
 .avisos-ranking__table th { padding: 13px 10px; color: #5a6b68; font-size: .72rem; letter-spacing: .04em; text-align: left; text-transform: uppercase; white-space: nowrap; }
 .avisos-ranking__table th button { color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
 .avisos-ranking__sort-icon { margin-left: 4px; color: #758d82; }
@@ -158,8 +165,8 @@ export default {
 .avisos-ranking__description strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .93rem; line-height: 1.35; }
 .avisos-ranking__description small { display: block; overflow: hidden; margin-top: 4px; color: #6f7c7a; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .avisos-ranking__category { display: inline-flex; align-items: center; gap: 6px; color: #465854; font-size: .83rem; }
-.avisos-ranking__status { display: inline-block; padding: 4px 8px; border-radius: 99px; background: #e4eee9; color: #38614c; font-size: .76rem; font-weight: 700; }
-.avisos-ranking__status.is-solucionada { background: #ecedef; color: #66716d; }
+.avisos-ranking__status { display: inline-flex; margin-left: 6px; padding: 3px 7px; align-items: center; border-radius: 99px; background: #ecedef; color: #66716d; font-size: .72rem; font-weight: 700; line-height: 1.2; vertical-align: middle; }
+.avisos-ranking__date { width: 108px; color: #52635e; font-size: .84rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .avisos-ranking__total { text-align: right !important; }
 .avisos-ranking__total span { display: inline-flex; align-items: center; gap: 5px; color: #245d54; font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .avisos-ranking__empty { display: flex; min-height: 180px; align-items: center; justify-content: center; gap: 10px; color: #687571; }
@@ -169,12 +176,14 @@ export default {
   .avisos-ranking__toggle { margin-top: 20px; }
   .avisos-ranking__table-wrap { overflow-x: hidden; }
   .avisos-ranking__table { min-width: 0; table-layout: fixed; }
-  .avisos-ranking__optional, .avisos-ranking__image { display: none; }
+  .avisos-ranking__desktop-only, .avisos-ranking__image, .avisos-ranking__rank { display: none; }
   .avisos-ranking__table th, .avisos-ranking__table td { padding: 13px 6px; }
-  .avisos-ranking__rank { width: 28px; }
   .avisos-ranking__description { min-width: 0; max-width: none; }
   .avisos-ranking__description strong { -webkit-line-clamp: 2; font-size: .9rem; }
   .avisos-ranking__description small { display: none; }
-  .avisos-ranking__total { width: 74px; }
+  .avisos-ranking__date { width: 84px; font-size: .78rem; }
+  .avisos-ranking__total { width: 68px; }
+  .avisos-ranking__total span { gap: 3px; font-size: .92rem; }
+  .avisos-ranking__total .v-icon { font-size: 17px !important; }
 }
 </style>
