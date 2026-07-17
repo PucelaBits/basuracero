@@ -262,7 +262,10 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
       const status = err instanceof multer.MulterError
         ? err.code === 'LIMIT_FILE_SIZE' ? 413 : 400
         : 500;
-      return res.status(status).json({ error: getSpecificErrorMessage('file', 'upload') });
+      const messageType = err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
+        ? 'tooLarge'
+        : 'upload';
+      return res.status(status).json({ error: getSpecificErrorMessage('file', messageType) });
     }
 
     const errorNombre = validarNombre(req.body.nombre);

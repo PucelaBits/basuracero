@@ -107,6 +107,20 @@ describe('API publica real', () => {
     expect(fs.existsSync(path.join(uploadsDir, image.ruta_imagen))).toBe(true);
   });
 
+  it('explica cuando una imagen supera el límite de subida', async () => {
+    const response = await request(app)
+      .post('/api/incidencias')
+      .field('tipo_id', '1')
+      .field('descripcion', 'Imagen demasiado grande')
+      .field('latitud', '41.652')
+      .field('longitud', '-4.728')
+      .field('nombre', 'Vecina Test')
+      .attach('imagenes', Buffer.alloc((5 * 1024 * 1024) + 1), { filename: 'foto.jpg', contentType: 'image/jpeg' });
+
+    expect(response.status).toBe(413);
+    expect(response.body).toEqual({ error: 'La imagen seleccionada es demasiado grande. Por favor, elige una imagen más pequeña.' });
+  });
+
   it('registra una sola apertura externa por incidencia y huella, y expone solo agregados', async () => {
     const first = await request(app)
       .post(`/api/incidencias/${incidenciaId}/external-report`)

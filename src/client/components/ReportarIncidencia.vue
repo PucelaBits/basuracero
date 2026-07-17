@@ -151,18 +151,22 @@
             <v-divider class="my-4"><span style="color: grey;">Fotos</span></v-divider>
             <v-row class="mt-4">
               <v-col cols="6 px-1">
-                <v-btn block color="secondary" @click="tomarFoto" :disabled="incidencia.imagenes.length >= 2">
+                <v-btn block color="secondary" @click="tomarFoto" :loading="procesandoImagenes" :disabled="incidencia.imagenes.length >= 2 || procesandoImagenes">
                   <v-icon start>mdi-camera</v-icon>
                   Hacer foto
                 </v-btn>
               </v-col>
               <v-col cols="6 px-1">
-                <v-btn block color="secondary" @click="abrirSelectorArchivos" :disabled="incidencia.imagenes.length >= 2">
+                <v-btn block color="secondary" @click="abrirSelectorArchivos" :loading="procesandoImagenes" :disabled="incidencia.imagenes.length >= 2 || procesandoImagenes">
                   <v-icon start>mdi-upload</v-icon>
                   Subir fotos
                 </v-btn>
               </v-col>
             </v-row>
+
+            <v-alert v-if="procesandoImagenes" type="info" variant="tonal" density="compact" class="mt-3 mb-0">
+              Optimizando la foto para poder enviarla…
+            </v-alert>
 
             <v-list v-if="incidencia.imagenes.length > 0" class="mt-3">
               <v-list-item v-for="(imagen, index) in incidencia.imagenes" :key="index">
@@ -213,7 +217,7 @@
 
             <div class="subtitle-text d-flex align-center justify-center mt-4">
               <v-icon color="grey" class="mr-2">mdi-information</v-icon>
-              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal)<br/>No incluyas caras, matrículas o info personal</span>
+              <span color="grey">Máx. 2 fotos (preferiblemente en horizontal). Si hace falta, las reducimos automáticamente.<br/>No incluyas caras, matrículas o info personal</span>
             </div>
 
             <v-divider class="my-4"><span style="color: grey;">Tus datos</span></v-divider>
@@ -433,6 +437,7 @@ export default {
     const cameraInput = ref(null)
     const fileInput = ref(null)
     const aceptaLicencia = ref(false)
+    const procesandoImagenes = ref(false)
     const { incidenciasUsuario, añadirIncidenciaUsuario } = useIncidenciasUsuarioStore()
     const instruccionesRegistro = ref(getRuntimeConfig().VITE_INSTRUCCIONES_REGISTRO || '')
 
@@ -466,21 +471,98 @@ export default {
       }
     }
 
-    const onFilesSelected = (event) => {
-      const files = event.target.files
-      if (files && files.length > 0) {
-        const newImages = Array.from(files).slice(0, 2 - incidencia.value.imagenes.length)
-        incidencia.value.imagenes = [...incidencia.value.imagenes, ...newImages].slice(0, 2)
-        updatePreviewUrls()
+    const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024
+    const TARGET_IMAGE_UPLOAD_BYTES = Math.floor(4.5 * 1024 * 1024)
+    const MAX_IMAGE_DIMENSION = 1920
+
+    const loadImage = (file) => new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file)
+      const image = new Image()
+      image.onload = () => {
+        URL.revokeObjectURL(url)
+        resolve(image)
+      }
+      image.onerror = () => {
+        URL.revokeObjectURL(url)
+        reject(new Error('No se pudo leer la imagen'))
+      }
+      image.src = url
+    })
+
+    const canvasToBlob = (canvas, quality) => new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('No se pudo optimizar la imagen')), 'image/jpeg', quality)
+    })
+
+    const optimizarImagen = async (file) => {
+      if (file.size <= TARGET_IMAGE_UPLOAD_BYTES) return { file, optimizada: false }
+
+      const image = await loadImage(file)
+      let scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(image.naturalWidth, image.naturalHeight))
+      let blob
+
+      for (const quality of [0.84, 0.74, 0.64]) {
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+        const context = canvas.getContext('2d')
+        context.drawImage(image, 0, 0, canvas.width, canvas.height)
+        blob = await canvasToBlob(canvas, quality)
+        if (blob.size <= TARGET_IMAGE_UPLOAD_BYTES) break
+        scale *= 0.72
+      }
+
+      if (!blob || blob.size > MAX_IMAGE_UPLOAD_BYTES) {
+        throw new Error('No hemos podido reducir esta foto lo suficiente. Prueba con otra imagen.')
+      }
+
+      const filename = `${file.name.replace(/\.[^.]+$/, '') || 'foto'}.jpg`
+      return {
+        file: new File([blob], filename, { type: 'image/jpeg', lastModified: Date.now() }),
+        optimizada: true
       }
     }
 
-    const onCameraCapture = (event) => {
-      const file = event.target.files[0]
-      if (file && incidencia.value.imagenes.length < 2) {
-        incidencia.value.imagenes.push(file)
-        updatePreviewUrls()
+    const añadirImagenes = async (files) => {
+      const newImages = Array.from(files || []).slice(0, 2 - incidencia.value.imagenes.length)
+      if (!newImages.length) return
+
+      procesandoImagenes.value = true
+      try {
+        const resultados = await Promise.all(newImages.map(async (file) => {
+          try {
+            return await optimizarImagen(file)
+          } catch (error) {
+            return { error }
+          }
+        }))
+        const imagenesPreparadas = resultados.filter((resultado) => resultado.file).map((resultado) => resultado.file)
+        incidencia.value.imagenes = [...incidencia.value.imagenes, ...imagenesPreparadas].slice(0, 2)
+        if (imagenesPreparadas.length) updatePreviewUrls()
+
+        const optimizadas = resultados.filter((resultado) => resultado.optimizada).length
+        const fallidas = resultados.filter((resultado) => resultado.error).length
+        if (fallidas) {
+          notificacionMensaje.value = 'No se pudo preparar una foto. Prueba con otra imagen en formato JPG, PNG o WebP.'
+          notificacionTipo.value = 'error'
+          mostrarNotificacion.value = true
+        } else if (optimizadas) {
+          notificacionMensaje.value = optimizadas === 1 ? 'Hemos reducido la foto para enviarla.' : 'Hemos reducido las fotos para enviarlas.'
+          notificacionTipo.value = 'success'
+          mostrarNotificacion.value = true
+        }
+      } finally {
+        procesandoImagenes.value = false
       }
+    }
+
+    const onFilesSelected = async (event) => {
+      await añadirImagenes(event.target.files)
+      event.target.value = ''
+    }
+
+    const onCameraCapture = async (event) => {
+      await añadirImagenes(event.target.files)
+      event.target.value = ''
     }
 
     const removeImage = (index) => {
@@ -820,6 +902,7 @@ export default {
       tiposIncidencias,
       previewUrls,
       enviando,
+      procesandoImagenes,
       direccion,
       cerrar,
       onFilesSelected,
@@ -834,6 +917,9 @@ export default {
       friendlyCaptchaSitekey,
       mostrarDialogoError,
       mensajeError,
+      mostrarNotificacion,
+      notificacionMensaje,
+      notificacionTipo,
       obteniendoUbicacion,
       incidenciasCercanas,
       mostrarDialogoIncidenciasCercanas,
