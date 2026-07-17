@@ -4,6 +4,7 @@ umask 077
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+source "$ROOT_DIR/scripts/dockerRuntimeIdentity.sh"
 
 remote="${UPGRADE_REMOTE:-origin}"
 branch="${UPGRADE_BRANCH:-main}"
@@ -28,6 +29,8 @@ if ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>
   echo "Error: se necesita Docker y Docker Compose v2 para actualizar." >&2
   exit 1
 fi
+
+ensure_docker_runtime_identity
 
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
   echo "Error: hay cambios locales en archivos versionados. Guardalos o reviertelos antes de actualizar." >&2
@@ -109,6 +112,10 @@ echo "Deteniendo el servicio y creando una copia de seguridad..."
 docker compose stop basuracero-app
 service_stopped=true
 touch "$retry_marker"
+
+# Repara las instalaciones creadas por versiones antiguas que ejecutaban el
+# contenedor como root antes de intentar leer los ficheros desde el host.
+repair_runtime_storage_ownership
 
 timestamp="$(date +%Y%m%d-%H%M%S)"
 backup_dir="backups/upgrade-$timestamp"

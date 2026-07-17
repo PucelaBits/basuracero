@@ -34,4 +34,8 @@ EXPOSE ${PORT}
 ENV TZ=Europe/Madrid
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# El servicio no necesita privilegios. Docker Compose ajusta además el UID/GID
+# al del administrador del host para que los bind mounts sigan siendo legibles.
+USER node
+
 CMD ["npm", "start"]

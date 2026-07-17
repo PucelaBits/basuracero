@@ -4,6 +4,7 @@ umask 077
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+source "$ROOT_DIR/scripts/dockerRuntimeIdentity.sh"
 
 chmod 600 .env data/incidencias.sqlite data/.admin-enabled 2>/dev/null || true
 
@@ -35,6 +36,8 @@ if ! docker compose version >/dev/null 2>&1; then
   echo "Error: se necesita Docker Compose v2 (docker compose)." >&2
   exit 1
 fi
+
+ensure_docker_runtime_identity
 
 node_image="${ADMIN_ACTIVATION_NODE_IMAGE:-node:22-slim}"
 
@@ -113,6 +116,7 @@ echo "Construyendo la version actualizada..."
 export APP_GIT_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
 export APP_VERSION="$(git tag --merged HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname 2>/dev/null | head -n 1 | sed 's/^v//')"
 docker compose build
+repair_runtime_storage_ownership
 
 echo "Aplicando migraciones y preparando el administrador inicial..."
 export ADMIN_BOOTSTRAP_PASSWORD="$temporary_password"

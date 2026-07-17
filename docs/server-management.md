@@ -190,7 +190,7 @@ Desde la raíz de una instalación Docker ejecuta:
 ./scripts/upgrade.sh
 ```
 
-El script descarga la rama configurada, admite únicamente un avance rápido, realiza un backup coherente con el servicio detenido, reconstruye la imagen y espera al healthcheck. Usa `UPGRADE_REMOTE` o `UPGRADE_BRANCH` únicamente si la instalación sigue deliberadamente otro remoto o rama. El aviso del dashboard es informativo y nunca ejecuta comandos del sistema.
+El script descarga la rama configurada, admite únicamente un avance rápido, realiza un backup coherente con el servicio detenido, reconstruye la imagen y espera al healthcheck. También genera automáticamente la identidad local de Docker y corrige los permisos de `data/` y `uploads/`, para que las imágenes no queden propiedad de `root`. Usa `UPGRADE_REMOTE` o `UPGRADE_BRANCH` únicamente si la instalación sigue deliberadamente otro remoto o rama. El aviso del dashboard es informativo y nunca ejecuta comandos del sistema.
 
 La versión distribuible y sus novedades viven en la última GitHub Release publicada. En el canal estable, el panel solo avisa ante una etiqueta `vMAJOR.MINOR.PATCH` superior y el script instala esa etiqueta; esto permite acumular commits sin publicarlos y evita incorporar trabajo posterior a una entrega. En beta, el panel y el script siguen la punta de la rama. La preferencia se gestiona en la sección independiente **Actualizaciones** y se refleja en `data/update-channel`.
 
