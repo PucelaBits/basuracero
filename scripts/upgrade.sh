@@ -95,12 +95,15 @@ else
 fi
 retry_marker="data/.upgrade-incomplete"
 running_revision="$(docker compose exec -T basuracero-app node -p "process.env.APP_GIT_SHA || ''" 2>/dev/null || true)"
-if [[ "$current_revision" == "$latest_revision" && "$running_revision" == "$latest_revision" && ! -f "$retry_marker" ]]; then
+if [[ "$current_revision" == "$latest_revision" && "$running_revision" == "$latest_revision" && ! -f "$retry_marker" && "$DOCKER_RUNTIME_IDENTITY_CHANGED" != true ]]; then
   echo "La instalacion ya esta actualizada en el canal $channel (${current_revision:0:7})."
   exit 0
 fi
 if [[ "$current_revision" == "$latest_revision" && "$running_revision" != "$latest_revision" ]]; then
   echo "El codigo esta actualizado, pero el contenedor ejecuta otra revision; se reconstruira la imagen."
+fi
+if [[ "$DOCKER_RUNTIME_IDENTITY_CHANGED" == true ]]; then
+  echo "Se ha preparado la identidad local del contenedor; se reconstruira la imagen."
 fi
 
 if [[ "$current_revision" != "$latest_revision" ]] && ! git merge-base --is-ancestor "$current_revision" "$latest_revision"; then

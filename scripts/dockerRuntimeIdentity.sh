@@ -4,16 +4,19 @@
 # bind mounts con el mismo UID/GID que ejecuta Docker Compose en el host, sin
 # exigir que el administrador configure nada manualmente.
 ensure_docker_runtime_identity() {
-  local host_uid host_gid
+  local host_uid host_gid changed=false
   host_uid="$(id -u)"
   host_gid="$(id -g)"
 
   if ! grep -q '^DOCKER_UID=' .env; then
     printf '\n# Identidad local generada automáticamente para los volúmenes Docker.\nDOCKER_UID=%s\n' "$host_uid" >> .env
+    changed=true
   fi
   if ! grep -q '^DOCKER_GID=' .env; then
     printf 'DOCKER_GID=%s\n' "$host_gid" >> .env
+    changed=true
   fi
+  DOCKER_RUNTIME_IDENTITY_CHANGED="$changed"
 }
 
 repair_runtime_storage_ownership() {
