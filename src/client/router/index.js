@@ -4,6 +4,7 @@ import RankingUsuarios from '../components/RankingUsuarios.vue'
 import IncidenciasCercanas from '../components/IncidenciasCercanas.vue'
 import TusIncidencias from '../components/TusIncidencias.vue'
 import RankingBarrios from '../components/RankingBarrios.vue'
+import RankingAvisos from '../components/RankingAvisos.vue'
 import FavoritasIncidencias from '../components/FavoritasIncidencias.vue'
 import MaratonGuide from '../components/MaratonGuide.vue'
 import PendientesValidar from '../components/PendientesValidar.vue'
@@ -58,11 +59,6 @@ const routes = [
     }
   },
   {
-    path: '/ranking',
-    name: 'RankingUsuarios',
-    component: RankingUsuarios
-  },
-  {
     path: '/tipos',
     name: 'TiposIncidencias',
     component: App
@@ -82,6 +78,16 @@ const routes = [
     path: '/ranking/barrios',
     name: 'RankingBarrios',
     component: RankingBarrios
+  },
+  {
+    path: '/ranking/avisos',
+    name: 'RankingAvisos',
+    component: RankingAvisos
+  },
+  {
+    path: '/ranking',
+    name: 'RankingUsuarios',
+    component: RankingUsuarios
   },
   {
     path: '/favoritas',

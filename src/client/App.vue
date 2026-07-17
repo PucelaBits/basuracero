@@ -57,6 +57,12 @@
           </template>
           <v-list-item-title>Ranking de zonas</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/ranking/avisos" active-class="primary--text">
+          <template v-slot:prepend>
+            <v-icon>mdi-account-group-outline</v-icon>
+          </template>
+          <v-list-item-title>Avisos al ayuntamiento</v-list-item-title>
+        </v-list-item>
         <v-list-item to="/organizar-evento" active-class="primary--text">
           <template v-slot:prepend>
             <v-icon>mdi-calendar-star</v-icon>
@@ -478,6 +484,7 @@
     <IncidenciasCercanas :incidencias="todasLasIncidencias" />
     <TusIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
     <RankingBarrios />
+    <RankingAvisos />
     <FavoritasIncidencias :incidencias="todasLasIncidenciasConSolucionadas" />
     <PendientesValidar :incidencias="todasLasIncidencias" />
 
@@ -524,6 +531,7 @@ import TusIncidencias from './components/TusIncidencias.vue'
 import { obtenerTiposIncidencias } from './utils/api'
 import { enviarEventoMatomo } from './utils/analytics';
 import RankingBarrios from './components/RankingBarrios.vue';
+import RankingAvisos from './components/RankingAvisos.vue';
 import FavoritasIncidencias from './components/FavoritasIncidencias.vue'
 import { useFavoritosStore } from './store/favoritosStore'
 import { useIncidenciasUsuarioStore } from './store/incidenciasUsuarioStore'
@@ -546,6 +554,7 @@ export default {
     IncidenciasCercanas,
     TusIncidencias,
     RankingBarrios,
+    RankingAvisos,
     FavoritasIncidencias,
     MaratonGuide,
     PendientesValidar,

@@ -636,7 +636,9 @@ router.post('/:id/external-report', externalReportBurstLimiter, externalReportDa
 router.get('/reportes-externos/ranking', publicReadLimiter, async (req, res) => {
   const channel = String(req.query.channel || 'whatsapp').trim().toLowerCase();
   const requestedLimit = Number.parseInt(req.query.limit, 10);
-  const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 20;
+  const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 500) : 20;
+  const incluirSolucionadas = String(req.query.incluirSolucionadas || '').toLowerCase() === 'true';
+  const incluirDetalles = String(req.query.incluirDetalles || '').toLowerCase() === 'true';
   if (!EXTERNAL_REPORT_CHANNELS.has(channel)) {
     return res.status(400).json({ error: 'Canal no válido.' });
   }
@@ -658,9 +660,24 @@ router.get('/reportes-externos/ranking', publicReadLimiter, async (req, res) => 
          SELECT r.incidencia_id AS incidenciaId,
                 r.channel,
                 SUM(r.total) AS total,
-                i.estado
+                i.estado,
+                i.descripcion,
+                i.direccion,
+                i.barrio,
+                i.fecha,
+                t.nombre AS tipo,
+                t.icono,
+                (
+                  SELECT ruta_imagen
+                  FROM imagenes_incidencias imagen
+                  WHERE imagen.incidencia_id = i.id
+                  ORDER BY imagen.id ASC
+                  LIMIT 1
+                ) AS ruta_imagen
          FROM report_totals r
          JOIN incidencias i ON i.id = r.incidencia_id
+         LEFT JOIN tipos_incidencias t ON t.id = i.tipo_id
+         WHERE i.estado IN (${incluirSolucionadas ? "'activa', 'solucionada'" : "'activa'"})
          GROUP BY r.incidencia_id, r.channel, i.estado
          ORDER BY total DESC, r.incidencia_id DESC
          LIMIT ?`,
@@ -670,12 +687,22 @@ router.get('/reportes-externos/ranking', publicReadLimiter, async (req, res) => 
     });
     return res.json({
       channel,
+      incluirSolucionadas,
       ranking: rows.map((row) => ({
         incidenciaId: row.incidenciaId,
         total: Number(row.total),
         channel: row.channel,
         estado: row.estado,
-        url: `/i/${row.incidenciaId}`
+        url: `/i/${row.incidenciaId}`,
+        ...(incluirDetalles ? {
+          descripcion: row.descripcion,
+          direccion: row.direccion,
+          barrio: row.barrio,
+          fecha: row.fecha,
+          tipo: row.tipo,
+          icono: row.icono,
+          rutaImagen: row.ruta_imagen ? `/uploads/${row.ruta_imagen}` : null
+        } : {})
       }))
     });
   } catch (error) {

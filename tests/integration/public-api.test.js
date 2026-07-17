@@ -124,6 +124,19 @@ describe('API publica real', () => {
     ]));
     expect(JSON.stringify(ranking.body)).not.toContain('reporter_fingerprint');
 
+    const rankingDetallado = await request(app).get('/api/incidencias/reportes-externos/ranking?channel=whatsapp&incluirDetalles=true');
+    expect(rankingDetallado.body.ranking).toEqual(expect.arrayContaining([
+      expect.objectContaining({ incidenciaId, descripcion: expect.any(String), rutaImagen: expect.any(String) })
+    ]));
+
+    await dbAsync.run('UPDATE incidencias SET estado = ? WHERE id = ?', ['solucionada', incidenciaId]);
+    const soloAbiertas = await request(app).get('/api/incidencias/reportes-externos/ranking?channel=whatsapp');
+    expect(soloAbiertas.body.ranking.find((row) => row.incidenciaId === incidenciaId)).toBeUndefined();
+    const conSolucionadas = await request(app).get('/api/incidencias/reportes-externos/ranking?channel=whatsapp&incluirSolucionadas=true');
+    expect(conSolucionadas.body.ranking).toEqual(expect.arrayContaining([
+      expect.objectContaining({ incidenciaId, estado: 'solucionada' })
+    ]));
+
     const detail = await request(app).get(`/api/incidencias/${incidenciaId}`);
     expect(detail.status).toBe(200);
     expect(detail.body.avisos_externos).toBe(8);
