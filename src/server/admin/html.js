@@ -1813,6 +1813,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .detail-edit-grid {
           display: grid;
           gap: 16px;
+          container-type: inline-size;
         }
         .detail-toolbar {
           display: flex;
@@ -1921,6 +1922,12 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 14px;
         }
+        .detail-edit-fields > label,
+        .detail-edit-fields input,
+        .detail-edit-fields select,
+        .detail-edit-fields textarea {
+          min-width: 0;
+        }
         .detail-edit-fields .full {
           grid-column: 1 / -1;
         }
@@ -1977,6 +1984,19 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           overflow: hidden;
           border: 1px solid var(--line);
           border-radius: 14px;
+        }
+        @container (max-width: 390px) {
+          .detail-edit-fields {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+        @container (max-width: 330px) {
+          .location-search-row {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .location-search-row button {
+            width: 100%;
+          }
         }
         .detail-actions {
           display: flex;
@@ -2656,7 +2676,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             width: 17%;
           }
         }
-        @media (max-width: 1050px) {
+        @media (max-width: 1200px) {
           .dashboard-shell {
             grid-template-columns: minmax(0, 1fr);
             gap: 20px;
@@ -2689,6 +2709,11 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           }
           .dashboard-main {
             min-width: 0;
+          }
+        }
+        @media (max-width: 980px) and (min-width: 769px) {
+          .detail-grid {
+            grid-template-columns: minmax(0, 1fr);
           }
         }
         @media (max-width: 900px) {
