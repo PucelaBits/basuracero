@@ -37,8 +37,8 @@
                 <th class="avisos-ranking__rank">#</th>
                 <th class="avisos-ranking__image">Imagen</th>
                 <th><button type="button" @click="ordenarPor('descripcion')">Incidencia <SortIcon campo="descripcion" :actual="ordenacion" /></button></th>
-                <th class="avisos-ranking__desktop-only"><button type="button" @click="ordenarPor('tipo')">Categoría <SortIcon campo="tipo" :actual="ordenacion" /></button></th>
-                <th class="avisos-ranking__desktop-only"><button type="button" @click="ordenarPor('barrio')">Zona <SortIcon campo="barrio" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__desktop-only avisos-ranking__category-column"><button type="button" @click="ordenarPor('tipo')">Categoría <SortIcon campo="tipo" :actual="ordenacion" /></button></th>
+                <th class="avisos-ranking__desktop-only avisos-ranking__zone-column"><button type="button" @click="ordenarPor('barrio')">Zona <SortIcon campo="barrio" :actual="ordenacion" /></button></th>
                 <th class="avisos-ranking__date"><button type="button" @click="ordenarPor('primerAvisoAt')">Fecha <SortIcon campo="primerAvisoAt" :actual="ordenacion" /></button></th>
                 <th class="avisos-ranking__total"><button type="button" @click="ordenarPor('total')">Avisos <SortIcon campo="total" :actual="ordenacion" /></button></th>
               </tr>
@@ -51,8 +51,8 @@
                   <span v-else><v-icon>mdi-image-outline</v-icon></span>
                 </td>
                 <td class="avisos-ranking__description"><a :href="incidencia.url" class="avisos-ranking__incidencia-link"><strong>{{ incidencia.descripcion }} <span v-if="incidencia.estado === 'solucionada'" class="avisos-ranking__status">Solucionada</span></strong></a><small>{{ incidencia.direccion || 'Sin dirección' }}</small></td>
-                <td class="avisos-ranking__desktop-only"><span class="avisos-ranking__category"><v-icon size="16">{{ incidencia.icono || 'mdi-tag-outline' }}</v-icon>{{ incidencia.tipo || 'Sin categoría' }}</span></td>
-                <td class="avisos-ranking__desktop-only">{{ incidencia.barrio || 'Sin zona' }}</td>
+                <td class="avisos-ranking__desktop-only avisos-ranking__category-column"><span class="avisos-ranking__category"><v-icon size="16">{{ incidencia.icono || 'mdi-tag-outline' }}</v-icon>{{ incidencia.tipo || 'Sin categoría' }}</span></td>
+                <td class="avisos-ranking__desktop-only avisos-ranking__zone-column">{{ incidencia.barrio || 'Sin zona' }}</td>
                 <td class="avisos-ranking__date" :title="incidencia.primerAvisoAt ? 'Fecha del primer aviso al Ayuntamiento' : 'Fecha de publicación de la incidencia'">{{ formatearFecha(incidencia.primerAvisoAt || incidencia.fecha) }}</td>
                 <td class="avisos-ranking__total"><span><v-icon size="19">mdi-account-group-outline</v-icon>{{ incidencia.total }}</span></td>
               </tr>
@@ -149,12 +149,12 @@ export default {
 .avisos-ranking h1 { margin: 0; font-size: clamp(1.75rem, 3vw, 2.45rem); line-height: 1.15; letter-spacing: -.03em; }
 .avisos-ranking__intro > div > p:last-child { max-width: 670px; margin: 12px 0 0; color: #5e6a70; line-height: 1.55; }
 .avisos-ranking__toggle { flex: 0 0 auto; min-width: 210px; font-size: .92rem; }
-.avisos-ranking__table-wrap { overflow-x: auto; border-top: 1px solid #d7dfdb; border-bottom: 1px solid #d7dfdb; }
-.avisos-ranking__table { width: 100%; min-width: 840px; border-collapse: collapse; }
+.avisos-ranking__table-wrap { overflow-x: hidden; border-top: 1px solid #d7dfdb; border-bottom: 1px solid #d7dfdb; }
+.avisos-ranking__table { width: 100%; min-width: 0; border-collapse: collapse; table-layout: fixed; }
 .avisos-ranking__table th { padding: 13px 10px; color: #5a6b68; font-size: .72rem; letter-spacing: .04em; text-align: left; text-transform: uppercase; white-space: nowrap; }
 .avisos-ranking__table th button { color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
 .avisos-ranking__sort-icon { margin-left: 4px; color: #758d82; }
-.avisos-ranking__table td { padding: 12px 10px; border-top: 1px solid #e0e6e3; vertical-align: middle; }
+.avisos-ranking__table td { overflow: hidden; padding: 12px 10px; border-top: 1px solid #e0e6e3; vertical-align: middle; }
 .avisos-ranking__table tbody tr { transition: background-color .16s ease; }
 .avisos-ranking__table tbody tr:hover { background: #edf4f0; }
 .avisos-ranking__rank { width: 34px; color: #81918b; font-variant-numeric: tabular-nums; }
@@ -170,14 +170,26 @@ export default {
 .avisos-ranking__status { display: inline-flex; margin-left: 6px; padding: 3px 7px; align-items: center; border-radius: 99px; background: #ecedef; color: #66716d; font-size: .72rem; font-weight: 700; line-height: 1.2; vertical-align: middle; }
 .avisos-ranking__date { width: 108px; color: #52635e; font-size: .84rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .avisos-ranking__total { text-align: right !important; }
+.avisos-ranking__total { width: 82px; }
 .avisos-ranking__total span { display: inline-flex; align-items: center; gap: 5px; color: #245d54; font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .avisos-ranking__empty { display: flex; min-height: 180px; align-items: center; justify-content: center; gap: 10px; color: #687571; }
+@media (max-width: 1024px) {
+  .avisos-ranking__content { padding-left: 20px; padding-right: 20px; }
+  .avisos-ranking__image { display: none; }
+  .avisos-ranking__table th, .avisos-ranking__table td { padding-left: 8px; padding-right: 8px; }
+  .avisos-ranking__description { min-width: 0; max-width: none; }
+}
+@media (max-width: 840px) and (min-width: 701px) {
+  .avisos-ranking__category-column { display: none; }
+  .avisos-ranking__description strong { font-size: .88rem; }
+  .avisos-ranking__date { width: 96px; font-size: .8rem; }
+  .avisos-ranking__total { width: 74px; }
+  .avisos-ranking__total span { gap: 3px; font-size: .94rem; }
+}
 @media (max-width: 700px) {
   .avisos-ranking__content { padding: 24px 16px 44px; }
   .avisos-ranking__intro { display: block; }
   .avisos-ranking__toggle { margin-top: 20px; }
-  .avisos-ranking__table-wrap { overflow-x: hidden; }
-  .avisos-ranking__table { min-width: 0; table-layout: fixed; }
   .avisos-ranking__desktop-only, .avisos-ranking__image, .avisos-ranking__rank { display: none; }
   .avisos-ranking__table th, .avisos-ranking__table td { padding: 13px 6px; }
   .avisos-ranking__description { min-width: 0; max-width: none; }
