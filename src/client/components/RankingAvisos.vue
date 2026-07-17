@@ -44,13 +44,13 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(incidencia, index) in filasOrdenadas" :key="incidencia.incidenciaId" tabindex="0" @click="abrirIncidencia(incidencia)" @keydown.enter="abrirIncidencia(incidencia)">
+              <tr v-for="(incidencia, index) in filasOrdenadas" :key="incidencia.incidenciaId">
                 <td class="avisos-ranking__rank">{{ index + 1 }}</td>
                 <td class="avisos-ranking__image">
                   <img v-if="incidencia.rutaImagen" :src="incidencia.rutaImagen" alt="" loading="lazy">
                   <span v-else><v-icon>mdi-image-outline</v-icon></span>
                 </td>
-                <td class="avisos-ranking__description"><strong>{{ incidencia.descripcion }} <span v-if="incidencia.estado === 'solucionada'" class="avisos-ranking__status">Solucionada</span></strong><small>{{ incidencia.direccion || 'Sin dirección' }}</small></td>
+                <td class="avisos-ranking__description"><a :href="incidencia.url" class="avisos-ranking__incidencia-link"><strong>{{ incidencia.descripcion }} <span v-if="incidencia.estado === 'solucionada'" class="avisos-ranking__status">Solucionada</span></strong></a><small>{{ incidencia.direccion || 'Sin dirección' }}</small></td>
                 <td class="avisos-ranking__desktop-only"><span class="avisos-ranking__category"><v-icon size="16">{{ incidencia.icono || 'mdi-tag-outline' }}</v-icon>{{ incidencia.tipo || 'Sin categoría' }}</span></td>
                 <td class="avisos-ranking__desktop-only">{{ incidencia.barrio || 'Sin zona' }}</td>
                 <td class="avisos-ranking__date" :title="incidencia.primerAvisoAt ? 'Fecha del primer aviso al Ayuntamiento' : 'Fecha de publicación de la incidencia'">{{ formatearFecha(incidencia.primerAvisoAt || incidencia.fecha) }}</td>
@@ -126,7 +126,6 @@ export default {
       if (Number.isNaN(date.getTime())) return '—'
       return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
     }
-    const abrirIncidencia = (incidencia) => router.push(incidencia.url)
     const cerrar = () => router.push({ name: 'Home' })
 
     onMounted(() => {
@@ -137,7 +136,7 @@ export default {
     watch(() => route.name, (nombre) => { dialogVisible.value = nombre === 'RankingAvisos' })
     watch(dialogVisible, (visible) => { if (!visible && route.name === 'RankingAvisos') cerrar() })
 
-    return { dialogVisible, incluirSolucionadas, cargando, error, ordenacion, filasOrdenadas, ordenarPor, formatearFecha, abrirIncidencia, cerrar }
+    return { dialogVisible, incluirSolucionadas, cargando, error, ordenacion, filasOrdenadas, ordenarPor, formatearFecha, cerrar }
   }
 }
 </script>
@@ -156,13 +155,16 @@ export default {
 .avisos-ranking__table th button { color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
 .avisos-ranking__sort-icon { margin-left: 4px; color: #758d82; }
 .avisos-ranking__table td { padding: 12px 10px; border-top: 1px solid #e0e6e3; vertical-align: middle; }
-.avisos-ranking__table tbody tr { cursor: pointer; transition: background-color .16s ease; }
-.avisos-ranking__table tbody tr:hover, .avisos-ranking__table tbody tr:focus { background: #edf4f0; outline: none; }
+.avisos-ranking__table tbody tr { transition: background-color .16s ease; }
+.avisos-ranking__table tbody tr:hover { background: #edf4f0; }
 .avisos-ranking__rank { width: 34px; color: #81918b; font-variant-numeric: tabular-nums; }
 .avisos-ranking__image { width: 66px; }
 .avisos-ranking__image img, .avisos-ranking__image span { display: flex; width: 52px; height: 52px; align-items: center; justify-content: center; border-radius: 8px; background: #e4ebe7; color: #84918b; object-fit: cover; }
 .avisos-ranking__description { min-width: 220px; max-width: 330px; }
 .avisos-ranking__description strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .93rem; line-height: 1.35; }
+.avisos-ranking__incidencia-link { color: inherit; text-decoration: none; }
+.avisos-ranking__incidencia-link:hover strong { color: #245d54; text-decoration: underline; text-underline-offset: 3px; }
+.avisos-ranking__incidencia-link:focus-visible { border-radius: 3px; outline: 2px solid #245d54; outline-offset: 3px; }
 .avisos-ranking__description small { display: block; overflow: hidden; margin-top: 4px; color: #6f7c7a; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .avisos-ranking__category { display: inline-flex; align-items: center; gap: 6px; color: #465854; font-size: .83rem; }
 .avisos-ranking__status { display: inline-flex; margin-left: 6px; padding: 3px 7px; align-items: center; border-radius: 99px; background: #ecedef; color: #66716d; font-size: .72rem; font-weight: 700; line-height: 1.2; vertical-align: middle; }
