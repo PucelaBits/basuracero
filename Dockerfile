@@ -22,6 +22,13 @@ WORKDIR /app
 
 COPY --from=build /app /app
 
+# Docker Compose ejecuta el servicio con el UID/GID del administrador del host
+# para que los bind mounts no creen ficheros de root. La imagen debe concederle
+# también acceso de lectura al código que se ha copiado durante el build.
+ARG APP_UID=1000
+ARG APP_GID=1000
+RUN chown -R "${APP_UID}:${APP_GID}" /app
+
 # 5050 como valor por defecto
 ARG PORT=5050
 ARG APP_GIT_SHA=unknown
