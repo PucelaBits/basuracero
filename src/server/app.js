@@ -261,6 +261,7 @@ async function createApp({ logger = console } = {}) {
   if (adminEnabled) {
     app.use('/admin-assets/mdi', express.static(path.join(__dirname, '..', '..', 'node_modules', '@mdi', 'font')));
     app.use('/admin-assets/leaflet', express.static(path.join(__dirname, '..', '..', 'node_modules', 'leaflet', 'dist')));
+    app.use('/admin-assets/inter', express.static(path.join(__dirname, '..', '..', 'node_modules', '@fontsource', 'inter')));
   }
   const uploadsDir = process.env.UPLOADS_DIR
     ? path.resolve(process.env.UPLOADS_DIR)

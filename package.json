@@ -26,6 +26,7 @@
     "lint": "eslint . --max-warnings=200"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@mdi/font": "^7.4.47",
     "@unhead/vue": "^2.1.15",
     "axios": "^1.18.1",

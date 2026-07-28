@@ -3266,6 +3266,227 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             width: 100%;
           }
         }
+        /* Administrative settings system */
+        @font-face { font-family: 'Inter'; src: url('/admin-assets/inter/files/inter-latin-400-normal.woff2') format('woff2'); font-display: swap; font-weight: 400; }
+        @font-face { font-family: 'Inter'; src: url('/admin-assets/inter/files/inter-latin-500-normal.woff2') format('woff2'); font-display: swap; font-weight: 500; }
+        @font-face { font-family: 'Inter'; src: url('/admin-assets/inter/files/inter-latin-600-normal.woff2') format('woff2'); font-display: swap; font-weight: 600; }
+        @font-face { font-family: 'Inter'; src: url('/admin-assets/inter/files/inter-latin-700-normal.woff2') format('woff2'); font-display: swap; font-weight: 700; }
+        :root {
+          --bg: #f7f7f5;
+          --panel: #ffffff;
+          --ink: #202124;
+          --muted: #71727a;
+          --line: #e5e5e1;
+          --accent: #222328;
+          --accent-soft: #ececeb;
+          --surface-soft: #fafaf8;
+        }
+        body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); }
+        .shell { width: min(100%, 1440px); padding: 0 28px 48px; }
+        .topbar { min-height: 82px; margin: 0; padding: 16px 0; border-bottom-color: var(--line); }
+        .brand { font-size: 18px; font-weight: 650; letter-spacing: -0.025em; }
+        .meta, .small { color: var(--muted); }
+        .panel { padding: 32px 0 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+        input, select, textarea { border-color: #dededb; border-radius: 10px; background: #fbfbfa; box-shadow: none; }
+        input:focus, select:focus, textarea:focus { border-color: #8b8c91; outline: 0; box-shadow: 0 0 0 3px rgba(38, 39, 45, 0.1); }
+        button, .button-link { border-radius: 10px; font-weight: 600; }
+        .button-ghost { background: transparent; border-color: #dededb; }
+        .dashboard-shell { grid-template-columns: 252px minmax(0, 1fr); gap: 64px; align-items: start; }
+        .dashboard-sidebar { position: sticky; top: 20px; gap: 0; padding: 0 24px 24px 0; border-right: 1px solid var(--line); }
+        .dashboard-nav { gap: 22px; }
+        .dashboard-nav-group { display: grid; gap: 5px; }
+        .dashboard-nav-group-label { padding: 0 12px 5px; color: #8b8b8b; font-size: 11px; font-weight: 700; letter-spacing: .1em; line-height: 1.25; text-transform: uppercase; }
+        .dashboard-nav-group-links { display: grid; gap: 2px; }
+        .dashboard-nav a { min-height: 40px; gap: 11px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: #4d4e53; font-size: 14px; font-weight: 500; }
+        .dashboard-nav a i { width: 18px; color: #77787d; font-size: 18px; text-align: center; }
+        .dashboard-nav a:hover { background: #f2f2f0; color: var(--ink); }
+        .dashboard-nav a.active { background: #e7e7e5; color: var(--ink); font-weight: 600; }
+        .dashboard-nav a.active i { color: var(--ink); }
+        .dashboard-nav-search { position: relative; }
+        .dashboard-nav-search i { position: absolute; top: 50%; left: 13px; transform: translateY(-50%); color: #7b7c80; font-size: 18px; pointer-events: none; }
+        .dashboard-nav-search input { min-height: 44px; padding-left: 38px; font-size: 14px; }
+        .dashboard-nav-group[hidden] { display: none; }
+        .dashboard-sidebar-meta { padding-top: 18px; }
+        .dashboard-main { max-width: 900px; gap: 32px; padding-bottom: 56px; }
+        .dashboard-header { gap: 9px; padding-bottom: 24px; }
+        .dashboard-section-title { font-size: clamp(29px, 3vw, 36px); letter-spacing: -0.045em; }
+        .dashboard-section-label { color: #7b7c80; font-size: 11px; letter-spacing: .1em; }
+        .dashboard-header.has-intro > p { max-width: 580px; color: var(--muted); }
+        .dashboard-section { gap: 18px; }
+        .dashboard-section-header { padding-bottom: 12px; }
+        .dashboard-section-header h2, .detail-section-heading h2 { letter-spacing: -0.025em; }
+        .dashboard-kpi { padding: 18px 16px; }
+        .dashboard-kpi strong { font-size: 26px; letter-spacing: -0.04em; }
+        .ops-surface, .subtle-panel, .stat-card { border-radius: 12px; box-shadow: none; }
+        table { font-size: 13px; }
+        th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+        .settings-layout { max-width: 820px; }
+        .settings-form { gap: 40px; }
+        .settings-section { gap: 20px; padding-bottom: 40px; }
+        .settings-section > div:first-child h2 { font-size: 21px; letter-spacing: -0.03em; }
+        .settings-section > div:first-child .small { max-width: 540px; margin-top: 5px; }
+        .settings-fields { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); }
+        .settings-fields .field-wide { grid-column: auto; }
+        .settings-fields > label { display: grid; grid-template-columns: minmax(220px, .84fr) minmax(0, 1.16fr); gap: 12px 28px; align-items: center; min-height: 74px; margin: 0; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 500; }
+        .settings-fields > label:has(textarea) { align-items: start; padding-top: 18px; }
+        .settings-fields > label > input, .settings-fields > label > select, .settings-fields > label > textarea, .settings-fields > label > .input-suffix { grid-column: 2; }
+        .settings-fields > label > .small { grid-column: 2; margin-top: -6px; }
+        .settings-fields > label > textarea { min-height: 108px; }
+        .settings-section-actions { padding-top: 4px; }
+        .settings-section-save { min-width: 156px; }
+        .settings-preview-panel { border-radius: 12px; }
+        .settings-brand-assets { gap: 0; border-top: 1px solid var(--line); }
+        .settings-brand-asset, .settings-brand-asset.settings-brand-asset-social { grid-template-columns: 96px minmax(0, 1fr); min-height: 112px; padding: 16px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+        .settings-brand-asset.settings-brand-asset-social { grid-template-columns: 140px minmax(0, 1fr); }
+        .settings-brand-asset img { width: 72px; height: 72px; border-radius: 10px; }
+        .settings-brand-asset.settings-brand-asset-social img { width: 128px; border-radius: 8px; }
+        .settings-social-row { border-radius: 10px; background: #fbfbfa; }
+        .settings-service-grid { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); }
+        .settings-service { padding: 22px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+        .dashboard-mobile-nav, .admin-nav-drawer { display: none; }
+        @media (max-width: 900px) {
+          .shell { padding: 0 20px 36px; }
+          .dashboard-shell { grid-template-columns: 1fr; gap: 24px; }
+          .dashboard-sidebar { position: static; padding: 0; border: 0; }
+          .dashboard-sidebar > div:first-child, .dashboard-sidebar > .dashboard-nav, .dashboard-sidebar-meta { display: none; }
+          .dashboard-mobile-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 54px; padding: 0 14px; border: 1px solid #dededb; border-radius: 12px; background: #fff; color: var(--ink); }
+          .dashboard-mobile-nav span { display: grid; gap: 2px; text-align: left; }
+          .dashboard-mobile-nav small { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+          .dashboard-mobile-nav strong { font-size: 15px; }
+          .admin-nav-drawer { position: fixed; inset: 0; z-index: 120; padding: max(18px, env(safe-area-inset-top)) 18px 18px; background: rgba(28, 29, 31, .28); }
+          .admin-nav-drawer.is-open { display: flex; align-items: flex-start; justify-content: center; }
+          .admin-nav-drawer-panel { width: min(100%, 520px); max-height: calc(100vh - 36px); overflow: auto; padding: 18px; border: 1px solid #e0e0dd; border-radius: 16px; background: #fff; box-shadow: 0 22px 60px rgba(0,0,0,.16); }
+          .admin-nav-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+          .admin-nav-drawer-close { width: 44px; min-width: 44px; min-height: 44px; padding: 0; }
+          .admin-nav-drawer .dashboard-nav { display: grid; }
+          .admin-nav-drawer .dashboard-nav a { min-height: 48px; border: 0; background: transparent; }
+          .dashboard-main { max-width: none; }
+          .settings-fields > label { grid-template-columns: 1fr; gap: 8px; padding: 16px 0; }
+          .settings-fields > label > input, .settings-fields > label > select, .settings-fields > label > textarea, .settings-fields > label > .input-suffix, .settings-fields > label > .small { grid-column: auto; }
+          .settings-brand-asset, .settings-brand-asset.settings-brand-asset-social { grid-template-columns: 88px minmax(0, 1fr); }
+          .settings-brand-asset.settings-brand-asset-social { grid-template-columns: 112px minmax(0, 1fr); }
+          .settings-brand-asset.settings-brand-asset-social img { width: 104px; }
+        }
+        @media (max-width: 520px) {
+          .shell { padding: 0 14px 28px; }
+          .topbar { min-height: 74px; }
+          .topbar-actions { width: auto; }
+          .topbar-actions .button-ghost { width: auto; min-height: 44px; }
+          .panel { padding-top: 22px; }
+          .dashboard-main { gap: 24px; }
+          .settings-section-actions { align-items: stretch; flex-direction: column; }
+          .settings-section-save { width: 100%; }
+        }
+        /* Second-pass consistency: authentication, forms, detail and maintenance */
+        .auth-page { width: min(100%, 520px); margin: clamp(28px, 9vh, 104px) auto; }
+        .auth-eyebrow { margin-bottom: 10px; color: #7b7c80; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+        .auth-page h1 { margin-bottom: 10px; font-size: clamp(30px, 4vw, 40px); letter-spacing: -.05em; }
+        .auth-page > p { max-width: 430px; margin-bottom: 30px; }
+        .auth-form { gap: 0; border-top: 1px solid var(--line); }
+        .auth-form > label { display: grid; grid-template-columns: 155px minmax(0, 1fr); align-items: center; gap: 20px; min-height: 76px; padding: 14px 0; border-bottom: 1px solid var(--line); font-weight: 500; }
+        .auth-form .actions { justify-content: flex-end; padding-top: 22px; }
+        .auth-form .actions button, .auth-form .actions .button-link { width: auto; }
+        .detail-header { margin-bottom: 30px; padding-bottom: 22px; }
+        .detail-title { letter-spacing: -.045em; }
+        .detail-grid { grid-template-columns: minmax(0, 1.2fr) minmax(360px, .9fr); gap: 40px; margin-bottom: 32px !important; }
+        .dashboard-main > .detail-grid > .subtle-panel { padding: 0; border: 0; border-radius: 0; background: transparent; }
+        .dashboard-main > .detail-grid > .subtle-panel + .subtle-panel { padding-left: 32px; border-left: 1px solid var(--line); }
+        .photo-stack { gap: 18px; }
+        .hero-photo { border-radius: 12px; }
+        .photo-file-trigger, .detail-mini-button { border-radius: 10px; }
+        .detail-grid h2, .dashboard-main > details.subtle-panel > summary { font-size: 19px; letter-spacing: -.025em; }
+        .detail-edit-grid { gap: 20px; }
+        .detail-edit-fields { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); }
+        .detail-edit-fields .full { grid-column: auto; }
+        .detail-edit-fields > label { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: center; gap: 20px; min-height: 72px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 500; }
+        .detail-edit-fields > label.full { align-items: start; padding-top: 18px; }
+        .detail-edit-fields > label > input, .detail-edit-fields > label > select, .detail-edit-fields > label > textarea, .detail-edit-fields > label > .tipo-select { grid-column: 2; }
+        .detail-edit-fields > label > textarea { min-height: 104px; }
+        .detail-edit-fields > .location-picker { padding: 20px 0; border-bottom: 1px solid var(--line); }
+        .dashboard-main > details.subtle-panel { padding: 22px 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
+        .dashboard-main > details.subtle-panel:last-child { border-bottom: 1px solid var(--line); }
+        .dashboard-main > .grid.two { gap: 40px; padding-bottom: 32px; border-bottom: 1px solid var(--line); }
+        .dashboard-main > .grid.two .subtle-panel,
+        .dashboard-main > .subtle-panel { padding: 0; border: 0; border-radius: 0; background: transparent; }
+        .dashboard-main > .grid.two .subtle-panel + .subtle-panel { padding-left: 40px; border-left: 1px solid var(--line); }
+        .dashboard-main > .grid.two .subtle-panel form { gap: 0; border-top: 1px solid var(--line); }
+        .dashboard-main > .grid.two .subtle-panel form > label { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: center; gap: 18px; min-height: 72px; padding: 14px 0; border-bottom: 1px solid var(--line); font-weight: 500; }
+        .dashboard-main > .grid.two .subtle-panel form > button { width: fit-content; margin-top: 18px; }
+        .old-solvable-workspace { border-radius: 12px; box-shadow: none; }
+        .table-card { padding: 14px 0; border-width: 0 0 1px; border-radius: 0; background: transparent; }
+        .empty-state { border-style: solid; border-radius: 10px; background: #fbfbfa; }
+        .modal-backdrop { background: rgba(28, 29, 31, .32); }
+        .modal-card { border-color: #e0e0dd; border-radius: 14px; box-shadow: 0 22px 60px rgba(0,0,0,.16); padding: 22px; }
+        .modal-close { border-radius: 10px; }
+        .modal-preview { border-radius: 10px; background: #fbfbfa; }
+        .category-preview { border-radius: 9px; }
+        .icon-tile { min-height: 64px; border-radius: 9px; box-shadow: none; }
+        .icon-option input[type="radio"]:checked + .icon-tile { box-shadow: none; background: #e7e7e5; border-color: #babbb7; }
+        .notice.toast { border-radius: 12px; box-shadow: 0 16px 38px rgba(0,0,0,.14); }
+        @media (max-width: 900px) {
+          .detail-grid { grid-template-columns: 1fr; gap: 30px; }
+          .dashboard-main > .detail-grid > .subtle-panel + .subtle-panel,
+          .dashboard-main > .grid.two .subtle-panel + .subtle-panel { padding: 28px 0 0; border-top: 1px solid var(--line); border-left: 0; }
+          .dashboard-main > .grid.two { gap: 28px; }
+        }
+        @media (max-width: 520px) {
+          .auth-page { margin: 28px 0; }
+          .topbar { align-items: center; flex-direction: row; gap: 10px; }
+          .topbar-actions { width: auto; margin-left: auto; }
+          .topbar-actions .button-ghost { padding: 0 13px; font-size: 14px; }
+          .auth-form > label, .detail-edit-fields > label, .dashboard-main > .grid.two .subtle-panel form > label { grid-template-columns: 1fr; gap: 8px; }
+          .detail-edit-fields > label > input, .detail-edit-fields > label > select, .detail-edit-fields > label > textarea, .detail-edit-fields > label > .tipo-select { grid-column: auto; }
+          .auth-form .actions { align-items: stretch; flex-direction: column; }
+          .auth-form .actions button, .auth-form .actions .button-link { width: 100%; }
+        }
+        @media (max-width: 768px) {
+          .table-wrap:has(.category-table) { overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+          .category-table { display: table; min-width: 620px; table-layout: auto; }
+          .category-table thead { display: table-header-group; }
+          .category-table tbody { display: table-row-group; }
+          .category-table tr { display: table-row; padding: 0; border: 0; }
+          .category-table th,
+          .category-table td { display: table-cell; width: auto; padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+          .category-table td + td,
+          .category-table th + th { padding-left: 10px; margin: 0; }
+          .category-table td.metrics-cell { width: 72px; }
+          .category-table td.metrics-cell::before,
+          .category-table td.actions-cell::before { content: none; display: none; }
+          .category-table td.actions-cell { width: 150px; }
+          .category-actions { flex-wrap: nowrap; gap: 6px; }
+          .category-actions > * { flex: 0 0 auto; }
+          .category-actions .detail-mini-button { min-height: 38px; padding: 0 10px; font-size: 13px; }
+          /* Moderation stays a calm, compact queue on phones instead of stacked table cells. */
+          .moderation-workspace .table-cards { gap: 0; }
+          .moderation-workspace .moderation-card {
+            padding: 20px 16px 18px;
+            border-color: var(--line);
+          }
+          .moderation-workspace .moderation-card:last-child { border-bottom: 0; }
+          .moderation-card .table-card-head { gap: 16px; margin-bottom: 12px; }
+          .moderation-card .table-card-head > div { min-width: 0; }
+          .moderation-card .table-card-head strong {
+            display: block;
+            font-size: 17px;
+            line-height: 1.42;
+            letter-spacing: -.015em;
+          }
+          .moderation-card-meta {
+            display: block;
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.5;
+          }
+          .moderation-card-description {
+            margin: 0;
+            color: var(--ink);
+            font-size: 15px;
+            line-height: 1.6;
+          }
+          .moderation-card .table-card-check { flex: 0 0 20px; margin-top: 2px; }
+        }
       </style>
     </head>
     <body>
@@ -3424,6 +3645,57 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
               if (indicator) indicator.textContent = active ? (nextDirection === 'asc' ? '↑' : '↓') : '↕';
             });
           });
+
+          const drawer = document.querySelector('[data-admin-nav-drawer]');
+          const drawerOpeners = document.querySelectorAll('[data-admin-nav-open]');
+          let lastAdminDrawerOpener = null;
+          const closeAdminDrawer = () => {
+            if (!drawer) return;
+            drawer.classList.remove('is-open');
+            drawer.hidden = true;
+            drawerOpeners.forEach((opener) => opener.setAttribute('aria-expanded', 'false'));
+            lastAdminDrawerOpener?.focus();
+          };
+          drawerOpeners.forEach((opener) => opener.addEventListener('click', () => {
+            if (!drawer) return;
+            lastAdminDrawerOpener = opener;
+            drawer.hidden = false;
+            drawer.classList.add('is-open');
+            opener.setAttribute('aria-expanded', 'true');
+            window.setTimeout(() => drawer.querySelector('input, a[href], button')?.focus(), 0);
+          }));
+          document.querySelectorAll('[data-admin-nav-close]').forEach((button) => button.addEventListener('click', closeAdminDrawer));
+          drawer?.addEventListener('click', (event) => {
+            if (event.target === drawer) closeAdminDrawer();
+          });
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && drawer && !drawer.hidden) closeAdminDrawer();
+            if (event.key !== 'Tab' || !drawer || drawer.hidden) return;
+            const focusable = Array.from(drawer.querySelectorAll('button:not([disabled]), a[href], input:not([disabled])'))
+              .filter((element) => element.offsetParent !== null);
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          });
+          document.querySelectorAll('[data-admin-nav-search]').forEach((search) => {
+            search.addEventListener('input', () => {
+              const query = search.value.trim().toLocaleLowerCase('es-ES');
+              const nav = search.closest('.dashboard-nav');
+              nav?.querySelectorAll('.dashboard-nav-group').forEach((group) => {
+                const links = Array.from(group.querySelectorAll('a'));
+                const visible = links.some((link) => link.textContent.toLocaleLowerCase('es-ES').includes(query));
+                group.hidden = !visible;
+                links.forEach((link) => { link.hidden = Boolean(query) && !link.textContent.toLocaleLowerCase('es-ES').includes(query); });
+              });
+            });
+          });
         })();
       </script>
     </body>
@@ -3436,19 +3708,22 @@ function renderLoginPage({ notice, csrfToken }) {
     notice,
     csrfToken,
     body: `
-      <h1>Entrar al panel</h1>
-      <p>Usa tu usuario y contraseña de administración. Si es el primer acceso, primero se te pedirá cambiar la contraseña temporal.</p>
-      <form method="post" action="/admin/login">
-        <label>Usuario
-          <input name="username" autocomplete="username" required>
-        </label>
-        <label>Contraseña
-          <input name="password" type="password" autocomplete="current-password" required>
-        </label>
-        <div class="actions">
-          <button type="submit">Entrar</button>
-        </div>
-      </form>
+      <main class="auth-page">
+        <div class="auth-eyebrow">Administración</div>
+        <h1>Entrar al panel</h1>
+        <p>Usa tus credenciales de administración para continuar.</p>
+        <form method="post" action="/admin/login" class="auth-form">
+          <label>Usuario
+            <input name="username" autocomplete="username" required>
+          </label>
+          <label>Contraseña
+            <input name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <div class="actions">
+            <button type="submit">Entrar</button>
+          </div>
+        </form>
+      </main>
     `
   });
 }
@@ -3496,15 +3771,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
       <link rel="stylesheet" href="/admin-assets/leaflet/leaflet.css">
       <section class="dashboard-shell">
         <aside class="dashboard-sidebar">
-          <div>
-            <div class="eyebrow">Admin</div>
-            <h2 style="margin-bottom:8px">Panel de control</h2>
-            <div class="small">Basura Cero</div>
-          </div>
           ${renderAdminNavigation('incidencias')}
-          <div class="dashboard-sidebar-meta">
-            <div class="small">Sesion: ${escapeHtml(currentAdmin.username)}</div>
-          </div>
         </aside>
         <div class="dashboard-main">
       <div class="detail-header">
@@ -4288,22 +4555,25 @@ function renderChangePasswordPage({ currentAdmin, notice, minLength, csrfToken }
     notice,
     csrfToken,
     body: `
-      <h1>Cambiar contraseña</h1>
-      <p>${currentAdmin.mustChangePassword
+      <main class="auth-page">
+        <div class="auth-eyebrow">Seguridad</div>
+        <h1>Cambiar contraseña</h1>
+        <p>${currentAdmin.mustChangePassword
     ? 'Necesitas establecer una contraseña nueva antes de usar el panel.'
     : 'Introduce una contraseña nueva para actualizar tus credenciales.'} Usa al menos ${minLength} caracteres.</p>
-      <form method="post" action="/admin/change-password">
-        <label>Nueva contraseña
-          <input name="password" type="password" autocomplete="new-password" minlength="${minLength}" required>
-        </label>
-        <label>Repite la nueva contraseña
-          <input name="passwordConfirm" type="password" autocomplete="new-password" minlength="${minLength}" required>
-        </label>
-        <div class="actions">
-          <button type="submit">Guardar contraseña</button>
-          <a class="button-link button-ghost" href="/admin">Volver</a>
-        </div>
-      </form>
+        <form method="post" action="/admin/change-password" class="auth-form">
+          <label>Nueva contraseña
+            <input name="password" type="password" autocomplete="new-password" minlength="${minLength}" required>
+          </label>
+          <label>Repite la nueva contraseña
+            <input name="passwordConfirm" type="password" autocomplete="new-password" minlength="${minLength}" required>
+          </label>
+          <div class="actions">
+            <button type="submit">Guardar contraseña</button>
+            <a class="button-link button-ghost" href="/admin">Volver</a>
+          </div>
+        </form>
+      </main>
     `
   });
 }
@@ -4358,16 +4628,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
     body: `
       <section class="dashboard-shell">
         <aside class="dashboard-sidebar">
-          <div>
-            <div class="eyebrow">Admin</div>
-            <h2 style="margin-bottom:8px">Panel de control</h2>
-            <div class="small">Basura Cero</div>
-          </div>
           ${renderAdminNavigation('dashboard')}
-          <div class="dashboard-sidebar-meta">
-            <div class="small">Sesion: ${escapeHtml(currentAdmin.username)}</div>
-            <a class="dashboard-muted-link" href="/admin/incidencias">Ver listado completo</a>
-          </div>
         </aside>
         <div class="dashboard-main">
           <section class="dashboard-header">
@@ -4481,34 +4742,58 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
 }
 
 function renderAdminNavigation(activeNav) {
-  const items = [
-    ['/admin', 'Vista general', 'dashboard'],
-    ['/admin/incidencias', 'Incidencias', 'incidencias'],
-    ['/admin/avisos-ayuntamiento', 'Avisos al ayuntamiento', 'avisos-ayuntamiento'],
-    ['/admin/categorias', 'Categorías', 'categorias'],
-    ['/admin/maintenance', 'Mantenimiento', 'maintenance'],
-    ['/admin/configuracion', 'Configuración', 'configuracion'],
-    ['/admin/administradores', 'Administradores', 'administradores'],
-    ['/admin/auditoria', 'Auditoría', 'auditoria'],
-    ['/admin/updates', 'Actualizaciones', 'updates']
+  const groups = [
+    ['Gestión', [
+      ['/admin', 'Vista general', 'dashboard', 'mdi-view-dashboard-outline'],
+      ['/admin/incidencias', 'Incidencias', 'incidencias', 'mdi-alert-circle-outline'],
+      ['/admin/avisos-ayuntamiento', 'Avisos al ayuntamiento', 'avisos-ayuntamiento', 'mdi-message-text-outline']
+    ]],
+    ['Configuración', [
+      ['/admin/configuracion', 'Configuración', 'configuracion', 'mdi-tune-variant'],
+      ['/admin/categorias', 'Categorías', 'categorias', 'mdi-tag-outline']
+    ]],
+    ['Administración', [
+      ['/admin/administradores', 'Administradores', 'administradores', 'mdi-account-multiple-outline'],
+      ['/admin/auditoria', 'Auditoría', 'auditoria', 'mdi-clipboard-text-clock-outline']
+    ]],
+    ['Sistema', [
+      ['/admin/maintenance', 'Mantenimiento', 'maintenance', 'mdi-wrench-outline'],
+      ['/admin/updates', 'Actualizaciones', 'updates', 'mdi-update']
+    ]]
   ];
+  const items = groups.flatMap(([, entries]) => entries);
   const activeItem = items.find(([, , key]) => key === activeNav) || items[0];
-  const links = items
-    .map(([href, label, key]) => `<a class="${activeNav === key ? 'active' : ''}" href="${href}"${activeNav === key ? ' aria-current="page"' : ''}>${label}</a>`)
-    .join('');
+  const renderNav = (label) => `
+    <nav class="dashboard-nav" aria-label="${label}">
+      <label class="dashboard-nav-search">
+        <span class="sr-only">Buscar una sección</span>
+        <i class="mdi mdi-magnify" aria-hidden="true"></i>
+        <input type="search" placeholder="Buscar" data-admin-nav-search>
+      </label>
+      ${groups.map(([groupLabel, entries]) => `
+        <section class="dashboard-nav-group">
+          <div class="dashboard-nav-group-label">${escapeHtml(groupLabel)}</div>
+          <div class="dashboard-nav-group-links">
+            ${entries.map(([href, itemLabel, key, icon]) => `<a class="${activeNav === key ? 'active' : ''}" href="${href}"${activeNav === key ? ' aria-current="page"' : ''}><i class="mdi ${icon}" aria-hidden="true"></i><span>${escapeHtml(itemLabel)}</span></a>`).join('')}
+          </div>
+        </section>`).join('')}
+    </nav>`;
 
   return `
-    <nav class="dashboard-nav" aria-label="Secciones del panel">${links}</nav>
-    <details class="dashboard-mobile-nav">
-      <summary>
-        <span class="dashboard-mobile-nav-current">
-          <span>Sección actual</span>
-          <strong>${escapeHtml(activeItem[1])}</strong>
-        </span>
-        <i class="mdi mdi-chevron-down dashboard-mobile-nav-chevron" aria-hidden="true"></i>
-      </summary>
-      <nav class="dashboard-mobile-nav-list" aria-label="Cambiar sección">${links}</nav>
-    </details>`;
+    ${renderNav('Secciones del panel')}
+    <button class="dashboard-mobile-nav" type="button" data-admin-nav-open aria-expanded="false" aria-controls="admin-nav-drawer">
+      <span><small>Sección actual</small><strong>${escapeHtml(activeItem[1])}</strong></span>
+      <i class="mdi mdi-menu" aria-hidden="true"></i>
+    </button>
+    <div class="admin-nav-drawer" id="admin-nav-drawer" data-admin-nav-drawer hidden role="dialog" aria-modal="true" aria-label="Navegación administrativa">
+      <div class="admin-nav-drawer-panel">
+        <div class="admin-nav-drawer-head">
+          <strong>Navegación</strong>
+          <button type="button" class="button-ghost admin-nav-drawer-close" data-admin-nav-close aria-label="Cerrar menú"><i class="mdi mdi-close" aria-hidden="true"></i></button>
+        </div>
+        ${renderNav('Cambiar sección')}
+      </div>
+    </div>`;
 }
 
 function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro, activeNav, content, csrfToken }) {
@@ -4520,15 +4805,7 @@ function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro,
     body: `
       <section class="dashboard-shell">
         <aside class="dashboard-sidebar">
-          <div>
-            <div class="eyebrow">Admin</div>
-            <h2 style="margin-bottom:8px">Panel de control</h2>
-            <div class="small">Basura Cero</div>
-          </div>
           ${renderAdminNavigation(activeNav)}
-          <div class="dashboard-sidebar-meta">
-            <div class="small">Sesion: ${escapeHtml(currentAdmin.username)}</div>
-          </div>
         </aside>
         <div class="dashboard-main">
           <section class="dashboard-header ${intro ? 'has-intro' : 'no-intro'}">
@@ -5811,15 +6088,15 @@ function renderMaintenancePage({ currentAdmin, notice, inadequateIncidencias, mi
 
   const inadequateCards = (inadequateIncidencias || []).length
     ? inadequateIncidencias.map((item) => `
-      <article class="table-card">
+      <article class="table-card moderation-card">
         <div class="table-card-head">
           <div>
             <strong><a class="maintenance-incident-link" href="/admin/incidencias/${item.id}">#${item.id}</a> · ${escapeHtml(item.tipo)}</strong>
-            <span>${item.reportes_inadecuado} ${item.reportes_inadecuado === 1 ? 'reporte inadecuado' : 'reportes inadecuados'} · ${escapeHtml(item.estado)}</span>
+            <span class="moderation-card-meta">${item.reportes_inadecuado} ${item.reportes_inadecuado === 1 ? 'reporte inadecuado' : 'reportes inadecuados'} · ${escapeHtml(item.estado)}</span>
           </div>
           <input class="table-card-check inadequate-checkbox" type="checkbox" name="incidenciaIds" value="${item.id}" aria-label="Seleccionar incidencia ${item.id}">
         </div>
-        <span>${escapeHtml(item.descripcion)}</span>
+        <p class="moderation-card-description">${escapeHtml(item.descripcion)}</p>
       </article>
     `).join('')
     : '<div class="empty-state">No hay incidencias con reportes inadecuados pendientes.</div>';

@@ -743,7 +743,7 @@ describe('Panel admin', () => {
     expect(response.text).toContain('/uploads/detalle-incidencia.jpg');
     expect(response.text).toContain('Editar incidencia');
     expect(response.text).toContain('Guardar cambios');
-    expect(response.text).toContain('Panel');
+    expect(response.text).toContain('Vista general');
     expect(response.text).toContain('name="descripcion"');
     expect(response.text).toContain('name="tipoId"');
     expect(response.text).toContain('name="estado"');
