@@ -58,7 +58,7 @@ Estos valores no se muestran en el panel:
 | `ADMIN_BOOTSTRAP_PASSWORD` | Contraseña temporal para bootstrap manual. `scripts/install.sh` la gestiona y retira automáticamente. |
 | `TRUST_PROXY` | Número de proxies inversos de confianza. Usa `1` solo detrás de un único proxy. |
 | `CORS_ORIGINS` | Orígenes adicionales autorizados, separados por comas. |
-| `ADMIN_SESSION_MAX_AGE_MS` | Duración máxima de inactividad de la sesión administrativa. |
+| `ADMIN_SESSION_MAX_AGE_MS` | Duración máxima de inactividad de la sesión administrativa. Por defecto, 30 días; al usar el panel se renueva el plazo. |
 | `APP_UPDATE_REPOSITORY` | Repositorio público consultado por el aviso de actualizaciones. Por defecto `PucelaBits/basuracero`. |
 | `APP_UPDATE_BRANCH` | Rama consultada por el aviso. Por defecto `main`. |
 | `SQLITE_DB_PATH` | Ruta alternativa de la base SQLite. |

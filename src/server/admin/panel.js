@@ -17,6 +17,7 @@ const {
   clearSolutionReports,
   createTipo,
   createAdminUser,
+  deleteAdminUser,
   deleteIncidencia,
   deleteIncidenciaImage,
   deleteInadequateReport,
@@ -70,6 +71,9 @@ const uploadsDir = process.env.UPLOADS_DIR
   : path.join(__dirname, '..', '..', '..', 'uploads');
 const brandingUploadsDir = path.join(uploadsDir, 'branding');
 const allowedBrandImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+// La cookie se renueva con cada petición autenticada: 30 días es el máximo de
+// inactividad, no un límite absoluto desde el inicio de sesión.
+const DEFAULT_ADMIN_SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 const uploadBrandImage = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 1, parts: 3 },
@@ -147,7 +151,7 @@ class SQLiteSessionStore extends session.Store {
   set(sid, sessionData, callback = () => {}) {
     const expiresAt = sessionData?.cookie?.expires
       ? new Date(sessionData.cookie.expires).getTime()
-      : Date.now() + (sessionData?.cookie?.originalMaxAge || 1000 * 60 * 60 * 8);
+      : Date.now() + (sessionData?.cookie?.originalMaxAge || DEFAULT_ADMIN_SESSION_MAX_AGE_MS);
     run(
       `INSERT INTO admin_sessions (sid, expired, sess)
        VALUES (?, ?, ?)
@@ -271,7 +275,7 @@ async function renderCategoriasResponse(res, currentAdmin, notice, csrfToken, st
 
 function createSessionMiddleware(logger = console) {
   const sessionSecret = getSessionSecret(logger);
-  const maxAge = parsePositiveInt(process.env.ADMIN_SESSION_MAX_AGE_MS, 1000 * 60 * 60 * 8);
+  const maxAge = parsePositiveInt(process.env.ADMIN_SESSION_MAX_AGE_MS, DEFAULT_ADMIN_SESSION_MAX_AGE_MS);
   return session({
     secret: sessionSecret,
     name: 'basuracero_admin',
@@ -571,7 +575,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     try {
       const settings = await getAppSettings();
       const [dashboard, updateStatus] = await Promise.all([
-        getAdminDashboardData(),
+        getAdminDashboardData(req.query.period),
         getUpdateStatus({ logger, channel: settings.UPDATE_CHANNEL })
       ]);
       res.send(renderDashboardPage({
@@ -750,7 +754,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
         username: req.body.username,
         password: req.body.password,
         mustChangePassword: parseBoolean(req.body.mustChangePassword),
-        isActive: parseBoolean(req.body.isActive)
+        isActive: true
       }, req.currentAdmin.id);
       res.redirect('/admin/administradores?message=' + encodeURIComponent('Administrador creado'));
     } catch (error) {
@@ -766,7 +770,10 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
   router.post('/administradores/:id/update', async (req, res) => {
     try {
-      await updateAdminUser(req.params.id, { username: req.body.username }, req.currentAdmin.id);
+      await updateAdminUser(req.params.id, {
+        username: req.body.username,
+        ...(req.body.isActive === undefined ? {} : { isActive: parseBoolean(req.body.isActive) })
+      }, req.currentAdmin.id);
       res.redirect('/admin/administradores?message=' + encodeURIComponent('Administrador actualizado'));
     } catch (error) {
       const admins = await getAdminUsersList();
@@ -794,10 +801,40 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     }
   });
 
+  router.post('/administradores/:id/delete', async (req, res) => {
+    try {
+      await deleteAdminUser(req.params.id, req.currentAdmin.id);
+      res.redirect('/admin/administradores?message=' + encodeURIComponent('Administrador eliminado'));
+    } catch (error) {
+      const admins = await getAdminUsersList();
+      res.status(400).send(renderAdminUsersPage({
+        currentAdmin: req.currentAdmin,
+        notice: toActionNotice(error),
+        admins,
+        csrfToken: req.session.csrfToken
+      }));
+    }
+  });
+
   router.post('/administradores/:id/force-reset', async (req, res) => {
     try {
       await forcePasswordReset(req.params.id, req.currentAdmin.id);
       res.redirect('/admin/administradores?message=' + encodeURIComponent('Cambio de contraseña forzado'));
+    } catch (error) {
+      const admins = await getAdminUsersList();
+      res.status(400).send(renderAdminUsersPage({
+        currentAdmin: req.currentAdmin,
+        notice: toActionNotice(error),
+        admins,
+        csrfToken: req.session.csrfToken
+      }));
+    }
+  });
+
+  router.post('/administradores/:id/set-password', async (req, res) => {
+    try {
+      await changeAdminPassword(req.params.id, req.body.password, req.currentAdmin.id);
+      res.redirect('/admin/administradores?message=' + encodeURIComponent('Contraseña de administrador actualizada'));
     } catch (error) {
       const admins = await getAdminUsersList();
       res.status(400).send(renderAdminUsersPage({
@@ -890,6 +927,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
         search: String(req.query.search || '').trim(),
         estado: String(req.query.estado || '').trim(),
         tipoId: String(req.query.tipoId || '').trim(),
+        withSolutionReports: req.query.withSolutionReports === '1' ? '1' : '',
         sortBy: String(req.query.sortBy || 'fecha').trim(),
         sortDir: String(req.query.sortDir || 'desc').trim()
       };

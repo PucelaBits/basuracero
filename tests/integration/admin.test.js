@@ -193,6 +193,9 @@ describe('Panel admin', () => {
     expect(panelResponse.text).toContain('Contraseña actualizada correctamente.');
     expect(panelResponse.text).toContain('Incidencias recientes');
     expect(panelResponse.text).toContain('Categorias');
+    expect(panelResponse.text).toContain('Evolución de incidencias');
+    expect(panelResponse.text).toContain('dashboard-trend-bar');
+    expect(panelResponse.text).toContain('href="/admin?period=month"');
   });
 
   it('informa al frontend publico cuando existe una sesion administrativa', async () => {
@@ -248,6 +251,9 @@ describe('Panel admin', () => {
     expect(adminPage.status).toBe(200);
     expect(adminPage.text).toContain('Administradores');
     expect(adminPage.text).toContain('Nuevo administrador');
+    expect(adminPage.text).toContain('Administradores registrados');
+    expect(adminPage.text).toContain('Editar administrador');
+    expect(adminPage.text).toContain('Cambiar mi contraseña');
     expect(adminPage.text).not.toContain('AdminJS');
 
     const categoriasPage = await agent.get('/admin/categorias');
@@ -271,14 +277,14 @@ describe('Panel admin', () => {
         username: 'operador-panel',
         password: 'ClaveSeguraOperador123',
         mustChangePassword: '1',
-        isActive: '1'
+        isActive: '0'
       }, '/admin/administradores');
 
     expect(createResponse.status).toBe(302);
     expect(createResponse.headers.location).toContain('/admin/administradores?message=');
 
     const created = await dbAsync.get(
-      'SELECT username, must_change_password, is_active, password_hash FROM admin_users WHERE username = ?',
+      'SELECT id, username, must_change_password, is_active, password_hash FROM admin_users WHERE username = ?',
       ['operador-panel']
     );
     expect(created).toBeTruthy();
@@ -288,7 +294,7 @@ describe('Panel admin', () => {
 
     const updateResponse = await postWithCsrf(
       '/admin/administradores/2/update',
-      { username: 'operador-renombrado' },
+      { username: 'operador-renombrado', isActive: '1' },
       '/admin/administradores'
     );
 
@@ -297,6 +303,19 @@ describe('Panel admin', () => {
 
     const updated = await dbAsync.get('SELECT username FROM admin_users WHERE id = 2');
     expect(updated.username).toBe('operador-renombrado');
+
+    const setPasswordResponse = await postWithCsrf(
+      `/admin/administradores/${created.id}/set-password`,
+      { password: 'NuevaClaveOperadorSegura123' },
+      '/admin/administradores'
+    );
+    expect(setPasswordResponse.status).toBe(302);
+    expect((await service.authenticateAdmin('operador-renombrado', 'NuevaClaveOperadorSegura123')).id).toBe(created.id);
+
+    await expect(service.updateAdminUser(1, { isActive: false }, 1)).rejects.toThrow('No puedes desactivar tu propia cuenta.');
+    await expect(service.deleteAdminUser(1, 1)).rejects.toThrow('No puedes borrar tu propia cuenta.');
+    await service.deleteAdminUser(created.id, 1);
+    expect(await dbAsync.get('SELECT id FROM admin_users WHERE id = ?', [created.id])).toBeUndefined();
   });
 
   it('permite crear, actualizar icono, renombrar y borrar categorias sin incidencias desde el panel propio', async () => {
@@ -971,6 +990,11 @@ describe('Panel admin', () => {
       'INSERT INTO imagenes_incidencias (incidencia_id, ruta_imagen) VALUES (?, ?)',
       [incidencia.lastID, 'listado-propio.jpg']
     );
+    await dbAsync.run(
+      `INSERT INTO reportes_solucion (incidencia_id, ip, fecha, usuario)
+       VALUES (?, ?, datetime('now', 'localtime'), ?)`,
+      [incidencia.lastID, '127.0.0.1', 'Vecina']
+    );
 
     const redirected = await agent.get('/admin/resources/incidencias');
     expect(redirected.status).toBe(404);
@@ -982,6 +1006,9 @@ describe('Panel admin', () => {
     expect(response.text).toContain('Enseres');
     expect(response.text).toContain('Accion masiva');
     expect(response.text).toContain('Foto');
+    expect(response.text).toContain('Reportes solución');
+    expect(response.text).toContain('name="withSolutionReports"');
+    expect(response.text).toContain('sortBy=reportesSolucion');
     expect(response.text).toContain('sortBy=fecha');
     expect(response.text).toContain('sortBy=id');
     expect(response.text).toContain(`#${incidencia.lastID}`);
@@ -990,6 +1017,12 @@ describe('Panel admin', () => {
     expect(response.text).not.toContain('tipo_id');
     expect(response.text).not.toContain('Filter');
     expect(response.text).not.toContain('/actions/list');
+
+    const filtered = await agent.get('/admin/incidencias?withSolutionReports=1');
+    expect(filtered.status).toBe(200);
+    expect(filtered.text).toContain(`#${incidencia.lastID}`);
+    expect(filtered.text).toContain('name="withSolutionReports"');
+    expect(filtered.text).toContain('value="1" selected');
   });
 
   it('permite acciones masivas sobre varias incidencias seleccionadas', async () => {
@@ -1122,7 +1155,7 @@ describe('Panel admin', () => {
       await service.setAdminActiveState(adminRow.id, false, 1);
     }
 
-    await expect(service.setAdminActiveState(1, false, 1)).rejects.toThrow('ultimo administrador activo');
+    await expect(service.setAdminActiveState(1, false, 1)).rejects.toThrow('No puedes desactivar tu propia cuenta.');
   });
 
   it('registra auditoria al cambiar estado y tipo de incidencias', async () => {
@@ -1479,6 +1512,7 @@ describe('Panel admin', () => {
     expect(cookie).toContain('SameSite=Strict');
     expect(cookie).toContain('Path=/admin');
     expect(cookie).toContain('Secure');
+    expect(cookie).toContain('Expires=');
     expect(loginPage.headers['cache-control']).toBe('no-store');
     expect(loginPage.headers['x-frame-options']).toBe('DENY');
     expect(logger.warn.mock.calls.flat().join(' ')).not.toContain('BootstrapProduccionSegura123');

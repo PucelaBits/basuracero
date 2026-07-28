@@ -18,6 +18,10 @@ const WHATSAPP_REPORT_TOTAL_SQL = `
   + COALESCE((SELECT SUM(eri.total)
               FROM external_report_imports eri
               WHERE eri.incidencia_id = i.id AND eri.channel = 'whatsapp'), 0)`;
+const SOLUTION_REPORT_TOTAL_SQL = `
+  (SELECT COUNT(*)
+   FROM reportes_solucion rs
+   WHERE rs.incidencia_id = i.id)`;
 
 function normalizeFlag(value) {
   return value ? 1 : 0;
@@ -368,6 +372,34 @@ async function createAdminUser({ username, password, mustChangePassword = false,
   return created;
 }
 
+async function deleteAdminUser(adminId, actingAdminId) {
+  const current = await getAdminById(adminId, { includePasswordHash: true });
+  if (!current) {
+    throw new Error('Administrador no encontrado.');
+  }
+  if (Number(current.id) === Number(actingAdminId)) {
+    throw new Error('No puedes borrar tu propia cuenta.');
+  }
+
+  const activeCount = await countActiveAdmins();
+  if (activeCount <= (current.is_active ? 1 : 0)) {
+    throw new Error('Debe permanecer al menos un administrador activo.');
+  }
+
+  await invalidateAdminSessions(adminId);
+  await run('BEGIN');
+  try {
+    await createAuditLog(actingAdminId, 'delete_admin_user', 'admin_user', adminId, sanitizeAdmin(current), null);
+    await run('DELETE FROM admin_users WHERE id = ?', [adminId]);
+    await run('COMMIT');
+  } catch (error) {
+    await run('ROLLBACK').catch(() => {});
+    throw error;
+  }
+
+  return sanitizeAdmin(current);
+}
+
 async function updateAdminUser(adminId, updates, actingAdminId) {
   const current = await getAdminById(adminId, { includePasswordHash: true });
   if (!current) {
@@ -384,13 +416,31 @@ async function updateAdminUser(adminId, updates, actingAdminId) {
     throw new Error('Ya existe un administrador con ese nombre de usuario.');
   }
 
+  const hasActiveStateUpdate = updates.isActive !== undefined;
+  const nextIsActive = hasActiveStateUpdate ? normalizeFlag(updates.isActive) : current.is_active;
+
+  if (!nextIsActive && current.is_active) {
+    if (Number(current.id) === Number(actingAdminId)) {
+      throw new Error('No puedes desactivar tu propia cuenta.');
+    }
+    const activeCount = await countActiveAdmins();
+    if (activeCount <= 1) {
+      throw new Error('No puedes desactivar el ultimo administrador activo.');
+    }
+  }
+
   await run(
     `UPDATE admin_users
      SET username = ?,
+         is_active = ?,
          updated_at = datetime('now', 'localtime')
      WHERE id = ?`,
-    [nextUsername, adminId]
+    [nextUsername, nextIsActive, adminId]
   );
+
+  if (!nextIsActive && current.is_active) {
+    await invalidateAdminSessions(adminId);
+  }
 
   const updated = await getAdminById(adminId);
   await createAuditLog(
@@ -412,6 +462,9 @@ async function setAdminActiveState(adminId, isActive, actingAdminId) {
   }
 
   if (!isActive) {
+    if (Number(current.id) === Number(actingAdminId)) {
+      throw new Error('No puedes desactivar tu propia cuenta.');
+    }
     const activeCount = await countActiveAdmins();
     if (activeCount <= 1 && current.is_active) {
       throw new Error('No puedes desactivar el ultimo administrador activo.');
@@ -1203,7 +1256,7 @@ async function getIncidenciaDetail(incidenciaId) {
   };
 }
 
-async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', sortBy = 'fecha', sortDir = 'desc' } = {}) {
+async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', withSolutionReports = '', sortBy = 'fecha', sortDir = 'desc' } = {}) {
   const clauses = [];
   const params = [];
 
@@ -1223,6 +1276,10 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
     params.push(tipoId);
   }
 
+  if (withSolutionReports === '1') {
+    clauses.push('EXISTS (SELECT 1 FROM reportes_solucion rs WHERE rs.incidencia_id = i.id)');
+  }
+
   const whereSql = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const allowedSorts = {
     id: 'i.id',
@@ -1230,7 +1287,8 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
     tipo: 'lower(t.nombre)',
     estado: 'lower(i.estado)',
     barrio: 'lower(ifnull(i.barrio, \'\'))',
-    avisos: WHATSAPP_REPORT_TOTAL_SQL
+    avisos: WHATSAPP_REPORT_TOTAL_SQL,
+    reportesSolucion: SOLUTION_REPORT_TOTAL_SQL
   };
   const sortColumn = allowedSorts[sortBy] || allowedSorts.fecha;
   const direction = String(sortDir).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
@@ -1247,6 +1305,7 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
        t.nombre AS tipo,
        t.icono AS tipo_icono,
        ${WHATSAPP_REPORT_TOTAL_SQL} AS avisos_ayuntamiento,
+       ${SOLUTION_REPORT_TOTAL_SQL} AS reportes_solucion,
        img.ruta_imagen
      FROM incidencias i
      JOIN tipos_incidencias t ON t.id = i.tipo_id
@@ -1324,8 +1383,76 @@ async function getAdminExternalReportsList({ search = '', estado = '', tipoId = 
   ).then((rows) => rows.map((row) => ({ ...row, avisos_ayuntamiento: Number(row.avisos_ayuntamiento) })));
 }
 
-async function getAdminDashboardData() {
-  const [statsRow, pendingReview, recentWithPhoto, recentWithoutPhoto, byTipo, externalReports] = await Promise.all([
+const DASHBOARD_TREND_PERIODS = {
+  week: { count: 7, sqliteModifier: '-6 days', groupBy: 'date', label: 'Semana' },
+  month: { count: 30, sqliteModifier: '-29 days', groupBy: 'date', label: 'Mes' },
+  year: { count: 12, sqliteModifier: '-11 months', groupBy: 'month', label: 'Año' }
+};
+
+function normalizeDashboardTrendPeriod(value) {
+  return Object.hasOwn(DASHBOARD_TREND_PERIODS, value) ? value : 'week';
+}
+
+function localDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildDashboardTrend(rows, period) {
+  const config = DASHBOARD_TREND_PERIODS[period];
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const buckets = [];
+
+  if (config.groupBy === 'month') {
+    start.setDate(1);
+    start.setMonth(start.getMonth() - (config.count - 1));
+    for (let index = 0; index < config.count; index += 1) {
+      const date = new Date(start.getFullYear(), start.getMonth() + index, 1);
+      buckets.push({ key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`, date });
+    }
+  } else {
+    start.setDate(start.getDate() - (config.count - 1));
+    for (let index = 0; index < config.count; index += 1) {
+      const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
+      buckets.push({ key: localDateKey(date), date });
+    }
+  }
+
+  const totals = new Map(rows.map((row) => [row.bucket, {
+    created: Number(row.created || 0),
+    solved: Number(row.solved || 0)
+  }]));
+  const dateFormat = new Intl.DateTimeFormat('es-ES', config.groupBy === 'month'
+    ? { month: 'short' }
+    : { day: 'numeric', month: 'short' });
+
+  return {
+    period,
+    label: config.label,
+    points: buckets.map(({ key, date }) => ({
+      key,
+      label: dateFormat.format(date).replace('.', ''),
+      created: totals.get(key)?.created || 0,
+      solved: totals.get(key)?.solved || 0
+    }))
+  };
+}
+
+async function getAdminDashboardData(trendPeriod = 'week') {
+  const period = normalizeDashboardTrendPeriod(trendPeriod);
+  const trendConfig = DASHBOARD_TREND_PERIODS[period];
+  const trendExpression = trendConfig.groupBy === 'month'
+    ? "strftime('%Y-%m', %s)"
+    : 'date(%s)';
+  const createdBucket = trendExpression.replace('%s', 'fecha');
+  const solvedBucket = trendExpression.replace('%s', 'fecha_solucion');
+  const trendStart = trendConfig.groupBy === 'month'
+    ? `date('now', 'localtime', 'start of month', '${trendConfig.sqliteModifier}')`
+    : `date('now', 'localtime', '${trendConfig.sqliteModifier}')`;
+  const [statsRow, pendingReview, recentWithPhoto, recentWithoutPhoto, byTipo, externalReports, trendRows] = await Promise.all([
     get(
       `SELECT
          COUNT(*) AS total,
@@ -1421,6 +1548,30 @@ async function getAdminDashboardData() {
        GROUP BY r.incidencia_id, r.channel, i.estado, i.descripcion
        ORDER BY total DESC, r.incidencia_id DESC
        LIMIT 5`
+    ),
+    all(
+      `WITH created AS (
+         SELECT ${createdBucket} AS bucket, COUNT(*) AS total
+         FROM incidencias
+         WHERE fecha IS NOT NULL AND date(fecha) >= ${trendStart}
+         GROUP BY ${createdBucket}
+       ), solved AS (
+         SELECT ${solvedBucket} AS bucket, COUNT(*) AS total
+         FROM incidencias
+         WHERE fecha_solucion IS NOT NULL AND date(fecha_solucion) >= ${trendStart}
+         GROUP BY ${solvedBucket}
+       ), buckets AS (
+         SELECT bucket FROM created
+         UNION
+         SELECT bucket FROM solved
+       )
+       SELECT buckets.bucket,
+              COALESCE(created.total, 0) AS created,
+              COALESCE(solved.total, 0) AS solved
+       FROM buckets
+       LEFT JOIN created ON created.bucket = buckets.bucket
+       LEFT JOIN solved ON solved.bucket = buckets.bucket
+       ORDER BY buckets.bucket ASC`
     )
   ]);
 
@@ -1441,7 +1592,8 @@ async function getAdminDashboardData() {
     externalReports: externalReports.map((item) => ({
       ...item,
       total: Number(item.total)
-    }))
+    })),
+    trend: buildDashboardTrend(trendRows, period)
   };
 }
 
@@ -1636,6 +1788,7 @@ module.exports = {
   addIncidenciaImage,
   createAdminUser,
   createAuditLog,
+  deleteAdminUser,
   deleteIncidencia,
   deleteIncidenciaImage,
   deleteInadequateReport,

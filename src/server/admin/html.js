@@ -2282,6 +2282,47 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           font-size: 13px;
           line-height: 1.45;
         }
+        .dashboard-trend {
+          display: grid;
+          gap: 14px;
+          padding: 24px 0 4px;
+          border-bottom: 1px solid var(--line);
+        }
+        .dashboard-trend-header { align-items: center; }
+        .dashboard-trend-header h2 { margin: 0 0 6px; }
+        .dashboard-trend-filters {
+          display: inline-flex;
+          align-items: center;
+          padding: 3px;
+          border: 1px solid var(--line);
+          border-radius: 10px;
+          background: #fbfbfa;
+        }
+        .dashboard-trend-filter {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 34px;
+          padding: 0 11px;
+          border-radius: 7px;
+          color: var(--muted);
+          font-size: 13px;
+          font-weight: 600;
+          text-decoration: none;
+        }
+        .dashboard-trend-filter.active { color: #fff; background: var(--accent); }
+        .dashboard-trend-legend { display: flex; flex-wrap: wrap; gap: 16px; color: var(--muted); font-size: 13px; }
+        .dashboard-trend-legend span { display: inline-flex; align-items: center; gap: 7px; }
+        .dashboard-trend-key { width: 9px; height: 9px; border-radius: 3px; }
+        .dashboard-trend-key.created, .dashboard-trend-bar .created { fill: #25272b; background: #25272b; }
+        .dashboard-trend-key.solved, .dashboard-trend-bar .solved { fill: #6f8376; background: #6f8376; }
+        .dashboard-trend-chart { min-height: 222px; }
+        .dashboard-trend-chart svg { display: block; width: 100%; height: 222px; overflow: visible; }
+        .dashboard-trend-grid line { stroke: var(--line); stroke-width: 1; }
+        .dashboard-trend-grid text, .dashboard-trend-labels text { fill: var(--muted); font-family: Inter, sans-serif; font-size: 11px; }
+        .dashboard-trend-empty { fill: var(--muted); font-family: Inter, sans-serif; font-size: 14px; }
+        .dashboard-trend-bar rect { transition: opacity 160ms ease; }
+        .dashboard-trend-bar:hover rect { opacity: .78; }
         .dashboard-section {
           display: grid;
           gap: 14px;
@@ -3344,7 +3385,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .settings-service-grid { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); }
         .settings-service { padding: 22px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
         .dashboard-mobile-nav, .admin-nav-drawer { display: none; }
-        @media (max-width: 900px) {
+        @media (max-width: 1180px) {
           .shell { padding: 0 20px 36px; }
           .dashboard-shell { grid-template-columns: 1fr; gap: 24px; }
           .dashboard-sidebar { position: static; padding: 0; border: 0; }
@@ -3367,6 +3408,72 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .settings-brand-asset.settings-brand-asset-social { grid-template-columns: 112px minmax(0, 1fr); }
           .settings-brand-asset.settings-brand-asset-social img { width: 104px; }
         }
+        .ops-filters { grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(142px, .8fr)) auto; }
+        @media (min-width: 769px) {
+          .ops-table.admin-list-table { min-width: 1100px; }
+          .ops-table.admin-list-table th:nth-child(7),
+          .ops-table.admin-list-table td:nth-child(7) { width: 140px; }
+          .ops-table.admin-list-table th:nth-child(8),
+          .ops-table.admin-list-table td:nth-child(8) { width: 148px; }
+          .ops-table.admin-list-table th:nth-child(9),
+          .ops-table.admin-list-table td:nth-child(9) { width: 104px; }
+          .ops-table.admin-list-table th:nth-child(7),
+          .ops-table.admin-list-table th:nth-child(8),
+          .ops-table.admin-list-table th:nth-child(7) .ops-sort,
+          .ops-table.admin-list-table th:nth-child(8) .ops-sort { white-space: normal; line-height: 1.25; }
+        }
+        @media (max-width: 980px) and (min-width: 769px) {
+          .ops-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .ops-filters > button { width: fit-content; }
+        }
+        @media (max-width: 768px) {
+          .ops-filters { grid-template-columns: 1fr; }
+          .ops-table-wrap { display: none; }
+          .ops-mobile-list { display: grid; }
+        }
+        .admin-users-table { min-width: 600px; }
+        .admin-users-table .admin-user-edit-cell { width: 56px; padding-left: 0; padding-right: 8px; text-align: left; }
+        .admin-users-table th.admin-user-edit-cell { border-bottom-color: transparent; }
+        .admin-create-modal-card { width: min(100%, 560px); }
+        .admin-create-modal-card > .small { margin: -4px 0 18px; }
+        .admin-create-form { display: grid; gap: 16px; }
+        .admin-create-form > label { display: grid; gap: 7px; font-size: 14px; font-weight: 600; }
+        .admin-create-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .admin-create-options > label { display: grid; gap: 7px; font-size: 14px; font-weight: 600; }
+        .admin-create-form .detail-actions { justify-content: flex-end; padding-top: 4px; }
+        .admin-create-form .detail-actions button { width: auto; }
+        .admin-user-actions { display: inline-flex; align-items: center; gap: 6px; }
+        .admin-user-actions form { margin: 0; }
+        .admin-user-action {
+          display: inline-grid;
+          width: 38px;
+          height: 38px;
+          place-items: center;
+          padding: 0;
+          border: 1px solid var(--line);
+          border-radius: 10px;
+          background: transparent;
+          color: var(--ink);
+        }
+        .admin-user-action:hover { border-color: var(--ink); background: var(--soft); }
+        .admin-user-action--danger { color: #9f3b32; }
+        .admin-user-action--danger:hover { border-color: #c97970; background: #fff4f2; }
+        .admin-user-action .mdi { font-size: 19px; line-height: 1; }
+        .admin-edit-modal-card { width: min(100%, 560px); }
+        .admin-edit-modal-card .modal-close { width: 44px; min-width: 44px; flex: 0 0 44px; padding: 0; }
+        .admin-edit-form { display: grid; gap: 16px; }
+        .admin-edit-form > label { display: grid; gap: 7px; font-size: 14px; font-weight: 600; }
+        .admin-edit-form .detail-actions { justify-content: flex-end; padding-top: 4px; }
+        .admin-security-action { display: grid; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+        .admin-security-action h3 { margin: 0 0 4px; font-size: 14px; }
+        .admin-security-action p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+        .admin-security-action form { justify-self: start; }
+        .admin-password-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; width: 100%; }
+        .admin-password-form input { min-height: 38px; padding: 0 10px; font-size: 13px; }
+        .admin-delete-form { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+        .admin-delete-button { color: #9f3b32; }
+        .admin-delete-button:hover { border-color: #c97970; background: #fff4f2; }
+        .admin-delete-note, .admin-edit-note { margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
         @media (max-width: 520px) {
           .shell { padding: 0 14px 28px; }
           .topbar { min-height: 74px; }
@@ -3376,6 +3483,10 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .dashboard-main { gap: 24px; }
           .settings-section-actions { align-items: stretch; flex-direction: column; }
           .settings-section-save { width: 100%; }
+          .admin-create-options { grid-template-columns: 1fr; }
+          .admin-password-form { grid-template-columns: 1fr; align-items: stretch; }
+          .admin-create-form .detail-actions { align-items: stretch; flex-direction: column-reverse; }
+          .admin-create-form .detail-actions button { width: 100%; }
         }
         /* Second-pass consistency: authentication, forms, detail and maintenance */
         .auth-page { width: min(100%, 520px); margin: clamp(28px, 9vh, 104px) auto; }
@@ -3438,6 +3549,10 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .detail-edit-fields > label > input, .detail-edit-fields > label > select, .detail-edit-fields > label > textarea, .detail-edit-fields > label > .tipo-select { grid-column: auto; }
           .auth-form .actions { align-items: stretch; flex-direction: column; }
           .auth-form .actions button, .auth-form .actions .button-link { width: 100%; }
+          .dashboard-trend-header { align-items: flex-start; flex-direction: column; }
+          .dashboard-trend-filters { width: 100%; }
+          .dashboard-trend-filter { flex: 1 1 0; }
+          .dashboard-trend-chart, .dashboard-trend-chart svg { min-height: 190px; height: 190px; }
         }
         @media (max-width: 768px) {
           .table-wrap:has(.category-table) { overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
@@ -3551,7 +3666,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
               }, 0);
               return;
             }
-            const closer = event.target.closest('[data-close-delete-modal], [data-close-photo-modal], [data-close-modal]');
+            const closer = event.target.closest('[data-close-delete-modal], [data-close-photo-modal], [data-close-modal], [data-close-admin-edit]');
             if (closer && lastModalTrigger) {
               window.setTimeout(() => lastModalTrigger?.focus(), 0);
             }
@@ -3561,7 +3676,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
             if (!modal) return;
             if (event.key === 'Escape') {
               event.preventDefault();
-              modal.querySelector('[data-close-delete-modal], [data-close-photo-modal], [data-close-modal]')?.click();
+              modal.querySelector('[data-close-delete-modal], [data-close-photo-modal], [data-close-modal], [data-close-admin-edit]')?.click();
               return;
             }
             if (event.key !== 'Tab') return;
@@ -4241,6 +4356,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
     if (filters.search) params.set('search', filters.search);
     if (filters.estado) params.set('estado', filters.estado);
     if (filters.tipoId) params.set('tipoId', filters.tipoId);
+    if (filters.withSolutionReports === '1') params.set('withSolutionReports', '1');
     params.set('sortBy', sortBy);
     params.set('sortDir', nextDir);
     return `/admin/incidencias?${params.toString()}`;
@@ -4266,10 +4382,11 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
         <td><span class="status-chip">${escapeHtml(incidencia.estado || 'Sin estado')}</span></td>
         <td>${escapeHtml(incidencia.barrio || 'Sin barrio')}</td>
         <td>${incidencia.avisos_ayuntamiento || 0}</td>
+        <td>${incidencia.reportes_solucion || 0}</td>
         <td>${formatDate(incidencia.fecha)}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="8">No hay incidencias que coincidan con los filtros actuales.</td></tr>';
+    : '<tr><td colspan="9">No hay incidencias que coincidan con los filtros actuales.</td></tr>';
 
   const cards = incidencias.length
     ? incidencias.map((incidencia) => `
@@ -4287,6 +4404,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
             <span>${renderTipoBadge(incidencia.tipo, incidencia.tipo_icono, true)}</span>
             <span class="status-chip">${escapeHtml(incidencia.estado || 'Sin estado')}</span>
             <span class="small"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i> ${incidencia.avisos_ayuntamiento || 0}</span>
+            <span class="small"><i class="mdi mdi-check-circle-outline" aria-hidden="true"></i> ${incidencia.reportes_solucion || 0}</span>
           </div>
           <span class="ops-mobile-subline">${escapeHtml(incidencia.direccion || incidencia.barrio || 'Sin ubicacion')}</span>
           <div class="ops-mobile-actions">
@@ -4329,6 +4447,12 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
                 id: 'incidencias-filter-tipo',
                 includeEmptyOption: 'Todas'
               })}
+            </label>
+            <label>Reportes de solución
+              <select name="withSolutionReports">
+                <option value="">Todos</option>
+                <option value="1"${filters.withSolutionReports === '1' ? ' selected' : ''}>Con reportes</option>
+              </select>
             </label>
             <button type="submit">Aplicar filtros</button>
           </div>
@@ -4373,6 +4497,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
                     <th><a class="ops-sort${filters.sortBy === 'estado' ? ' active' : ''}" href="${buildSortUrl('estado')}">Estado ${sortIndicator('estado')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'barrio' ? ' active' : ''}" href="${buildSortUrl('barrio')}">Barrio ${sortIndicator('barrio')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'avisos' ? ' active' : ''}" href="${buildSortUrl('avisos')}">Avisos al ayuntamiento ${sortIndicator('avisos')}</a></th>
+                    <th><a class="ops-sort${filters.sortBy === 'reportesSolucion' ? ' active' : ''}" href="${buildSortUrl('reportesSolucion')}">Reportes solución ${sortIndicator('reportesSolucion')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'fecha' ? ' active' : ''}" href="${buildSortUrl('fecha')}">Fecha ${sortIndicator('fecha')}</a></th>
                   </tr>
                 </thead>
@@ -4579,7 +4704,7 @@ function renderChangePasswordPage({ currentAdmin, notice, minLength, csrfToken }
 }
 
 function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, csrfToken }) {
-  const { stats, recentWithPhoto, byTipo, externalReports = [] } = dashboard;
+  const { stats, recentWithPhoto, byTipo, externalReports = [], trend = { period: 'week', points: [] } } = dashboard;
   const updateRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
   const updateHeading = updateStatus?.channel === 'beta'
     ? `Actualización beta ${updateRelease?.version || ''} disponible`
@@ -4619,6 +4744,48 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
       </tr>
     `).join('')
     : '<tr><td colspan="3">Todavia no hay avisos al ayuntamiento registrados.</td></tr>';
+  const trendPoints = Array.isArray(trend.points) ? trend.points : [];
+  const trendHasActivity = trendPoints.some((point) => point.created > 0 || point.solved > 0);
+  const trendMaximum = Math.max(1, ...trendPoints.map((point) => point.created + point.solved));
+  const trendChart = { width: 760, height: 222, left: 32, right: 16, top: 18, bottom: 32 };
+  const trendPlotWidth = trendChart.width - trendChart.left - trendChart.right;
+  const trendPlotHeight = trendChart.height - trendChart.top - trendChart.bottom;
+  const trendBarPosition = (value, index) => {
+    const x = trendPoints.length > 1
+      ? trendChart.left + (index / (trendPoints.length - 1)) * trendPlotWidth
+      : trendChart.left + trendPlotWidth / 2;
+    const y = trendChart.top + trendPlotHeight - (value / trendMaximum) * trendPlotHeight;
+    return { x, y };
+  };
+  const trendBarWidth = Math.min(42, Math.max(12, trendPlotWidth / Math.max(trendPoints.length, 1) * 0.58));
+  const trendGrid = [0, 0.5, 1].map((ratio) => {
+    const y = trendChart.top + trendPlotHeight - ratio * trendPlotHeight;
+    return `<g><line x1="${trendChart.left}" x2="${trendChart.width - trendChart.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"></line><text x="0" y="${(y + 4).toFixed(1)}">${Math.round(trendMaximum * ratio)}</text></g>`;
+  }).join('');
+  const trendLabels = trendPoints.map((point, index) => {
+    const every = trendPoints.length > 12 ? Math.ceil(trendPoints.length / 6) : 1;
+    if (index % every !== 0 && index !== trendPoints.length - 1) return '';
+    const x = trendBarPosition(0, index).x;
+    return `<text x="${x}" y="${trendChart.height - 6}" text-anchor="middle">${escapeHtml(point.label)}</text>`;
+  }).join('');
+  const trendBars = trendPoints.map((point, index) => {
+    const base = trendBarPosition(0, index);
+    const createdTop = trendBarPosition(point.created, index);
+    const solvedTop = trendBarPosition(point.created + point.solved, index);
+    const x = (base.x - trendBarWidth / 2).toFixed(1);
+    const createdHeight = Math.max(0, base.y - createdTop.y).toFixed(1);
+    const solvedHeight = Math.max(0, createdTop.y - solvedTop.y).toFixed(1);
+    const totalHeight = Math.max(0, base.y - solvedTop.y).toFixed(1);
+    const round = Math.min(5, trendBarWidth / 2);
+    const clipId = `dashboard-trend-bar-${index}`;
+    return `<g class="dashboard-trend-bar"><title>${escapeHtml(`${point.label}: ${point.created} creadas y ${point.solved} solucionadas`)}</title><defs><clipPath id="${clipId}"><rect x="${x}" y="${solvedTop.y.toFixed(1)}" width="${trendBarWidth.toFixed(1)}" height="${totalHeight}" rx="${round}" ry="${round}"></rect></clipPath></defs><g clip-path="url(#${clipId})"><rect class="created" x="${x}" y="${createdTop.y.toFixed(1)}" width="${trendBarWidth.toFixed(1)}" height="${createdHeight}"></rect>${point.solved ? `<rect class="solved" x="${x}" y="${solvedTop.y.toFixed(1)}" width="${trendBarWidth.toFixed(1)}" height="${solvedHeight}"></rect>` : ''}</g></g>`;
+  }).join('');
+  const selectedTrendPeriod = ['week', 'month', 'year'].includes(trend.period) ? trend.period : 'week';
+  const trendPeriodLabel = { week: 'Semana', month: 'Mes', year: 'Año' };
+  const trendControls = ['week', 'month', 'year'].map((period) => `
+    <a class="dashboard-trend-filter${selectedTrendPeriod === period ? ' active' : ''}" href="/admin?period=${period}"${selectedTrendPeriod === period ? ' aria-current="page"' : ''}>${trendPeriodLabel[period]}</a>
+  `).join('');
+  const trendRows = trendPoints.map((point) => `<tr><th scope="row">${escapeHtml(point.label)}</th><td>${point.created}</td><td>${point.solved}</td></tr>`).join('');
 
   return renderLayout({
     title: 'Panel de administracion',
@@ -4659,6 +4826,26 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
             <div class="dashboard-kpi"><strong>${stats.pendientesRevision}</strong><span>Por revisar</span></div>
             <div class="dashboard-kpi"><strong>${stats.solucionadas}</strong><span>Solucionadas</span></div>
             <div class="dashboard-kpi"><strong>${stats.spam}</strong><span>Spam</span></div>
+          </section>
+
+          <section class="dashboard-trend" aria-labelledby="dashboard-trend-title">
+            <div class="dashboard-section-header dashboard-trend-header">
+              <div>
+                <h2 id="dashboard-trend-title">Evolución de incidencias</h2>
+                <p class="small">Creadas por fecha de alta y solucionadas por fecha de resolución.</p>
+              </div>
+              <nav class="dashboard-trend-filters" aria-label="Periodo de la evolución">${trendControls}</nav>
+            </div>
+            <div class="dashboard-trend-legend" aria-label="Series del gráfico">
+              <span><i class="dashboard-trend-key created" aria-hidden="true"></i>Creadas</span>
+              <span><i class="dashboard-trend-key solved" aria-hidden="true"></i>Solucionadas</span>
+            </div>
+            <div class="dashboard-trend-chart" role="img" aria-label="Evolución durante ${escapeAttr(trendPeriodLabel[selectedTrendPeriod].toLowerCase())}: incidencias creadas y solucionadas">
+              <svg viewBox="0 0 ${trendChart.width} ${trendChart.height}" preserveAspectRatio="none" aria-hidden="true">
+                ${trendHasActivity ? `<g class="dashboard-trend-grid">${trendGrid}</g>${trendBars}<g class="dashboard-trend-labels">${trendLabels}</g>` : `<text class="dashboard-trend-empty" x="${trendChart.width / 2}" y="${trendChart.height / 2}" text-anchor="middle">No hay actividad durante este periodo.</text>`}
+              </svg>
+            </div>
+            <table class="sr-only"><caption>Evolución de incidencias</caption><thead><tr><th>Periodo</th><th>Creadas</th><th>Solucionadas</th></tr></thead><tbody>${trendRows}</tbody></table>
           </section>
 
           <section class="dashboard-section">
@@ -5568,32 +5755,69 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
 }
 
 function renderAdminUsersPage({ currentAdmin, notice, admins, csrfToken }) {
+  const adminCountLabel = `${admins.length} ${admins.length === 1 ? 'administrador registrado' : 'administradores registrados'}`;
   const rows = admins.length
     ? admins.map((admin) => `
       <tr>
-        <td>${escapeHtml(admin.username)}</td>
-        <td><span class="status-chip">${admin.is_active ? 'activo' : 'inactivo'}</span></td>
-        <td><span class="status-chip">${admin.must_change_password ? 'pendiente' : 'ok'}</span></td>
-        <td>${formatDate(admin.last_login_at)}</td>
-        <td>${formatDate(admin.created_at)}</td>
-        <td>
-          <div class="actions">
-            <form method="post" action="/admin/administradores/${admin.id}/update" class="inline-form">
-              <input type="text" name="username" value="${escapeAttr(admin.username)}" aria-label="Usuario de ${escapeAttr(admin.username)}">
-              <button class="detail-mini-button button-ghost" type="submit">Guardar</button>
-            </form>
-            <form method="post" action="/admin/administradores/${admin.id}/toggle-active" data-confirm="Se cambiara el acceso de este administrador. ¿Continuar?">
-              <input type="hidden" name="isActive" value="${admin.is_active ? '0' : '1'}">
-              <button class="detail-mini-button button-ghost" type="submit">${admin.is_active ? 'Desactivar' : 'Activar'}</button>
-            </form>
-            <form method="post" action="/admin/administradores/${admin.id}/force-reset" data-confirm="El administrador tendrá que cambiar su contraseña antes de volver a usar el panel. ¿Continuar?">
-              <button class="detail-mini-button button-ghost" type="submit">Forzar clave</button>
-            </form>
+        <td class="admin-user-edit-cell">
+          <div class="admin-user-actions">
+            <button type="button" class="admin-user-action" data-open-admin-edit="${admin.id}" aria-label="Editar ${escapeAttr(admin.username)}" title="Editar administrador"><i class="mdi mdi-pencil-outline" aria-hidden="true"></i></button>
           </div>
         </td>
+        <td>${escapeHtml(admin.username)}</td>
+        <td><span class="status-chip">${admin.is_active ? 'activo' : 'inactivo'}</span></td>
+        <td>${formatDate(admin.last_login_at)}</td>
+        <td>${formatDate(admin.created_at)}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="6">Todavia no hay administradores.</td></tr>';
+    : '<tr><td colspan="5">Todavia no hay administradores.</td></tr>';
+  const editModals = admins.map((admin) => `
+    <div class="modal-backdrop" id="admin-edit-modal-${admin.id}" aria-hidden="true">
+      <div class="modal-card admin-edit-modal-card" role="dialog" aria-modal="true" aria-labelledby="admin-edit-title-${admin.id}">
+        <div class="modal-header">
+          <div>
+            <div class="eyebrow">Administrador</div>
+            <h2 id="admin-edit-title-${admin.id}">Editar ${escapeHtml(admin.username)}</h2>
+          </div>
+          <button type="button" class="modal-close" data-close-admin-edit="${admin.id}" aria-label="Cerrar"><i class="mdi mdi-close" aria-hidden="true"></i></button>
+        </div>
+        <p class="small">Actualiza el nombre de acceso o cambia el estado de esta cuenta.</p>
+        <form method="post" action="/admin/administradores/${admin.id}/update" class="admin-edit-form" data-confirm="Vas a actualizar esta cuenta de administrador. Si la desactivas, perderá el acceso al panel. ¿Continuar?">
+          <label>Usuario<input type="text" name="username" value="${escapeAttr(admin.username)}" autocomplete="username" required></label>
+          <label>Estado<select name="isActive"${Number(admin.id) === Number(currentAdmin.id) ? ' disabled' : ''}><option value="1"${admin.is_active ? ' selected' : ''}>Activo</option><option value="0"${!admin.is_active ? ' selected' : ''}>Inactivo</option></select></label>
+          ${Number(admin.id) === Number(currentAdmin.id) ? '<input type="hidden" name="isActive" value="1"><p class="admin-edit-note">Tu propia cuenta no puede desactivarse.</p>' : ''}
+          <div class="detail-actions"><button type="submit">Guardar cambios</button><button type="button" class="button-ghost" data-close-admin-edit="${admin.id}">Cancelar</button></div>
+        </form>
+        ${Number(admin.id) !== Number(currentAdmin.id) ? `
+          <section class="admin-security-action" aria-labelledby="admin-reset-title-${admin.id}">
+            <div>
+              <h3 id="admin-reset-title-${admin.id}">Restablecer acceso</h3>
+              <p>En su próximo acceso tendrá que crear una contraseña nueva.</p>
+            </div>
+            <form method="post" action="/admin/administradores/${admin.id}/force-reset" data-confirm="${escapeAttr(`En el próximo acceso, ${admin.username} tendrá que crear una contraseña nueva. ¿Continuar?`)}">
+              <button type="submit" class="button-ghost detail-mini-button"><i class="mdi mdi-lock-reset" aria-hidden="true"></i> Pedir cambio de contraseña</button>
+            </form>
+          </section>
+          <section class="admin-security-action" aria-labelledby="admin-password-title-${admin.id}">
+            <div>
+              <h3 id="admin-password-title-${admin.id}">Asignar contraseña nueva</h3>
+              <p>Crea una contraseña temporal y cierra sus sesiones activas.</p>
+            </div>
+            <form method="post" action="/admin/administradores/${admin.id}/set-password" class="admin-password-form" data-confirm="${escapeAttr(`Vas a cambiar la contraseña de ${admin.username} y cerrar sus sesiones activas. ¿Continuar?`)}">
+              <label class="sr-only" for="admin-password-${admin.id}">Nueva contraseña para ${escapeHtml(admin.username)}</label>
+              <input id="admin-password-${admin.id}" type="password" name="password" minlength="12" autocomplete="new-password" placeholder="Nueva contraseña (mín. 12 caracteres)" required>
+              <button type="submit" class="button-ghost detail-mini-button">Guardar contraseña</button>
+            </form>
+          </section>
+        ` : '<button type="button" class="button-ghost detail-mini-button admin-own-password-button" data-open-own-password><i class="mdi mdi-lock-outline" aria-hidden="true"></i> Cambiar mi contraseña</button>'}
+        ${Number(admin.id) !== Number(currentAdmin.id) ? `
+          <form method="post" action="/admin/administradores/${admin.id}/delete" class="admin-delete-form" data-confirm="${escapeAttr(`Vas a eliminar definitivamente a ${admin.username}. Esta acción no se puede deshacer. ¿Continuar?`)}">
+            <button type="submit" class="button-ghost admin-delete-button"><i class="mdi mdi-trash-can-outline" aria-hidden="true"></i> Eliminar administrador</button>
+          </form>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
 
   return renderAdminSectionLayout({
     currentAdmin,
@@ -5607,43 +5831,87 @@ function renderAdminUsersPage({ currentAdmin, notice, admins, csrfToken }) {
       <section class="dashboard-section">
         <div class="dashboard-section-header">
           <div>
-            <h2 style="margin-bottom:6px">Nuevo administrador</h2>
-            <p class="small">Alta rápida con contraseña inicial y cambio forzado opcional.</p>
+            <h2 style="margin-bottom:6px">Administradores registrados</h2>
+            <p class="small">${adminCountLabel}. Se muestran todas las cuentas de esta instancia.</p>
           </div>
-        </div>
-        <form method="post" action="/admin/administradores/create" class="detail-edit-fields">
-          <label>Usuario<input type="text" name="username" required></label>
-          <label>Contraseña inicial<input type="password" name="password" required></label>
-          <label><span>Cambio obligatorio</span><select name="mustChangePassword"><option value="1">Si</option><option value="0">No</option></select></label>
-          <label><span>Estado</span><select name="isActive"><option value="1">Activo</option><option value="0">Inactivo</option></select></label>
-          <div class="detail-actions">
-            <button type="submit">Crear administrador</button>
-          </div>
-        </form>
-      </section>
-      <section class="dashboard-section">
-        <div class="dashboard-section-header">
-          <div>
-            <h2 style="margin-bottom:6px">Equipo actual</h2>
-            <p class="small">Edicion inline para los cambios mas frecuentes.</p>
-          </div>
+          <button type="button" class="detail-mini-button" data-open-admin-create><i class="mdi mdi-account-plus-outline" aria-hidden="true"></i> Nuevo administrador</button>
         </div>
         <div class="table-wrap">
-          <table class="mobile-scroll-table">
+          <table class="mobile-scroll-table admin-users-table">
             <thead>
               <tr>
+                <th class="admin-user-edit-cell"><span class="sr-only">Editar</span></th>
                 <th>Usuario</th>
                 <th>Estado</th>
-                <th>Clave</th>
                 <th>Ultimo acceso</th>
                 <th>Alta</th>
-                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
       </section>
+      ${editModals}
+      <div class="modal-backdrop" id="admin-own-password-modal" aria-hidden="true">
+        <div class="modal-card admin-create-modal-card" role="dialog" aria-modal="true" aria-labelledby="admin-own-password-title">
+          <div class="modal-header">
+            <div>
+              <div class="eyebrow">Seguridad</div>
+              <h2 id="admin-own-password-title">Cambiar mi contraseña</h2>
+            </div>
+            <button type="button" class="modal-close" data-close-modal aria-label="Cerrar"><i class="mdi mdi-close" aria-hidden="true"></i></button>
+          </div>
+          <form method="post" action="/admin/change-password" class="admin-create-form">
+            <label>Nueva contraseña<input type="password" name="password" minlength="12" autocomplete="new-password" required></label>
+            <label>Repetir contraseña<input type="password" name="passwordConfirm" minlength="12" autocomplete="new-password" required></label>
+            <div class="detail-actions"><button type="submit">Cambiar contraseña</button><button type="button" class="button-ghost" data-close-modal>Cancelar</button></div>
+          </form>
+        </div>
+      </div>
+      <div class="modal-backdrop" id="admin-create-modal" aria-hidden="true">
+        <div class="modal-card admin-create-modal-card" role="dialog" aria-modal="true" aria-labelledby="admin-create-title">
+          <div class="modal-header">
+            <div>
+              <div class="eyebrow">Administración</div>
+              <h2 id="admin-create-title">Nuevo administrador</h2>
+            </div>
+            <button type="button" class="modal-close" data-close-modal aria-label="Cerrar"><i class="mdi mdi-close" aria-hidden="true"></i></button>
+          </div>
+          <p class="small">Define una contraseña inicial y, si procede, exige su cambio al primer acceso.</p>
+          <form method="post" action="/admin/administradores/create" class="admin-create-form">
+            <label>Usuario<input type="text" name="username" autocomplete="username" required></label>
+            <label>Contraseña inicial<input type="password" name="password" autocomplete="new-password" required></label>
+            <label><span>Cambio obligatorio</span><select name="mustChangePassword"><option value="1">Sí</option><option value="0">No</option></select></label>
+            <div class="detail-actions"><button type="submit">Crear administrador</button><button type="button" class="button-ghost" data-close-modal>Cancelar</button></div>
+          </form>
+        </div>
+      </div>
+      <script>
+        (() => {
+          const modal = document.getElementById('admin-create-modal');
+          const ownPasswordModal = document.getElementById('admin-own-password-modal');
+          const openButton = document.querySelector('[data-open-admin-create]');
+          const ownPasswordButton = document.querySelector('[data-open-own-password]');
+          const close = () => { modal?.classList.remove('open'); modal?.setAttribute('aria-hidden', 'true'); openButton?.focus(); };
+          openButton?.addEventListener('click', () => { modal?.classList.add('open'); modal?.setAttribute('aria-hidden', 'false'); window.setTimeout(() => modal?.querySelector('input')?.focus(), 0); });
+          modal?.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', close));
+          modal?.addEventListener('click', (event) => { if (event.target === modal) close(); });
+          ownPasswordButton?.addEventListener('click', () => { ownPasswordModal?.classList.add('open'); ownPasswordModal?.setAttribute('aria-hidden', 'false'); window.setTimeout(() => ownPasswordModal?.querySelector('input')?.focus(), 0); });
+          ownPasswordModal?.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', () => { ownPasswordModal.classList.remove('open'); ownPasswordModal.setAttribute('aria-hidden', 'true'); ownPasswordButton?.focus(); }));
+          ownPasswordModal?.addEventListener('click', (event) => { if (event.target === ownPasswordModal) { ownPasswordModal.classList.remove('open'); ownPasswordModal.setAttribute('aria-hidden', 'true'); ownPasswordButton?.focus(); } });
+          document.querySelectorAll('[data-open-admin-edit]').forEach((button) => {
+            const editModal = document.getElementById('admin-edit-modal-' + button.dataset.openAdminEdit);
+            const closeEdit = () => { editModal?.classList.remove('open'); editModal?.setAttribute('aria-hidden', 'true'); button.focus(); };
+            button.addEventListener('click', () => {
+              editModal?.classList.add('open');
+              editModal?.setAttribute('aria-hidden', 'false');
+              window.setTimeout(() => editModal?.querySelector('input')?.focus(), 0);
+            });
+            editModal?.querySelectorAll('[data-close-admin-edit]').forEach((closeButton) => closeButton.addEventListener('click', closeEdit));
+            editModal?.addEventListener('click', (event) => { if (event.target === editModal) closeEdit(); });
+          });
+        })();
+      </script>
     `
   });
 }
