@@ -18,6 +18,8 @@ RUN npm rebuild sqlite3 --build-from-source
 
 COPY . .
 
+ARG LEGACY_ORIGIN=
+ENV LEGACY_ORIGIN=$LEGACY_ORIGIN
 RUN npm run build
 RUN npm prune --omit=dev
 

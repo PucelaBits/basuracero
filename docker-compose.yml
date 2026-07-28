@@ -9,6 +9,9 @@ services:
         - APP_VERSION=${APP_VERSION:-unknown}
         - APP_UID=${DOCKER_UID:-1000}
         - APP_GID=${DOCKER_GID:-1000}
+        # Vite inserta este origen en el JavaScript durante la compilación para
+        # poder recuperar el localStorage del dominio anterior una sola vez.
+        - LEGACY_ORIGIN=${LEGACY_ORIGIN:-}
     ports:
       - "${PORT:-5050}:${PORT:-5050}"
     volumes:
