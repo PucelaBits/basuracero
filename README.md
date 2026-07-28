@@ -2,6 +2,8 @@
 
 **Basura Cero** es una plataforma colaborativa para visibilizar incidencias sin resolver en una ciudad, pueblo o barrio. Permite publicar avisos con fotografía y ubicación, consultarlos en un mapa y comunicar cuándo se han solucionado.
 
+Este repositorio de PucelaBits contiene el proyecto técnico, reutilizable para distintas localidades. [Basura Cero Valladolid](https://basuracero.aldeapucela.org) es una de sus implementaciones públicas.
+
 La aplicación incluye un panel de administración pensado para que la gestión cotidiana no requiera editar archivos, acceder a SQLite ni ejecutar comandos en el servidor.
 
 ## Instancias que utilizan la plataforma
@@ -11,7 +13,7 @@ La aplicación incluye un panel de administración pensado para que la gestión 
   <img src="./public/img/screenshots/alertadana.jpg" alt="Alerta DANA" width="300">
 </p>
 
-- [Basura Cero Valladolid](https://basuracero.pucelabits.org): incidencias sin resolver en la vía pública.
+- [Basura Cero Valladolid](https://basuracero.aldeapucela.org): incidencias sin resolver en la vía pública.
 - [Alerta DANA](https://dana.pucelabits.org): documentación de incidencias provocadas por la DANA de 2024.
 
 ## Qué ofrece

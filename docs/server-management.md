@@ -49,6 +49,7 @@ Estos valores no se muestran en el panel:
 | Variable | Función |
 | --- | --- |
 | `BASE_URL` | Origen público exacto, sin una ruta final. |
+| `LEGACY_ORIGIN` | Origen anterior usado temporalmente para trasladar una vez los datos locales del navegador tras un cambio de dominio. |
 | `HOST`, `PORT` | Interfaz y puerto de escucha. |
 | `SESSION_SECRET` | Firma de las sesiones administrativas; mínimo 32 caracteres en producción. |
 | `EXTERNAL_REPORT_FINGERPRINT_SECRET` | Opcional. Permite aportar un secreto propio para pseudonimizar y deduplicar los avisos externos. Si falta, la aplicación genera y guarda uno automáticamente junto a la base de datos. |
@@ -85,6 +86,21 @@ docker compose up -d --build basuracero-app
 ```
 
 Recuerda que los valores ya presentes en `app_settings` continuarán prevaleciendo.
+
+## Cambio de dominio y datos locales del navegador
+
+Los favoritos y los códigos de incidencias enviadas se guardan en el almacenamiento local del navegador, que está aislado por dominio. Si una instancia cambia de dominio, define temporalmente `LEGACY_ORIGIN` con el origen HTTPS anterior y reconstruye la imagen:
+
+```dotenv
+BASE_URL=https://nuevo-dominio.ejemplo.org
+LEGACY_ORIGIN=https://dominio-anterior.ejemplo.org
+```
+
+```bash
+docker compose up -d --build basuracero-app
+```
+
+En la primera visita al dominio nuevo, cada navegador vuelve automáticamente al origen anterior, copia esos datos y regresa a la misma ruta del dominio nuevo. La operación es idempotente y deja una marca local para no repetirse. El proxy del dominio anterior debe conservar el endpoint `/__basuracero_migrate` y servir los archivos públicos de migración; no debe redirigir ese endpoint antes de que se ejecute el script. Cuando haya terminado el periodo de migración, elimina `LEGACY_ORIGIN`, reconstruye la imagen y deja el redireccionamiento permanente habitual.
 
 ## Volver a utilizar un valor de `.env`
 
