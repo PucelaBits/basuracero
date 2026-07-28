@@ -136,16 +136,34 @@ function injectCategoryMeta(html, meta) {
 
 function injectAppSettings(html, settings, baseUrl) {
   const title = `${settings.APP_NAME} - ${settings.APP_DESCRIPTION}`;
+  const socialImage = new URL(settings.APP_SOCIAL_IMAGE_PATH, baseUrl).href;
+  const canonicalUrl = new URL('/', baseUrl).href;
   let nextHtml = replaceElement(html, 'title', `<title>${escapeHtml(title)}</title>`);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'description', settings.APP_DESCRIPTION);
+  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:type', 'website');
   nextHtml = upsertMetaTag(nextHtml, 'property', 'og:title', settings.APP_NAME);
   nextHtml = upsertMetaTag(nextHtml, 'property', 'og:description', settings.APP_DESCRIPTION);
-  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:image', new URL(settings.APP_FAVICON_PATH, baseUrl).href);
+  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:image', socialImage);
+  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:image:secure_url', socialImage);
+  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:image:width', '1200');
+  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:image:height', '630');
+  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:image:alt', `Vista previa de ${settings.APP_NAME}`);
+  nextHtml = upsertMetaTag(nextHtml, 'property', 'og:url', canonicalUrl);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:title', settings.APP_NAME);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:description', settings.APP_DESCRIPTION);
+  nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:card', 'summary_large_image');
+  nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:image', socialImage);
+  nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:image:alt', `Vista previa de ${settings.APP_NAME}`);
+  nextHtml = upsertMetaTag(nextHtml, 'name', 'twitter:url', canonicalUrl);
   nextHtml = upsertMetaTag(nextHtml, 'name', 'theme-color', settings.APP_PRIMARY_COLOR);
   nextHtml = replaceLinkByRel(nextHtml, 'icon', `<link rel="icon" href="${escapeHtml(settings.APP_FAVICON_PATH)}" type="image/png">`);
   nextHtml = replaceLinkByRel(nextHtml, 'apple-touch-icon', `<link rel="apple-touch-icon" href="${escapeHtml(settings.APP_FAVICON_PATH)}">`);
+  const canonicalTag = `<link rel="canonical" href="${escapeHtml(canonicalUrl)}">`;
+  if (/<link\s+rel="canonical"/i.test(nextHtml)) {
+    nextHtml = nextHtml.replace(/<link\s+rel="canonical"\s+href="[^"]*">/i, canonicalTag);
+  } else {
+    nextHtml = nextHtml.replace('</head>', `    ${canonicalTag}\n</head>`);
+  }
   return nextHtml;
 }
 
@@ -194,9 +212,7 @@ function buildRankingMeta(ranking, settings, baseUrl) {
     }
   };
   const metadata = rankings[ranking];
-  // La cabecera puede usar una marca apaisada; la vista previa social debe usar
-  // el icono/logo cuadrado de la aplicación.
-  const imagePath = settings.APP_FAVICON_PATH;
+  const imagePath = settings.APP_SOCIAL_IMAGE_PATH;
 
   return {
     title: metadata.title,

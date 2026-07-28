@@ -42,14 +42,23 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('detecta una version nueva, incluye sus novedades y conserva el resultado en cache', async () => {
-    const fetchImpl = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => githubRelease('1.1.0', {
-        title: 'Mejoras de mantenimiento',
-        body: '- Nuevo asistente\n- Correcciones de seguridad'
-      })
+  it('detecta una version nueva, incluye todas las versiones intermedias y conserva el resultado en cache', async () => {
+    const latest = githubRelease('1.3.0', {
+      title: 'Mejoras de mantenimiento',
+      body: '- Nuevo asistente\n- Correcciones de seguridad'
     });
+    const fetchImpl = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => latest })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          latest,
+          githubRelease('1.2.0', { title: 'Mejoras del mapa', body: '- Filtros nuevos' }),
+          githubRelease('1.1.0', { title: 'Panel más claro', body: '- Nuevo asistente' }),
+          githubRelease('1.0.0', { title: 'Versión instalada', body: '- Ya disponible' }),
+          githubRelease('1.4.0', { prerelease: true, title: 'No incluir' })
+        ]
+      });
     const options = {
       localRelease: { version: '1.0.0', ref: 'v1.0.0' },
       fetchImpl,
@@ -60,12 +69,17 @@ describe('Comprobacion de actualizaciones del panel', () => {
     const second = await checker.getUpdateStatus({ ...options, now: () => 2000 });
 
     expect(first.updateAvailable).toBe(true);
-    expect(first.latestVersion).toBe('1.1.0');
+    expect(first.latestVersion).toBe('1.3.0');
     expect(first.release.notes).toEqual(['Nuevo asistente', 'Correcciones de seguridad']);
+    expect(first.releases.map((release) => release.version)).toEqual(['1.1.0', '1.2.0', '1.3.0']);
     expect(second).toEqual(first);
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(fetchImpl).toHaveBeenCalledWith(
       'https://api.github.com/repos/PucelaBits/basuracero/releases/latest',
+      expect.objectContaining({ signal: expect.any(Object) })
+    );
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://api.github.com/repos/PucelaBits/basuracero/releases?per_page=100',
       expect.objectContaining({ signal: expect.any(Object) })
     );
   });
@@ -125,7 +139,15 @@ describe('Comprobacion de actualizaciones del panel', () => {
       })
       .mockResolvedValueOnce({
         ok: true,
+        json: async () => [githubRelease('2.0.1', { body: '- Primera comprobación' })]
+      })
+      .mockResolvedValueOnce({
+        ok: true,
         json: async () => githubRelease('2.0.2', { body: '- Segunda comprobación' })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [githubRelease('2.0.2', { body: '- Segunda comprobación' })]
       });
     const options = {
       localRelease: { version: '2.0.0', ref: 'v2.0.0' },
@@ -139,7 +161,7 @@ describe('Comprobacion de actualizaciones del panel', () => {
 
     expect(first.latestVersion).toBe('2.0.1');
     expect(second.latestVersion).toBe('2.0.2');
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
   });
 
   it('usa exclusivamente APP_VERSION como version instalada', () => {
@@ -178,5 +200,32 @@ describe('Comprobacion de actualizaciones del panel', () => {
     expect(html).toContain('./scripts/upgrade.sh');
     expect(html).toContain('class="dashboard-update-link"');
     expect(html).toContain('Ver novedades en GitHub');
+  });
+
+  it('muestra el historial de versiones que se instalarán en el panel', () => {
+    const { renderUpdatesPage } = require('../../src/server/admin/html');
+    const html = renderUpdatesPage({
+      currentAdmin: { username: 'admin' },
+      csrfToken: 'test-token',
+      channel: 'stable',
+      installedRelease: { version: '1.0.0' },
+      updateStatus: {
+        updateAvailable: true,
+        currentVersion: '1.0.0',
+        release: githubRelease('1.3.0', { title: 'Última versión' }),
+        releases: [
+          { version: '1.1.0', title: 'Primera mejora', notes: ['Novedad 1'] },
+          { version: '1.2.0', title: 'Segunda mejora', notes: ['Novedad 2'] },
+          { version: '1.3.0', title: 'Última versión', notes: ['Novedad 3'] }
+        ]
+      }
+    });
+
+    expect(html).toContain('Versión 1.1.0');
+    expect(html).toContain('Versión 1.2.0');
+    expect(html).toContain('Versión 1.3.0');
+    expect(html).toContain('Novedad 1');
+    expect(html).toContain('Novedad 2');
+    expect(html).toContain('Novedad 3');
   });
 });

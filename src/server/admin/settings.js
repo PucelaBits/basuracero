@@ -10,6 +10,7 @@ const SETTING_DEFINITIONS = {
   APP_DESCRIPTION: { fallback: () => process.env.APP_DESCRIPTION || 'Sistema colaborativo de incidencias urbanas', maxLength: 240 },
   APP_LOGO_PATH: { fallback: () => process.env.APP_LOGO_PATH || '/img/default/logo.png', type: 'assetPath' },
   APP_FAVICON_PATH: { fallback: () => process.env.APP_FAVICON_PATH || '/img/default/favicon.png', type: 'assetPath' },
+  APP_SOCIAL_IMAGE_PATH: { fallback: () => process.env.APP_SOCIAL_IMAGE_PATH || '/img/default/social-preview.png', type: 'assetPath' },
   APP_PRIMARY_COLOR: { fallback: () => process.env.APP_PRIMARY_COLOR || '#4b3481', type: 'color' },
   APP_SECONDARY_COLOR: { fallback: () => process.env.APP_SECONDARY_COLOR || '#7361a0', type: 'color' },
   APP_BACKGROUND_COLOR: { fallback: () => process.env.APP_BACKGROUND_COLOR || '#ffffff', type: 'color' },
@@ -76,7 +77,7 @@ const SETTING_DEFINITIONS = {
 
 const SETTING_SECTIONS = {
   identity: [
-    'APP_NAME', 'APP_SUBTITLE', 'APP_DESCRIPTION', 'APP_LOGO_PATH', 'APP_FAVICON_PATH',
+    'APP_NAME', 'APP_SUBTITLE', 'APP_DESCRIPTION', 'APP_LOGO_PATH', 'APP_FAVICON_PATH', 'APP_SOCIAL_IMAGE_PATH',
     'APP_PRIMARY_COLOR', 'APP_SECONDARY_COLOR', 'APP_BACKGROUND_COLOR', 'APP_SUCCESS_COLOR',
     'APP_ERROR_COLOR', 'APP_WARNING_COLOR', 'APP_INFO_COLOR', 'APP_SOCIAL_LINKS',
     'VITE_INSTRUCCIONES_REGISTRO', 'TEXTO_BOTON_RESOLVER', 'TEXTO_ESTADO_SOLUCIONADO'
@@ -164,7 +165,7 @@ function validateValue(key, rawValue) {
   if (definition.maxLength && value.length > definition.maxLength) {
     throw new Error(`${key} no puede superar ${definition.maxLength} caracteres.`);
   }
-  if (['APP_NAME', 'APP_DESCRIPTION', 'APP_LOGO_PATH', 'APP_FAVICON_PATH'].includes(key) && !value) {
+  if (['APP_NAME', 'APP_DESCRIPTION', 'APP_LOGO_PATH', 'APP_FAVICON_PATH', 'APP_SOCIAL_IMAGE_PATH'].includes(key) && !value) {
     throw new Error(`${key} es obligatorio.`);
   }
   return value;

@@ -75,6 +75,21 @@ function normalizeGithubRelease(value) {
   };
 }
 
+function getStableReleasesSince(releases, installedVersion, latestRelease) {
+  const candidates = Array.isArray(releases)
+    ? releases.map(normalizeGithubRelease).filter(Boolean)
+    : [];
+  if (latestRelease && !candidates.some((release) => release.version === latestRelease.version)) {
+    candidates.push(latestRelease);
+  }
+
+  return candidates
+    .filter((release) => compareVersions(release.version, installedVersion) > 0)
+    .filter((release) => !latestRelease || compareVersions(release.version, latestRelease.version) <= 0)
+    .sort((left, right) => compareVersions(left.version, right.version))
+    .filter((release, index, all) => index === 0 || release.version !== all[index - 1].version);
+}
+
 function getUpdateTarget(env) {
   const repository = String(env.APP_UPDATE_REPOSITORY || DEFAULT_REPOSITORY).trim();
   const branch = String(env.APP_UPDATE_BRANCH || DEFAULT_BRANCH).trim();
@@ -162,13 +177,33 @@ async function getUpdateStatus({ env = process.env, fetchImpl = global.fetch, lo
     } else {
       const latestRelease = normalizeGithubRelease(await response.json());
       if (!latestRelease) throw new Error('GitHub no devolvio una version estable valida');
+      const updateAvailable = compareVersions(latestRelease.version, installedRelease.version) > 0;
+      let releases = updateAvailable ? [latestRelease] : [];
+      if (updateAvailable) {
+        try {
+          const releasesResponse = await fetchImpl(`https://api.github.com/repos/${target.repository}/releases?per_page=100`, {
+            signal: controller.signal,
+            headers: {
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'basuracero-update-checker',
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
+          });
+          if (releasesResponse.ok) {
+            releases = getStableReleasesSince(await releasesResponse.json(), installedRelease.version, latestRelease);
+          }
+        } catch (error) {
+          logger.warn?.(`No se han podido cargar todas las novedades de la actualización: ${error.message}`);
+        }
+      }
       result = {
         checked: true,
         channel: 'stable',
-        updateAvailable: compareVersions(latestRelease.version, installedRelease.version) > 0,
+        updateAvailable,
         currentVersion: installedRelease.version,
         latestVersion: latestRelease.version,
-        release: latestRelease
+        release: latestRelease,
+        releases
       };
     }
     cache = { key: cacheKey, expiresAt: currentTime + SUCCESS_CACHE_MS, result };
@@ -191,6 +226,7 @@ module.exports = {
   compareVersions,
   getInstalledRelease,
   getUpdateStatus,
+  getStableReleasesSince,
   normalizeGithubRelease,
   parseReleaseNotes,
   resetUpdateStatusCache

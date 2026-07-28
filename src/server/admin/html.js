@@ -861,6 +861,17 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           border-radius: 14px;
           background: #fff;
         }
+        .settings-brand-asset.settings-brand-asset-social {
+          grid-template-columns: minmax(156px, 240px) minmax(0, 1fr);
+        }
+        .settings-brand-asset.settings-brand-asset-social img {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1200 / 630;
+          padding: 0;
+          object-fit: cover;
+          border-radius: 12px;
+        }
         .settings-brand-asset-content {
           display: grid;
           gap: 10px;
@@ -1083,6 +1094,34 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           color: var(--muted);
           font-size: 16px;
           line-height: 1;
+        }
+        .updates-release-history {
+          display: grid;
+          gap: 0;
+          margin: 18px 0 0;
+          border-top: 1px solid var(--line);
+        }
+        .updates-release-item {
+          display: grid;
+          gap: 6px;
+          padding: 16px 0;
+          border-bottom: 1px solid var(--line);
+        }
+        .updates-release-heading {
+          display: flex;
+          align-items: baseline;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .updates-release-heading strong {
+          font-size: 15px;
+        }
+        .updates-release-heading span {
+          color: var(--muted);
+          font-size: 13px;
+        }
+        .updates-release-item .dashboard-update-notes {
+          margin: 0;
         }
         .updates-channel-options {
           display: grid;
@@ -4520,6 +4559,25 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
   const availableNotes = availableRelease?.notes?.length
     ? `<ul class="dashboard-update-notes">${availableRelease.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
     : '';
+  const availableReleases = updateStatus?.updateAvailable && Array.isArray(updateStatus.releases)
+    ? updateStatus.releases
+    : (availableRelease ? [availableRelease] : []);
+  const releaseHistory = availableReleases.length
+    ? `<div class="updates-release-history" aria-label="Novedades de cada versión disponible">
+        ${availableReleases.map((release) => {
+          const releaseNotes = release.notes?.length
+            ? `<ul class="dashboard-update-notes">${release.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
+            : '<p class="small">Sin notas de publicación.</p>';
+          const version = release.url
+            ? `<a class="updates-version-link" href="${escapeAttr(release.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(release.version)}<i class="mdi mdi-open-in-new" aria-hidden="true"></i><span class="sr-only">: ver novedades en GitHub</span></a>`
+            : escapeHtml(release.version);
+          return `<article class="updates-release-item">
+            <div class="updates-release-heading"><strong>Versión ${version}</strong>${release.title ? `<span>${escapeHtml(release.title)}</span>` : ''}</div>
+            ${releaseNotes}
+          </article>`;
+        }).join('')}
+      </div>`
+    : '';
 
   return renderAdminSectionLayout({
     currentAdmin,
@@ -4546,7 +4604,7 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
           <div class="dashboard-update-icon" aria-hidden="true"><i class="mdi mdi-update"></i></div>
           <div class="dashboard-update-copy">
             <strong>${escapeHtml(availableTitle)}</strong>
-            ${availableNotes}
+            ${releaseHistory || availableNotes}
             <p class="dashboard-update-command">Ejecuta <code>./scripts/upgrade.sh</code> desde el servidor para instalarla.</p>
           </div>
           ${availableRelease.url ? `<a class="dashboard-update-link" href="${escapeAttr(availableRelease.url)}" target="_blank" rel="noopener noreferrer">Ver novedades en GitHub</a>` : ''}
@@ -4689,6 +4747,7 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
             </div>
             <input type="hidden" name="APP_LOGO_PATH" value="${escapeAttr(settings.APP_LOGO_PATH)}">
             <input type="hidden" name="APP_FAVICON_PATH" value="${escapeAttr(settings.APP_FAVICON_PATH)}">
+            <input type="hidden" name="APP_SOCIAL_IMAGE_PATH" value="${escapeAttr(settings.APP_SOCIAL_IMAGE_PATH)}">
             <div class="settings-brand-assets">
               <div class="settings-brand-asset">
                 <img id="settings-logo-current" src="${escapeAttr(settings.APP_LOGO_PATH)}" alt="Logotipo actual">
@@ -4698,6 +4757,16 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                   <button type="button" class="button-ghost settings-upload-button" data-brand-choose="logo">Subir logotipo</button>
                   <input type="file" hidden accept="image/png,image/jpeg,image/webp" data-brand-input="logo">
                   <span class="small settings-upload-status" data-brand-status="logo" role="status"></span>
+                </div>
+              </div>
+              <div class="settings-brand-asset settings-brand-asset-social">
+                <img id="settings-social-image-current" src="${escapeAttr(settings.APP_SOCIAL_IMAGE_PATH)}" alt="Imagen social actual">
+                <div class="settings-brand-asset-content">
+                  <strong>Imagen para redes sociales</strong>
+                  <p class="small">Se muestra al pegar un enlace en Telegram y redes. Recomendado: 1200 × 630 px. PNG, JPG o WebP; máximo 2 MB.</p>
+                  <button type="button" class="button-ghost settings-upload-button" data-brand-choose="social">Cambiar imagen social</button>
+                  <input type="file" hidden accept="image/png,image/jpeg,image/webp" data-brand-input="social">
+                  <span class="small settings-upload-status" data-brand-status="social" role="status"></span>
                 </div>
               </div>
               <div class="settings-brand-asset">
@@ -5107,9 +5176,14 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || 'No se ha podido subir la imagen.');
-                const settingName = kind === 'logo' ? 'APP_LOGO_PATH' : 'APP_FAVICON_PATH';
+                const settingName = kind === 'logo'
+                  ? 'APP_LOGO_PATH'
+                  : (kind === 'favicon' ? 'APP_FAVICON_PATH' : 'APP_SOCIAL_IMAGE_PATH');
                 form.elements[settingName].value = result.path;
-                document.getElementById(kind === 'logo' ? 'settings-logo-current' : 'settings-favicon-current').src = result.path;
+                const previewId = kind === 'logo'
+                  ? 'settings-logo-current'
+                  : (kind === 'favicon' ? 'settings-favicon-current' : 'settings-social-image-current');
+                document.getElementById(previewId).src = result.path;
                 status.textContent = 'Imagen preparada. Guarda esta sección para aplicarla.';
                 sync();
               } catch (error) {

@@ -98,7 +98,7 @@ async function saveIncidenciaImage(file) {
 }
 
 async function saveBrandImage(file, kind) {
-  if (!file?.buffer || !['logo', 'favicon'].includes(kind)) {
+  if (!file?.buffer || !['logo', 'favicon', 'social'].includes(kind)) {
     throw new Error('Imagen no válida.');
   }
   await fs.promises.mkdir(brandingUploadsDir, { recursive: true });
@@ -107,6 +107,8 @@ async function saveBrandImage(file, kind) {
   const image = sharp(file.buffer, { failOn: 'error', limitInputPixels: 25_000_000 }).rotate();
   if (kind === 'favicon') {
     image.resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 }, withoutEnlargement: true });
+  } else if (kind === 'social') {
+    image.resize(1200, 630, { fit: 'cover', position: 'centre' });
   } else {
     image.resize(1200, 600, { fit: 'inside', withoutEnlargement: true });
   }
@@ -719,7 +721,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
   router.post('/configuracion/branding/:kind', (req, res) => {
     const kind = String(req.params.kind || '');
-    if (!['logo', 'favicon'].includes(kind)) {
+    if (!['logo', 'favicon', 'social'].includes(kind)) {
       res.status(404).json({ error: 'Tipo de imagen no permitido.' });
       return;
     }

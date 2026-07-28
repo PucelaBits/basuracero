@@ -392,6 +392,8 @@ describe('Panel admin', () => {
     expect(page.text).toContain('Enviar la incidencia directamente');
     expect(page.text).toContain('Subir logotipo');
     expect(page.text).toContain('Subir icono');
+    expect(page.text).toContain('Imagen para redes sociales');
+    expect(page.text).toContain('Cambiar imagen social');
     expect(page.text).toContain('Logotipo actual');
     expect(page.text).toContain('Cabecera pública');
     expect(page.text).toContain('settings-preview-header');
@@ -413,6 +415,7 @@ describe('Panel admin', () => {
         APP_DESCRIPTION: 'Descripcion publica de prueba',
         APP_LOGO_PATH: '/img/default/logo.png',
         APP_FAVICON_PATH: '/img/default/favicon.png',
+        APP_SOCIAL_IMAGE_PATH: '/img/default/social-preview.png',
         APP_PRIMARY_COLOR: '#334455',
         APP_SECONDARY_COLOR: '#667788',
         APP_BACKGROUND_COLOR: '#ffffff',
@@ -460,6 +463,7 @@ describe('Panel admin', () => {
     const config = await agent.get('/api/config');
     expect(config.body.APP_NAME).toBe('Basura Cero Test');
     expect(config.body.APP_PRIMARY_COLOR).toBe('#334455');
+    expect(config.body.APP_SOCIAL_IMAGE_PATH).toBe('/img/default/social-preview.png');
     expect(config.body.VITE_INSTRUCCIONES_REGISTRO).toContain('ubicacion');
     expect(config.body.WHATSAPP_SHARE_ENABLED).toBe('true');
     expect(config.body.WHATSAPP_SHARE_PHONE).toBe('34600100100');
@@ -638,7 +642,7 @@ describe('Panel admin', () => {
       expect(page.text).toContain('class="topbar-update-link"');
       expect(page.text).toContain('href="/admin/updates"');
       expect(page.text).toContain('Actualización 2.1.2 disponible. Ver actualizaciones');
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
     } finally {
       checker.resetUpdateStatusCache();
       global.fetch = originalFetch;
@@ -697,6 +701,16 @@ describe('Panel admin', () => {
     expect(uploaded.status).toBe(201);
     expect(uploaded.body.path).toMatch(/^\/uploads\/branding\/logo-[a-f0-9-]+\.png$/);
     expect(fs.existsSync(path.join(process.env.UPLOADS_DIR, uploaded.body.path.replace('/uploads/', '')))).toBe(true);
+
+    const social = await agent
+      .post('/admin/configuracion/branding/social')
+      .set('x-csrf-token', csrf)
+      .attach('image', png, { filename: 'social.png', contentType: 'image/png' });
+
+    expect(social.status).toBe(201);
+    expect(social.body.path).toMatch(/^\/uploads\/branding\/social-[a-f0-9-]+\.png$/);
+    expect(await sharp(path.join(process.env.UPLOADS_DIR, social.body.path.replace('/uploads/', ''))).metadata())
+      .toMatchObject({ width: 1200, height: 630 });
 
     const invalid = await agent
       .post('/admin/configuracion/branding/favicon')
