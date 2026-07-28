@@ -1,7 +1,5 @@
 import { createApp } from 'vue'
 import { createHead } from '@unhead/vue/client'
-import App from './App.vue'
-import routes from './router/index' 
 import { createRouter, createWebHistory } from 'vue-router'
 import { createVuetify } from 'vuetify'
 import 'vuetify/styles'
@@ -11,10 +9,18 @@ import '@mdi/font/css/materialdesignicons.css'
 import 'leaflet/dist/leaflet.css'
 import { initializeAnalytics } from './utils/analytics';
 import { loadRuntimeConfig } from './utils/runtimeConfig'
+import { prepareDomainMigration } from './utils/domainMigration'
 
 async function bootstrap() {
-const runtimeConfig = await loadRuntimeConfig()
-const vuetify = createVuetify({
+  const shouldContinue = prepareDomainMigration(import.meta.env.VITE_LEGACY_ORIGIN)
+  if (!shouldContinue) return
+
+  const [{ default: App }, { default: routes }] = await Promise.all([
+    import('./App.vue'),
+    import('./router/index')
+  ])
+  const runtimeConfig = await loadRuntimeConfig()
+  const vuetify = createVuetify({
   components,
   directives,
   icons: {
@@ -37,24 +43,24 @@ const vuetify = createVuetify({
       }
     }
   }
-})
+  })
 
-const router = createRouter({
+  const router = createRouter({
     history: createWebHistory(),
     routes
-})
+  })
 
-const head = createHead()
+  const head = createHead()
 
-const app = createApp(App)
+  const app = createApp(App)
 
-app.use(router)
-app.use(vuetify)
-app.use(head)
+  app.use(router)
+  app.use(vuetify)
+  app.use(head)
 
-initializeAnalytics();
+  initializeAnalytics();
 
-app.mount('#app')
+  app.mount('#app')
 }
 
 bootstrap()

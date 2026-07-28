@@ -71,6 +71,7 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_BASE_URL': JSON.stringify(process.env.BASE_URL),
+    'import.meta.env.VITE_LEGACY_ORIGIN': JSON.stringify(process.env.LEGACY_ORIGIN || ''),
     'import.meta.env.VITE_CIUDAD_LAT_MIN': JSON.stringify(process.env.CIUDAD_LAT_MIN),
     'import.meta.env.VITE_CIUDAD_LAT_MAX': JSON.stringify(process.env.CIUDAD_LAT_MAX),
     'import.meta.env.VITE_CIUDAD_LON_MIN': JSON.stringify(process.env.CIUDAD_LON_MIN),
