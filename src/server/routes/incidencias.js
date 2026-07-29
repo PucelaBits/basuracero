@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const { toCSV, toGeoJSON } = require('../utils/formatters');
 const { getAmigableErrorMessage, getSpecificErrorMessage } = require('../utils/errorMessages');
 const { run: runAsync } = require('../utils/dbAsync');
+const { recordActivity } = require('../utils/activity');
 const { getCachedAppSettings } = require('../admin/settings');
 
 // Asegurarse de que la carpeta uploads existe
@@ -355,12 +356,13 @@ router.post('/', crearIncidenciaLimiter, (req, res) => {
 
           Promise.all(insertImagePromises)
             .then(() => {
-              db.run('COMMIT', (commitError) => {
+              db.run('COMMIT', async (commitError) => {
                 if (commitError) {
                   console.error('Error al confirmar la incidencia:', commitError);
                   res.status(500).json({ error: getSpecificErrorMessage('file', 'processingError') });
                   return;
                 }
+                await recordActivity({ eventType: 'incidencia_creada', eventGroup: 'incidencias', actorType: 'citizen', incidenciaId });
                 res.json({ id: incidenciaId, codigoUnico: codigoUnico });
               });
             })
@@ -625,6 +627,10 @@ router.post('/:id/external-report', externalReportBurstLimiter, externalReportDa
        VALUES (?, ?, 'redirect_opened', ?, datetime('now', 'localtime'))`,
       [incidenciaId, channel, obtenerHuellaReportante(req)]
     );
+
+    if (result.changes) {
+      await recordActivity({ eventType: 'aviso_ayuntamiento_enviado', eventGroup: 'ayuntamiento', actorType: 'citizen', incidenciaId, metadata: { channel } });
+    }
 
     return res.status(result.changes ? 201 : 200).json({
       recorded: Boolean(result.changes),
@@ -978,6 +984,8 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
         });
     });
 
+    await recordActivity({ eventType: 'voto_solucion_recibido', eventGroup: 'resolucion', actorType: 'citizen', incidenciaId });
+
     if (esAutor) {
       // El código único coincide, marcar como solucionada inmediatamente
       await new Promise((resolve, reject) => {
@@ -986,6 +994,8 @@ router.post('/:id/solucionada', reporteLimiter, async (req, res) => {
           else resolve();
         });
       });
+
+      await recordActivity({ eventType: 'incidencia_resuelta_por_autor', eventGroup: 'resolucion', actorType: 'citizen', incidenciaId });
 
       return res.json({
         solucionada: true,
@@ -1038,6 +1048,7 @@ async function procesarReporteSolucion(incidenciaId) {
         else resolve();
       });
     });
+    await recordActivity({ eventType: 'incidencia_resuelta_por_votos', eventGroup: 'resolucion', actorType: 'system', incidenciaId, metadata: { votos: count } });
     return { solucionada: true, reportes_solucion: count };
   } else {
     return { solucionada: false, reportes_solucion: count };

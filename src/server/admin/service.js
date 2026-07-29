@@ -3,6 +3,7 @@ const path = require('path');
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const { all, get, run } = require('../utils/dbAsync');
+const { recordActivity } = require('../utils/activity');
 const { DEFAULT_TIPO_ICON, normalizeTipoIcon } = require('./iconCatalog');
 
 const PASSWORD_MIN_LENGTH = 12;
@@ -173,6 +174,22 @@ async function createAuditLog(adminUserId, action, entityType, entityId, beforeS
       afterState ? JSON.stringify(afterState) : null
     ]
   );
+  const incidenciaId = entityType === 'incidencia' && afterState !== null
+    ? Number.parseInt(entityId, 10)
+    : (beforeState?.incidencia_id || afterState?.incidencia_id || null);
+  await recordActivity({
+    eventType: action,
+    eventGroup: 'administracion',
+    actorType: 'admin',
+    adminUserId,
+    incidenciaId: Number.isInteger(incidenciaId) ? incidenciaId : null,
+    metadata: {
+      entityType,
+      entityId: entityId != null ? String(entityId) : null,
+      before: beforeState || null,
+      after: afterState || null
+    }
+  });
 }
 
 async function getAdminById(adminId, { includePasswordHash = false } = {}) {
@@ -1689,6 +1706,54 @@ async function getAdminAuditEntries(limit = 50) {
   );
 }
 
+async function getActivityEntries(filters = {}) {
+  const tab = filters.tab === 'admins' ? 'admins' : 'system';
+  const clauses = [tab === 'admins' ? "l.actor_type = 'admin'" : "l.actor_type != 'admin'"];
+  const params = [];
+  const eventType = String(filters.eventType || '').trim();
+  const incidenciaId = Number.parseInt(filters.incidenciaId, 10);
+  const dateFrom = String(filters.dateFrom || '').trim();
+  const dateTo = String(filters.dateTo || '').trim();
+
+  if (eventType) { clauses.push('l.event_type = ?'); params.push(eventType); }
+  if (Number.isInteger(incidenciaId) && incidenciaId > 0) { clauses.push('l.incidencia_id = ?'); params.push(incidenciaId); }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) { clauses.push('datetime(l.created_at) >= datetime(?)'); params.push(`${dateFrom} 00:00:00`); }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) { clauses.push('datetime(l.created_at) <= datetime(?)'); params.push(`${dateTo} 23:59:59`); }
+
+  const source = tab === 'admins'
+    ? `SELECT id, event_type, event_group, actor_type, admin_user_id, incidencia_id, metadata_json, NULL AS before_json, NULL AS after_json, created_at
+         FROM activity_log
+        UNION ALL
+       SELECT -a.id AS id, a.action AS event_type, 'administracion' AS event_group, 'admin' AS actor_type,
+              a.admin_user_id, CASE WHEN a.entity_type = 'incidencia' THEN CAST(a.entity_id AS INTEGER) ELSE NULL END,
+              NULL AS metadata_json, a.before_json, a.after_json, a.created_at
+         FROM admin_audit_log a
+        WHERE NOT EXISTS (
+          SELECT 1 FROM activity_log current
+           WHERE current.actor_type = 'admin'
+             AND current.event_type = a.action
+             AND current.admin_user_id IS a.admin_user_id
+             AND datetime(current.created_at) = datetime(a.created_at)
+        )`
+    : `SELECT id, event_type, event_group, actor_type, admin_user_id, incidencia_id, metadata_json, NULL AS before_json, NULL AS after_json, created_at
+         FROM activity_log`;
+  const entries = await all(
+    `SELECT l.id, l.event_type, l.event_group, l.actor_type, l.incidencia_id, l.metadata_json, l.before_json, l.after_json, l.created_at,
+            u.username AS admin_username, i.descripcion AS incidencia_descripcion
+       FROM (${source}) l
+       LEFT JOIN admin_users u ON u.id = l.admin_user_id
+       LEFT JOIN incidencias i ON i.id = l.incidencia_id
+      WHERE ${clauses.join(' AND ')}
+      ORDER BY datetime(l.created_at) DESC, l.id DESC
+      LIMIT 100`,
+    params
+  );
+  const eventTypes = await all(
+    `SELECT DISTINCT event_type FROM (${source}) l WHERE ${tab === 'admins' ? "l.actor_type = 'admin'" : "l.actor_type != 'admin'"} ORDER BY event_type ASC`
+  );
+  return { entries, eventTypes: eventTypes.map((row) => row.event_type) };
+}
+
 async function getTipoSummary() {
   return all(
     `SELECT
@@ -1798,6 +1863,7 @@ module.exports = {
   executeOldSolvable,
   forcePasswordReset,
   getAdminAuditEntries,
+  getActivityEntries,
   getAdminDashboardData,
   getAdminById,
   getAdminIncidenciasList,

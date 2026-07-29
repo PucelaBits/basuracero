@@ -252,7 +252,7 @@
             required
             class="mt-4"
           ></v-text-field>
-          <div ref="captchaContainer" class="frc-captcha mt-0" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
+          <div v-if="captchaEnabled" ref="captchaContainer" class="frc-captcha mt-0" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
           <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
         </v-card-text>
         <v-card-actions>
@@ -363,7 +363,7 @@
         <v-card-title class="headline">Marcar como contenido inadecuado</v-card-title>
         <v-card-text>
           ¿Estás seguro de que quieres marcar este contenido como inadecuado o spam?
-          <div ref="captchaContainerInadecuado" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
+          <div v-if="captchaEnabled" ref="captchaContainerInadecuado" class="frc-captcha" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
           <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
         </v-card-text>
         <v-card-actions>
@@ -556,7 +556,7 @@ export default {
     };
 
     const confirmarSolucion = async () => {
-      if (!captchaSolution.value) {
+      if (captchaEnabled && !captchaSolution.value) {
         mostrarError('Por favor, completa el captcha.');
         return;
       }
@@ -819,7 +819,7 @@ export default {
     };
 
     const reportarContenidoInadecuado = async () => {
-      if (!captchaSolutionInadecuado.value) {
+      if (captchaEnabled && !captchaSolutionInadecuado.value) {
         mostrarError('Por favor, completa el captcha.');
         return;
       }
@@ -909,6 +909,7 @@ export default {
       mostrarDialogoReporteInadecuado,
       reportarContenidoInadecuado,
       captchaContainerInadecuado,
+      captchaEnabled,
       friendlyCaptchaSiteKey,
       geoLink,
       mostrarDialogoExito,

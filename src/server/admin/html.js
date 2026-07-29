@@ -4,6 +4,7 @@ const {
   getAllMdiIcons,
   normalizeTipoIcon
 } = require('./iconCatalog');
+const { getCachedAppSettings } = require('./settings');
 
 const CURATED_SOCIAL_ICON_OPTIONS = [
   { value: 'mdi-account-group', label: 'Comunidad' },
@@ -148,6 +149,7 @@ function renderPostFormsWithCsrf(html, csrfToken) {
 
 function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
   const safeBody = renderPostFormsWithCsrf(body, csrfToken);
+  const faviconPath = getCachedAppSettings().APP_FAVICON_PATH || '/img/default/favicon.png';
   const pendingUpdate = currentAdmin?.updateStatus?.updateAvailable
     ? currentAdmin.updateStatus.release
     : null;
@@ -157,6 +159,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>${escapeHtml(title)}</title>
+      <link rel="icon" href="${escapeAttr(faviconPath)}">
       <link rel="stylesheet" href="/admin-assets/mdi/css/materialdesignicons.min.css">
       <style>
         :root {
@@ -1799,24 +1802,56 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         }
         .photo-modal-card {
           width: min(1080px, calc(100vw - 32px));
+          height: calc(100vh - 32px);
           max-height: calc(100vh - 32px);
           padding: 18px;
-          display: grid;
+          display: flex;
+          flex-direction: column;
           gap: 14px;
+          overflow: hidden;
         }
         .photo-modal-stage {
           min-height: 0;
-          overflow: auto;
+          flex: 1 1 auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
           border-radius: 20px;
           background: #0f151d;
         }
         .photo-modal-image {
           display: block;
-          width: 100%;
+          width: auto;
           height: auto;
-          max-height: calc(100vh - 180px);
+          max-width: 100%;
+          max-height: 100%;
           object-fit: contain;
           margin: 0 auto;
+        }
+        .photo-modal-actions {
+          flex: 0 0 auto;
+          justify-content: flex-end;
+          gap: 10px;
+          padding-top: 2px;
+        }
+        .photo-replace-form > label.detail-mini-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 44px;
+          box-sizing: border-box;
+          cursor: pointer;
+          line-height: 1;
+          white-space: nowrap;
+        }
+        .photo-replace-form > label.detail-mini-button span {
+          display: block;
+        }
+        .photo-replace-form > label.detail-mini-button,
+        .photo-replace-form > label.detail-mini-button * {
+          cursor: pointer;
         }
         .kv-list {
           display: grid;
@@ -2326,6 +2361,117 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .dashboard-section {
           display: grid;
           gap: 14px;
+        }
+        .activity-section { gap: 18px; }
+        .activity-tabs {
+          display: inline-flex;
+          width: fit-content;
+          max-width: 100%;
+          gap: 4px;
+          padding: 4px;
+          overflow-x: auto;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: #f7f7f5;
+        }
+        .activity-tabs a {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 42px;
+          padding: 0 14px;
+          border-radius: 8px;
+          color: var(--muted);
+          font-size: 13px;
+          font-weight: 650;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .activity-tabs a.active { color: #fff; background: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+        .activity-filters {
+          display: grid;
+          grid-template-columns: minmax(180px, 1.5fr) minmax(140px, .8fr) minmax(140px, .8fr) minmax(140px, .8fr) auto;
+          align-items: end;
+          gap: 12px;
+          padding: 16px;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          background: #fbfbfa;
+        }
+        .activity-filters label { display: grid; gap: 7px; min-width: 0; }
+        .activity-filters label span { color: var(--muted); font-size: 12px; font-weight: 650; }
+        .activity-filters input, .activity-filters select {
+          width: 100%;
+          min-height: 44px;
+          padding: 0 11px;
+          border: 1px solid #d7d8d4;
+          border-radius: 9px;
+          background: #fff;
+          color: var(--ink);
+          font: inherit;
+          font-size: 14px;
+        }
+        .activity-filters input:focus, .activity-filters select:focus { outline: 2px solid rgba(43, 93, 84, .28); outline-offset: 1px; border-color: var(--accent); }
+        .activity-filter-actions { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+        .activity-filter-actions .button { min-height: 44px; white-space: nowrap; }
+        .activity-clear-action {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 44px;
+          padding: 0 13px;
+          border: 1px solid transparent;
+          border-radius: 9px;
+          color: var(--muted);
+          font-size: 13px;
+          font-weight: 650;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .activity-clear-action:hover { border-color: var(--line); background: #fff; color: var(--ink); }
+        .activity-feed { border-top: 1px solid var(--line); }
+        .activity-item {
+          display: grid;
+          grid-template-columns: 38px minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 2px;
+          border-bottom: 1px solid var(--line);
+        }
+        .activity-item-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #eef1ee; color: #386058; font-size: 18px; }
+        .activity-item-title { color: var(--ink); font-size: 14px; font-weight: 650; line-height: 1.45; }
+        .activity-item-context { margin-top: 3px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+        .activity-item-context a { color: var(--ink); font-weight: 650; text-decoration: none; }
+        .activity-item-context a:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .activity-change { margin-top: 9px; }
+        .activity-change-note { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+        .activity-change summary { display: inline-flex; align-items: center; min-height: 30px; color: #3d625b; cursor: pointer; font-size: 12px; font-weight: 700; }
+        .activity-change summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .activity-change dl { display: grid; gap: 7px; margin: 9px 0 0; padding: 10px 12px; border-left: 2px solid #d6e3dc; background: #f7faf8; }
+        .activity-change dl div { display: grid; grid-template-columns: minmax(90px, .45fr) minmax(0, 1fr); gap: 12px; }
+        .activity-change dt { color: var(--muted); font-size: 12px; }
+        .activity-change dd { display: flex; align-items: center; gap: 7px; min-width: 0; margin: 0; color: var(--ink); font-size: 12px; }
+        .activity-change dd span { color: var(--muted); text-decoration: line-through; overflow-wrap: anywhere; }
+        .activity-change dd strong { overflow-wrap: anywhere; }
+        .activity-item-meta { display: grid; justify-items: end; gap: 6px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+        .activity-origin { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: 999px; background: #eff0ee; color: #565b58; font-size: 11px; font-weight: 700; }
+        .activity-origin.admin { background: #edf0f5; color: #4b5971; }
+        .activity-origin.citizen { background: #edf4f0; color: #326353; }
+        .activity-empty { display: grid; justify-items: center; gap: 10px; padding: 54px 20px; color: var(--muted); text-align: center; }
+        .activity-empty i { font-size: 28px; }
+        .activity-empty p { margin: 0; }
+        @media (max-width: 900px) {
+          .activity-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .activity-filter-actions { grid-column: 1 / -1; }
+        }
+        @media (max-width: 560px) {
+          .activity-filters { grid-template-columns: 1fr; padding: 14px; }
+          .activity-filter-actions { grid-column: auto; flex-wrap: wrap; }
+          .activity-filter-actions .button { flex: 1 1 auto; justify-content: center; }
+          .activity-clear-action { flex: 1 1 auto; }
+          .activity-item { grid-template-columns: 38px minmax(0, 1fr); align-items: start; }
+          .activity-item-meta { grid-column: 2; justify-items: start; grid-template-columns: auto auto; align-items: center; }
         }
         .dashboard-section-header {
           display: flex;
@@ -3499,10 +3645,14 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .auth-form .actions button, .auth-form .actions .button-link { width: auto; }
         .detail-header { margin-bottom: 30px; padding-bottom: 22px; }
         .detail-title { letter-spacing: -.045em; }
-        .detail-grid { grid-template-columns: minmax(0, 1.2fr) minmax(360px, .9fr); gap: 40px; margin-bottom: 32px !important; }
+        .detail-grid { grid-template-columns: 1fr; gap: 28px; margin-bottom: 32px !important; }
         .dashboard-main > .detail-grid > .subtle-panel { padding: 0; border: 0; border-radius: 0; background: transparent; }
-        .dashboard-main > .detail-grid > .subtle-panel + .subtle-panel { padding-left: 32px; border-left: 1px solid var(--line); }
-        .photo-stack { gap: 18px; }
+        .dashboard-main > .detail-grid > .subtle-panel + .subtle-panel { padding-left: 0; border-left: 0; }
+        .photo-stack { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+        .photo-stack .detail-section-heading { min-width: 0; }
+        .photo-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 160px)); justify-content: start; gap: 12px; }
+        .photo-gallery-item { position: relative; min-width: 0; }
+        .photo-gallery-item img { display: block; width: 100%; height: 160px; object-fit: cover; border: 1px solid var(--line); border-radius: 12px; background: #e8edf1; }
         .hero-photo { border-radius: 12px; }
         .photo-file-trigger, .detail-mini-button { border-radius: 10px; }
         .detail-grid h2, .dashboard-main > details.subtle-panel > summary { font-size: 19px; letter-spacing: -.025em; }
@@ -3541,6 +3691,8 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .dashboard-main > .grid.two { gap: 28px; }
         }
         @media (max-width: 520px) {
+          .photo-stack { grid-template-columns: 1fr; align-items: stretch; }
+          .photo-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .auth-page { margin: 28px 0; }
           .topbar { align-items: center; flex-direction: row; gap: 10px; }
           .topbar-actions { width: auto; margin-left: auto; }
@@ -3876,6 +4028,15 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
   const statusOptions = ['activa', 'solucionada', 'spam']
     .map((estado) => `<option value="${estado}"${incidencia.estado === estado ? ' selected' : ''}>${escapeHtml(estado.charAt(0).toUpperCase() + estado.slice(1))}</option>`)
     .join('');
+  const photoGallery = images.length
+    ? `<div class="photo-gallery">${images.map((image, index) => `
+        <div class="photo-gallery-item">
+          <button type="button" class="photo-thumb-button" data-open-photo-modal="${image.id}" aria-label="Ver foto ${index + 1} en grande">
+            <img src="${escapeAttr(image.url)}" alt="Foto ${index + 1} de la incidencia ${incidencia.id}">
+          </button>
+        </div>
+      `).join('')}</div>`
+    : '<div class="empty-state">No hay imágenes asociadas a esta incidencia.</div>';
 
   return renderLayout({
     title: `Incidencia #${incidencia.id}`,
@@ -3921,64 +4082,15 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
         <div class="subtle-panel photo-stack">
           <div class="detail-section-heading">
             <h2>Fotos</h2>
-            <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/add" enctype="multipart/form-data" class="photo-upload-form" data-photo-file-form>
-              <label class="photo-file-trigger">
-                <i class="mdi mdi-plus" aria-hidden="true"></i>
-                <span>Añadir foto</span>
-                <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
-              </label>
-            </form>
           </div>
-          ${images.length
-            ? `
-              <div class="photo-stage">
-                <button type="button" class="photo-main-button" data-open-photo-modal="${images[0].id}" aria-label="Ver foto principal en grande">
-                  <img class="hero-photo" src="${escapeAttr(images[0].url)}" alt="Imagen principal de la incidencia ${incidencia.id}">
-                </button>
-                <div class="photo-overlay-actions">
-                  <button type="button" class="photo-icon-button" data-open-photo-modal="${images[0].id}" aria-label="Ampliar foto principal">
-                    <i class="mdi mdi-magnify-plus-outline" aria-hidden="true"></i>
-                  </button>
-                  <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/${images[0].id}/delete" data-photo-delete>
-                    <button type="submit" class="photo-icon-button photo-delete-button" aria-label="Borrar foto principal">
-                      <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
-                    </button>
-                  </form>
-                  <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/${images[0].id}/replace" enctype="multipart/form-data" class="photo-replace-form" data-photo-file-form>
-                    <label class="photo-icon-button" title="Reemplazar foto principal" aria-label="Reemplazar foto principal">
-                      <i class="mdi mdi-image-sync-outline" aria-hidden="true"></i>
-                      <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
-                    </label>
-                  </form>
-                </div>
-              </div>
-              ${images.length > 1
-                ? `<div class="thumb-strip">${images.slice(1).map((image, index) => `
-                    <div class="thumb-item">
-                      <button type="button" class="photo-thumb-button" data-open-photo-modal="${image.id}" aria-label="Ver foto ${index + 2} en grande">
-                        <img src="${escapeAttr(image.url)}" alt="Imagen ${index + 2} de la incidencia ${incidencia.id}">
-                      </button>
-                      <div class="photo-overlay-actions">
-                        <button type="button" class="photo-icon-button" data-open-photo-modal="${image.id}" aria-label="Ampliar foto ${index + 2}">
-                          <i class="mdi mdi-magnify-plus-outline" aria-hidden="true"></i>
-                        </button>
-                        <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/${image.id}/delete" data-photo-delete>
-                          <button type="submit" class="photo-icon-button photo-delete-button" aria-label="Borrar foto ${index + 2}">
-                            <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
-                          </button>
-                        </form>
-                        <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/${image.id}/replace" enctype="multipart/form-data" class="photo-replace-form" data-photo-file-form>
-                          <label class="photo-icon-button" title="Reemplazar foto ${index + 2}" aria-label="Reemplazar foto ${index + 2}">
-                            <i class="mdi mdi-image-sync-outline" aria-hidden="true"></i>
-                            <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
-                          </label>
-                        </form>
-                      </div>
-                    </div>
-                  `).join('')}</div>`
-                : ''}
-            `
-            : '<div class="empty-state">No hay imagenes asociadas a esta incidencia.</div>'}
+          ${photoGallery}
+          <form method="post" action="/admin/incidencias/${incidencia.id}/imagenes/add" enctype="multipart/form-data" class="photo-upload-form" data-photo-file-form>
+            <label class="photo-file-trigger">
+              <i class="mdi mdi-plus" aria-hidden="true"></i>
+              <span>Añadir foto</span>
+              <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
+            </label>
+          </form>
         </div>
         <div class="subtle-panel">
           <h2>Editar incidencia</h2>
@@ -4180,7 +4292,14 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
           <div class="photo-modal-stage">
             <img class="photo-modal-image" id="photo-preview-image" src="" alt="Vista ampliada de la foto de la incidencia">
           </div>
-          <div class="detail-actions">
+          <div class="detail-actions photo-modal-actions">
+            <form method="post" id="photo-replace-form" action="" enctype="multipart/form-data" class="photo-replace-form" data-photo-file-form>
+              <label class="button-ghost detail-mini-button" title="Reemplazar foto">
+                <i class="mdi mdi-image-sync-outline" aria-hidden="true"></i>
+                <span>Reemplazar foto</span>
+                <input class="photo-file-input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required data-photo-file-input>
+              </label>
+            </form>
             <form method="post" id="photo-delete-form" action="" data-photo-delete>
               <button type="submit" class="button-ghost detail-mini-button" style="color: var(--danger); border-color: #efc8c0;">Borrar foto</button>
             </form>
@@ -4195,6 +4314,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
           const photoModal = document.getElementById('photo-preview-modal');
           const photoPreviewImage = document.getElementById('photo-preview-image');
           const photoDeleteForm = document.getElementById('photo-delete-form');
+          const photoReplaceForm = document.getElementById('photo-replace-form');
           const closePhotoButtons = document.querySelectorAll('[data-close-photo-modal]');
           const photoButtons = document.querySelectorAll('[data-open-photo-modal]');
           const deleteForms = document.querySelectorAll('form[data-photo-delete]');
@@ -4202,7 +4322,8 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
           const photoMap = ${JSON.stringify(images.reduce((acc, image) => {
             acc[image.id] = {
               url: image.url,
-              deleteAction: `/admin/incidencias/${incidencia.id}/imagenes/${image.id}/delete`
+              deleteAction: `/admin/incidencias/${incidencia.id}/imagenes/${image.id}/delete`,
+              replaceAction: `/admin/incidencias/${incidencia.id}/imagenes/${image.id}/replace`
             };
             return acc;
           }, {}))};
@@ -4218,18 +4339,20 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
           };
           const openPhotoModal = (imageId) => {
             const image = photoMap[String(imageId)];
-            if (!photoModal || !image || !photoPreviewImage || !photoDeleteForm) return;
+            if (!photoModal || !image || !photoPreviewImage || !photoDeleteForm || !photoReplaceForm) return;
             photoPreviewImage.src = image.url;
             photoDeleteForm.action = image.deleteAction;
+            photoReplaceForm.action = image.replaceAction;
             photoModal.classList.add('open');
             photoModal.setAttribute('aria-hidden', 'false');
           };
           const closePhotoModal = () => {
-            if (!photoModal || !photoPreviewImage || !photoDeleteForm) return;
+            if (!photoModal || !photoPreviewImage || !photoDeleteForm || !photoReplaceForm) return;
             photoModal.classList.remove('open');
             photoModal.setAttribute('aria-hidden', 'true');
             photoPreviewImage.src = '';
             photoDeleteForm.action = '';
+            photoReplaceForm.action = '';
           };
           openDelete?.addEventListener('click', openModal);
           closeDeleteButtons.forEach((button) => button.addEventListener('click', closeModal));
@@ -4259,6 +4382,26 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
             const input = form.querySelector('[data-photo-file-input]');
             input?.addEventListener('change', () => {
               if (input.files?.length) form.requestSubmit();
+            });
+            form.addEventListener('submit', async (event) => {
+              event.preventDefault();
+              if (form.dataset.uploading === 'true') return;
+              const csrfToken = form.querySelector('input[name="_csrf"]')?.value;
+              if (!csrfToken) return;
+              form.dataset.uploading = 'true';
+              try {
+                const response = await fetch(form.action, {
+                  method: 'POST',
+                  body: new FormData(form),
+                  headers: { 'x-csrf-token': csrfToken },
+                  credentials: 'same-origin'
+                });
+                if (!response.ok) throw new Error('No se ha podido procesar la imagen.');
+                window.location.assign(response.url);
+              } catch (error) {
+                form.dataset.uploading = 'false';
+                window.alert(error.message || 'No se ha podido subir la imagen.');
+              }
             });
           });
           const timelineFilter = document.querySelector('[data-timeline-filter]');
@@ -4941,7 +5084,7 @@ function renderAdminNavigation(activeNav) {
     ]],
     ['Administración', [
       ['/admin/administradores', 'Administradores', 'administradores', 'mdi-account-multiple-outline'],
-      ['/admin/auditoria', 'Auditoría', 'auditoria', 'mdi-clipboard-text-clock-outline']
+      ['/admin/auditoria', 'Actividad', 'auditoria', 'mdi-clipboard-text-clock-outline']
     ]],
     ['Sistema', [
       ['/admin/maintenance', 'Mantenimiento', 'maintenance', 'mdi-wrench-outline'],
@@ -6255,48 +6398,132 @@ function renderCategoriasPage({ currentAdmin, notice, categorias, csrfToken }) {
   });
 }
 
-function renderAuditPage({ currentAdmin, notice, entries, csrfToken }) {
-  const rows = entries.length
+function renderAuditPage({ currentAdmin, notice, entries, eventTypes = [], filters = {}, csrfToken }) {
+  const labels = {
+    incidencia_creada: 'Se creó una incidencia',
+    voto_solucion_recibido: 'Una persona indicó que está solucionada',
+    incidencia_resuelta_por_autor: 'La persona creadora la marcó como solucionada',
+    incidencia_resuelta_por_votos: 'El sistema la marcó como solucionada por los votos',
+    aviso_ayuntamiento_enviado: 'Se envió un aviso al Ayuntamiento',
+    update_incidencia: 'Actualizó una incidencia',
+    set_incidencia_activa: 'Marcó una incidencia como activa',
+    set_incidencia_solucionada: 'Marcó una incidencia como solucionada',
+    set_incidencia_spam: 'Marcó una incidencia como spam',
+    change_incidencia_tipo: 'Cambió la categoría de una incidencia',
+    clear_solution_reports: 'Eliminó los votos de resolución',
+    clear_inadequate_reports: 'Eliminó los reportes inadecuados',
+    add_incidencia_image: 'Añadió una foto a la incidencia',
+    replace_incidencia_image: 'Reemplazó una foto de la incidencia',
+    delete_incidencia_image: 'Eliminó una foto de la incidencia',
+    delete_incidencia: 'Eliminó una incidencia',
+    bootstrap_admin_created: 'Creó el administrador inicial',
+    create_admin_user: 'Creó un administrador',
+    update_admin_user: 'Actualizó un administrador'
+  };
+  const icons = {
+    incidencias: 'mdi-plus-circle-outline',
+    resolucion: 'mdi-check-circle-outline',
+    ayuntamiento: 'mdi-send-outline',
+    administracion: 'mdi-shield-account-outline'
+  };
+  const isAdmins = filters.tab === 'admins';
+  const labelFor = (entry) => labels[entry.event_type]
+    || String(entry.event_type || '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+  const fieldLabels = { estado: 'Estado', tipo_id: 'Categoría', descripcion: 'Descripción', direccion: 'Dirección', barrio: 'Barrio', nombre: 'Nombre', isActive: 'Acceso', is_active: 'Acceso', username: 'Usuario', reportes_solucion: 'Votos de resolución' };
+  const formatValue = (value) => {
+    if (value === null || value === undefined || value === '') return 'Sin valor';
+    if (value === true || value === 1) return 'Sí';
+    if (value === false || value === 0) return 'No';
+    return String(value).length > 110 ? `${String(value).slice(0, 110)}…` : String(value);
+  };
+  const changeDetails = (entry) => {
+    const photoChangeMessages = {
+      add_incidencia_image: 'Se añadió una nueva foto a esta incidencia.',
+      replace_incidencia_image: 'La foto existente se reemplazó por una nueva.',
+      delete_incidencia_image: 'La foto se eliminó definitivamente de la incidencia.'
+    };
+    if (photoChangeMessages[entry.event_type]) {
+      return `<p class="activity-change-note">${escapeHtml(photoChangeMessages[entry.event_type])}</p>`;
+    }
+    let metadata = {};
+    try { metadata = entry.metadata_json ? JSON.parse(entry.metadata_json) : {}; } catch (_error) { metadata = {}; }
+    let before = metadata.before || null;
+    let after = metadata.after || null;
+    try { before = before || (entry.before_json ? JSON.parse(entry.before_json) : null); } catch (_error) { before = null; }
+    try { after = after || (entry.after_json ? JSON.parse(entry.after_json) : null); } catch (_error) { after = null; }
+    if (!before && !after) return '';
+    const keys = [...new Set([...Object.keys(before || {}), ...Object.keys(after || {})])]
+      .filter((key) => !['id', 'fecha_solucion', 'fecha_spam', 'updated_at', 'created_at'].includes(key))
+      .filter((key) => JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key]));
+    if (!keys.length) return '';
+    return `<details class="activity-change"><summary>Ver cambio</summary><dl>${keys.map((key) => `<div><dt>${escapeHtml(fieldLabels[key] || key)}</dt><dd><span>${escapeHtml(formatValue(before?.[key]))}</span><i class="mdi mdi-arrow-right" aria-hidden="true"></i><strong>${escapeHtml(formatValue(after?.[key]))}</strong></dd></div>`).join('')}</dl></details>`;
+  };
+  const contextFor = (entry) => {
+    if (entry.incidencia_id) {
+      const shortDescription = entry.incidencia_descripcion
+        ? ` · ${String(entry.incidencia_descripcion).slice(0, 88)}${String(entry.incidencia_descripcion).length > 88 ? '…' : ''}`
+        : '';
+      return `<a href="/admin/incidencias/${entry.incidencia_id}">Incidencia #${entry.incidencia_id}</a>${escapeHtml(shortDescription)}`;
+    }
+    return entry.admin_username ? `Por ${escapeHtml(entry.admin_username)}` : 'Cambio de administración';
+  };
+  const entriesMarkup = entries.length
     ? entries.map((entry) => `
-      <tr>
-        <td>${formatDate(entry.created_at)}</td>
-        <td>${escapeHtml(entry.admin_username || 'sistema')}</td>
-        <td>${escapeHtml(entry.action || '-')}</td>
-        <td>${escapeHtml(entry.entity_type || '-')}</td>
-        <td data-sort-value="${Number.parseInt(entry.entity_id, 10) || 0}">${escapeHtml(entry.entity_id || '-')}</td>
-      </tr>
+      <article class="activity-item">
+        <div class="activity-item-icon"><i class="mdi ${icons[entry.event_group] || 'mdi-history'}" aria-hidden="true"></i></div>
+        <div class="activity-item-main">
+          <div class="activity-item-title">${escapeHtml(labelFor(entry))}</div>
+          <div class="activity-item-context">${contextFor(entry)}</div>
+          ${isAdmins ? changeDetails(entry) : ''}
+        </div>
+        <div class="activity-item-meta">
+          <span class="activity-origin ${escapeAttr(entry.actor_type)}">${escapeHtml(entry.actor_type === 'admin' ? entry.admin_username || 'Administrador' : entry.actor_type === 'citizen' ? 'Vecindario' : 'Sistema')}</span>
+          <time datetime="${escapeAttr(entry.created_at)}">${formatDate(entry.created_at)}</time>
+        </div>
+      </article>
     `).join('')
-    : '<tr><td colspan="5">Todavia no hay actividad registrada.</td></tr>';
+    : `<div class="activity-empty"><i class="mdi mdi-history" aria-hidden="true"></i><p>No hay actividad que coincida con estos filtros.</p></div>`;
+
+  const eventOptions = eventTypes.map((eventType) => `<option value="${escapeAttr(eventType)}"${filters.eventType === eventType ? ' selected' : ''}>${escapeHtml(labels[eventType] || eventType.replaceAll('_', ' '))}</option>`).join('');
+  const queryForTab = (tab) => {
+    const params = new URLSearchParams();
+    params.set('tab', tab);
+    ['eventType', 'incidenciaId', 'dateFrom', 'dateTo'].forEach((key) => {
+      if (filters[key]) params.set(key, filters[key]);
+    });
+    return params.toString();
+  };
 
   return renderAdminSectionLayout({
     currentAdmin,
     notice,
     csrfToken,
-    title: 'Auditoria',
-    eyebrow: 'Trazabilidad',
-    intro: null,
+    title: 'Actividad',
+    eyebrow: 'Trazabilidad operativa',
+    intro: 'Consulta lo que ocurre en las incidencias y las decisiones tomadas desde el panel.',
     activeNav: 'auditoria',
     content: `
-      <section class="dashboard-section">
+      <section class="dashboard-section activity-section">
         <div class="dashboard-section-header">
           <div>
-            <h2 style="margin-bottom:6px">Actividad reciente</h2>
-            <p class="small">Ultimos eventos registrados en el panel.</p>
+            <h2>Actividad reciente</h2>
+            <p class="small">${entries.length} evento${entries.length === 1 ? '' : 's'} mostrado${entries.length === 1 ? '' : 's'}.</p>
           </div>
         </div>
-        <div class="table-wrap">
-          <table class="mobile-scroll-table" data-number-sortable>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Administrador</th>
-                <th>Accion</th>
-                <th>Entidad</th>
-                <th data-sort-number aria-sort="none"><button class="number-sort-button" type="button" aria-pressed="false">ID <span class="number-sort-indicator" aria-hidden="true">↕</span></button></th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
+        <nav class="activity-tabs" aria-label="Tipo de actividad">
+          <a class="${!isAdmins ? 'active' : ''}" href="/admin/auditoria?${escapeAttr(queryForTab('system'))}"${!isAdmins ? ' aria-current="page"' : ''}><i class="mdi mdi-pulse" aria-hidden="true"></i>Actividad del sistema</a>
+          <a class="${isAdmins ? 'active' : ''}" href="/admin/auditoria?${escapeAttr(queryForTab('admins'))}"${isAdmins ? ' aria-current="page"' : ''}><i class="mdi mdi-shield-account-outline" aria-hidden="true"></i>Actividad de administradores</a>
+        </nav>
+        <form class="activity-filters" method="get" action="/admin/auditoria">
+          <input type="hidden" name="tab" value="${isAdmins ? 'admins' : 'system'}">
+          <label><span>Tipo de actividad</span><select name="eventType"><option value="">Todos los tipos</option>${eventOptions}</select></label>
+          <label><span>Incidencia</span><input type="number" min="1" name="incidenciaId" value="${escapeAttr(filters.incidenciaId || '')}" placeholder="ID de incidencia"></label>
+          <label><span>Desde</span><input type="date" name="dateFrom" value="${escapeAttr(filters.dateFrom || '')}"></label>
+          <label><span>Hasta</span><input type="date" name="dateTo" value="${escapeAttr(filters.dateTo || '')}"></label>
+          <div class="activity-filter-actions"><button type="submit" class="button primary"><i class="mdi mdi-filter-outline" aria-hidden="true"></i>Aplicar filtros</button><a href="/admin/auditoria?tab=${isAdmins ? 'admins' : 'system'}" class="activity-clear-action">Limpiar</a></div>
+        </form>
+        <div class="activity-feed" aria-live="polite">
+          ${entriesMarkup}
         </div>
       </section>
     `

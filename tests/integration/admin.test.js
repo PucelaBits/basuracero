@@ -266,9 +266,11 @@ describe('Panel admin', () => {
 
     const auditoriaPage = await agent.get('/admin/auditoria');
     expect(auditoriaPage.status).toBe(200);
-    expect(auditoriaPage.text).toContain('Auditoria');
+    expect(auditoriaPage.text).toContain('Actividad');
     expect(auditoriaPage.text).toContain('Actividad reciente');
-    expect(auditoriaPage.text).toContain('data-sort-number aria-sort="none"');
+    expect(auditoriaPage.text).toContain('Actividad del sistema');
+    expect(auditoriaPage.text).toContain('Actividad de administradores');
+    expect(auditoriaPage.text).toContain('<link rel="icon" href="/img/default/favicon.png">');
     expect(auditoriaPage.text).not.toContain('Dashboard');
   });
 
@@ -851,6 +853,29 @@ describe('Panel admin', () => {
       [image.lastID]
     );
     expect(remaining.total).toBe(0);
+  });
+
+  it('permite añadir una foto desde la ficha enviando el token CSRF en la subida multipart', async () => {
+    const incidencia = await dbAsync.run(
+      `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, estado)
+       VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)`,
+      [1, 'Incidencia para añadir foto', 41.65, -4.72, 'Vecina', 'activa']
+    );
+    const { csrf } = await fetchCsrf(`/admin/incidencias/${incidencia.lastID}`);
+    const sharp = require('sharp');
+    const image = await sharp({
+      create: { width: 32, height: 32, channels: 4, background: '#334455' }
+    }).png().toBuffer();
+
+    const response = await agent
+      .post(`/admin/incidencias/${incidencia.lastID}/imagenes/add`)
+      .set('x-csrf-token', csrf)
+      .field('_csrf', csrf)
+      .attach('imagen', image, { filename: 'foto.png', contentType: 'image/png' });
+
+    expect(response.status).toBe(302);
+    const stored = await dbAsync.get('SELECT COUNT(*) AS total FROM imagenes_incidencias WHERE incidencia_id = ?', [incidencia.lastID]);
+    expect(stored.total).toBe(1);
   });
 
   it('lista y permite borrar reportes individuales desde la ficha', async () => {

@@ -26,7 +26,7 @@ const {
   deleteTipoIfUnused,
   executeOldSolvable,
   forcePasswordReset,
-  getAdminAuditEntries,
+  getActivityEntries,
   getAdminDashboardData,
   getAdminById,
   getAdminIncidenciasList,
@@ -909,11 +909,19 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
   router.get('/auditoria', async (req, res, next) => {
     try {
-      const entries = await getAdminAuditEntries();
+      const filters = {
+        tab: req.query.tab === 'admins' ? 'admins' : 'system',
+        eventType: String(req.query.eventType || '').trim(),
+        incidenciaId: String(req.query.incidenciaId || '').trim(),
+        dateFrom: String(req.query.dateFrom || '').trim(),
+        dateTo: String(req.query.dateTo || '').trim()
+      };
+      const activity = await getActivityEntries(filters);
       res.send(renderAuditPage({
         currentAdmin: req.currentAdmin,
         notice: req.query.message ? { type: 'success', message: String(req.query.message) } : null,
-        entries,
+        ...activity,
+        filters,
         csrfToken: req.session.csrfToken
       }));
     } catch (error) {

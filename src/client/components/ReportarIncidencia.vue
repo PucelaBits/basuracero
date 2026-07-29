@@ -254,7 +254,7 @@
               </template>
             </v-checkbox>
             
-            <div ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSitekey" data-lang="es"></div>
+            <div v-if="captchaEnabled" ref="captchaContainer" class="frc-captcha" :data-sitekey="friendlyCaptchaSitekey" data-lang="es"></div>
 
             <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
 
@@ -901,6 +901,7 @@ export default {
       obtenerUbicacion,
       enviarIncidencia,
       captchaContainer,
+      captchaEnabled,
       smAndDown,
       xs,
       validarCoordenadas,

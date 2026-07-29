@@ -153,12 +153,11 @@
           class="mt-4"
         ></v-text-field>
         <div v-if="captchaHabilitado" ref="captchaContainer" class="frc-captcha mt-0" :data-sitekey="friendlyCaptchaSiteKey" data-lang="es"></div>
-        <div v-else class="text-caption mt-2">El captcha no está disponible en este momento.</div>
         <div class="subtitle-text">Se guardará una versión anonimizada de tu IP para evitar abusos</div>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="green darken-1" text @click="confirmarSolucion" :disabled="!captchaHabilitado || !nombreUsuario">Sí</v-btn>
+        <v-btn color="green darken-1" text @click="confirmarSolucion" :disabled="!nombreUsuario">Sí</v-btn>
         <v-btn color="red darken-1" text @click="cancelarConfirmacion">No</v-btn>
       </v-card-actions>
     </v-card>
@@ -376,7 +375,7 @@ const inicializarCaptcha = () => {
 }
 
 const confirmarSolucion = async () => {
-  if (!captchaSolution.value) {
+  if (captchaHabilitado.value && !captchaSolution.value) {
     mostrarError('Por favor, completa el captcha.');
     return;
   }

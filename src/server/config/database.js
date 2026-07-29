@@ -102,6 +102,9 @@ function ensureIndexes(done) {
     CREATE INDEX IF NOT EXISTS idx_imagenes_incidencia ON imagenes_incidencias(incidencia_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username_nocase ON admin_users(lower(username));
     CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_log(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_activity_incidencia_created ON activity_log(incidencia_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_activity_actor_created ON activity_log(actor_type, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_sessions_expired ON admin_sessions(expired);
   `, (indexError) => {
     if (indexError) {
@@ -219,6 +222,19 @@ const db = new sqlite3.Database(dbPath, (err) => {
         after_json TEXT,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (admin_user_id) REFERENCES admin_users(id)
+      )`);
+
+      db.run(`CREATE TABLE IF NOT EXISTS activity_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT NOT NULL,
+        event_group TEXT NOT NULL,
+        actor_type TEXT NOT NULL CHECK (actor_type IN ('system', 'citizen', 'admin')),
+        admin_user_id INTEGER,
+        incidencia_id INTEGER,
+        metadata_json TEXT,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (admin_user_id) REFERENCES admin_users(id),
+        FOREIGN KEY (incidencia_id) REFERENCES incidencias(id) ON DELETE SET NULL
       )`);
 
       db.run(`CREATE TABLE IF NOT EXISTS admin_sessions (
