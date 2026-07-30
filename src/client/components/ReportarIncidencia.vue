@@ -58,8 +58,9 @@
             
             <v-textarea
               v-model="incidencia.descripcion"
+              class="descripcion-con-etiquetas"
               label="Descripción"
-              hint="Puedes añadir una etiqueta para una campaña, por ejemplo #LimpiezaBarrio o #recogida-otoño."
+              hint="Puedes añadir una etiqueta para una campaña, por ejemplo #dia-medioambiente o #AMAElPisuerga."
               persistent-hint
               :rules="[
                 v => !!v || 'La descripción es necesaria',
@@ -380,6 +381,10 @@ export default {
       type: Object,
       default: () => ({})
     },
+    etiquetaInicial: {
+      type: String,
+      default: ''
+    },
     todasLasIncidencias: {
       type: Array,
       default: () => []
@@ -455,6 +460,21 @@ export default {
 
     const cerrar = () => {
       dialog.value = false
+    }
+
+    const aplicarEtiquetaInicial = () => {
+      const etiqueta = props.etiquetaInicial ? `#${props.etiquetaInicial}` : ''
+      if (!etiqueta) return
+
+      const descripcionContieneEtiqueta = incidencia.value.descripcion
+        .split(/\s+/)
+        .some(fragmento => fragmento.toLocaleLowerCase('es') === etiqueta.toLocaleLowerCase('es'))
+
+      if (!descripcionContieneEtiqueta) {
+        incidencia.value.descripcion = incidencia.value.descripcion
+          ? `${etiqueta} ${incidencia.value.descripcion}`
+          : etiqueta
+      }
     }
 
     const tomarFoto = () => {
@@ -816,7 +836,8 @@ export default {
 
     watch(() => props.modelValue, (newVal) => {
       dialog.value = newVal
-    })
+      if (newVal) aplicarEtiquetaInicial()
+    }, { immediate: true })
 
     watch(dialog, (newVal) => {
       emit('update:modelValue', newVal)
@@ -831,6 +852,8 @@ export default {
       if (tipoIdDesdeRuta && !incidencia.value.tipo_id) {
         incidencia.value.tipo_id = tipoIdDesdeRuta
       }
+
+      aplicarEtiquetaInicial()
     })
 
     watch(() => props.ubicacionSeleccionada, (newUbicacion) => {
@@ -1016,6 +1039,11 @@ a:hover {
   border-bottom-left-radius: 4px;
   border-bottom-right-radius: 4px;
   overflow: hidden;
+}
+
+.descripcion-con-etiquetas :deep(.v-messages) {
+  margin-top: 10px;
+  padding-inline-start: 0;
 }
 
 </style>

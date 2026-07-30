@@ -416,6 +416,7 @@
         v-model="mostrarFormulario"
         :ubicacionSeleccionada="ubicacionSeleccionada"
         :datosFormulario="datosFormulario"
+        :etiqueta-inicial="etiquetaSeleccionada"
         :todasLasIncidencias="todasLasIncidencias"
         @incidencia-creada="incidenciaCreada"
         @seleccionar-en-mapa="seleccionarEnMapa"
