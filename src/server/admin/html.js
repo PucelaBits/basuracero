@@ -80,6 +80,36 @@ function formatDateInput(value) {
   return `${year}-${month}-${day}`;
 }
 
+function renderSafeReleaseNote(value) {
+  const source = String(value || '');
+  const tokenPattern = /(\*\*([^*]+)\*\*|`([^`]+)`|(https:\/\/[^\s<>"']+))/g;
+  let output = '';
+  let cursor = 0;
+  let match;
+
+  while ((match = tokenPattern.exec(source)) !== null) {
+    output += escapeHtml(source.slice(cursor, match.index));
+    if (match[2] !== undefined) {
+      output += `<strong>${escapeHtml(match[2])}</strong>`;
+    } else if (match[3] !== undefined) {
+      output += `<code>${escapeHtml(match[3])}</code>`;
+    } else {
+      const url = match[4];
+      try {
+        const parsed = new URL(url);
+        output += parsed.protocol === 'https:'
+          ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`
+          : escapeHtml(url);
+      } catch (_error) {
+        output += escapeHtml(url);
+      }
+    }
+    cursor = tokenPattern.lastIndex;
+  }
+
+  return output + escapeHtml(source.slice(cursor));
+}
+
 function renderTipoBadge(nombre, icono, compact = false) {
   return `
     <span class="tipo-inline${compact ? ' compact' : ''}">
@@ -212,15 +242,20 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 48px;
-          min-width: 48px;
+          gap: 8px;
           min-height: 48px;
+          padding: 0 14px;
           border: 1px solid #d9d4c7;
           border-radius: 14px;
           background: #faf8f2;
           color: #625b4d;
-          font-size: 22px;
+          font-size: 14px;
+          font-weight: 750;
           text-decoration: none;
+          white-space: nowrap;
+        }
+        .topbar-update-link i {
+          font-size: 22px;
         }
         .topbar-update-link:hover {
           background: #f1ede4;
@@ -2303,6 +2338,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           font-size: 14px;
           line-height: 1.5;
         }
+        .dashboard-update-notes a { color: #386058; font-weight: 650; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
         .dashboard-update-command {
           margin-top: 6px !important;
         }
@@ -3706,8 +3742,9 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .admin-delete-note, .admin-edit-note { margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
         @media (max-width: 520px) {
           .shell { padding: 0 14px 28px; }
-          .topbar { min-height: 74px; }
-          .topbar-actions { width: auto; }
+          .topbar { min-height: 74px; align-items: flex-start; flex-direction: column; }
+          .topbar-actions { width: 100%; justify-content: space-between; }
+          .topbar-update-link { flex: 1 1 auto; }
           .topbar-actions .button-ghost { width: auto; min-height: 44px; }
           .panel { padding-top: 22px; }
           .dashboard-main { gap: 24px; }
@@ -3778,8 +3815,8 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .photo-stack { grid-template-columns: 1fr; align-items: stretch; }
           .photo-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .auth-page { margin: 28px 0; }
-          .topbar { align-items: center; flex-direction: row; gap: 10px; }
-          .topbar-actions { width: auto; margin-left: auto; }
+          .topbar { gap: 10px; }
+          .topbar-actions { margin-left: 0; }
           .topbar-actions .button-ghost { padding: 0 13px; font-size: 14px; }
           .auth-form > label, .detail-edit-fields > label, .dashboard-main > .grid.two .subtle-panel form > label { grid-template-columns: 1fr; gap: 8px; }
           .detail-edit-fields > label > input, .detail-edit-fields > label > select, .detail-edit-fields > label > textarea, .detail-edit-fields > label > .tipo-select { grid-column: auto; }
@@ -3860,7 +3897,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           </div>
           ${currentAdmin ? `
             <div class="topbar-actions">
-              ${pendingUpdate ? `<a class="topbar-update-link" href="/admin/updates" aria-label="Actualización ${escapeAttr(pendingUpdate.version || '')} disponible. Ver actualizaciones"><i class="mdi mdi-update" aria-hidden="true"></i></a>` : ''}
+              ${pendingUpdate ? `<a class="topbar-update-link" href="/admin/updates" aria-label="Actualización ${escapeAttr(pendingUpdate.version || '')} disponible. Ver actualizaciones"><i class="mdi mdi-update" aria-hidden="true"></i><span>¡Actualización disponible!</span></a>` : ''}
               <form method="post" action="/admin/logout"><input type="hidden" name="_csrf" value="${escapeAttr(csrfToken || '')}"><button class="button-ghost" type="submit">Cerrar sesion</button></form>
             </div>
           ` : ''}
@@ -4997,7 +5034,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
       ? `Tienes la versión ${updateStatus.currentVersion}. La versión ${updateRelease?.version || ''} está disponible.`
       : `Versión ${updateRelease?.version || ''} disponible`;
   const updateNotes = updateRelease?.notes?.length
-    ? `<ul class="dashboard-update-notes">${updateRelease.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
+    ? `<ul class="dashboard-update-notes">${updateRelease.notes.map((note) => `<li>${renderSafeReleaseNote(note)}</li>`).join('')}</ul>`
     : '';
   const recentRows = recentWithPhoto.length
     ? recentWithPhoto.map((item) => `
@@ -5320,7 +5357,7 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
     ? `Actualización beta ${availableRelease?.version || ''} disponible`
     : `Tienes la versión ${installedVersion}. La versión ${availableRelease?.version || ''} está disponible.`;
   const availableNotes = availableRelease?.notes?.length
-    ? `<ul class="dashboard-update-notes">${availableRelease.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
+    ? `<ul class="dashboard-update-notes">${availableRelease.notes.map((note) => `<li>${renderSafeReleaseNote(note)}</li>`).join('')}</ul>`
     : '';
   const availableReleases = updateStatus?.updateAvailable && Array.isArray(updateStatus.releases)
     ? updateStatus.releases
@@ -5329,7 +5366,7 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
     ? `<div class="updates-release-history" aria-label="Novedades de cada versión disponible">
         ${availableReleases.map((release) => {
           const releaseNotes = release.notes?.length
-            ? `<ul class="dashboard-update-notes">${release.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>`
+            ? `<ul class="dashboard-update-notes">${release.notes.map((note) => `<li>${renderSafeReleaseNote(note)}</li>`).join('')}</ul>`
             : '<p class="small">Sin notas de publicación.</p>';
           const version = release.url
             ? `<a class="updates-version-link" href="${escapeAttr(release.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(release.version)}<i class="mdi mdi-open-in-new" aria-hidden="true"></i><span class="sr-only">: ver novedades en GitHub</span></a>`

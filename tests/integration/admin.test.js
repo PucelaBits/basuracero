@@ -749,7 +749,7 @@ describe('Panel admin', () => {
         json: async () => ({
           tag_name: 'v2.1.2',
           name: 'Mejora del aviso',
-          body: '- Indicador global',
+          body: '- **Full Changelog**: https://github.com/PucelaBits/basuracero/compare/v2.1.0...v2.1.2\n- <img src=x onerror=alert(1)>',
           draft: false,
           prerelease: false,
           published_at: '2026-07-16T10:00:00Z',
@@ -763,6 +763,11 @@ describe('Panel admin', () => {
       expect(page.text).toContain('class="topbar-update-link"');
       expect(page.text).toContain('href="/admin/updates"');
       expect(page.text).toContain('Actualización 2.1.2 disponible. Ver actualizaciones');
+      const updatesPage = await agent.get('/admin/updates');
+      expect(updatesPage.text).toContain('<strong>Full Changelog</strong>');
+      expect(updatesPage.text).toContain('href="https://github.com/PucelaBits/basuracero/compare/v2.1.0...v2.1.2"');
+      expect(updatesPage.text).toContain('&lt;img src=x onerror=alert(1)&gt;');
+      expect(updatesPage.text).not.toContain('<img src=x onerror=alert(1)>');
       expect(global.fetch).toHaveBeenCalledTimes(2);
     } finally {
       checker.resetUpdateStatusCache();
