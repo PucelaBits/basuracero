@@ -59,7 +59,7 @@ function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return escapeHtml(value);
   return new Intl.DateTimeFormat('es-ES', {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
   }).format(date);
 }
 
@@ -1889,6 +1889,43 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           gap: 16px;
           container-type: inline-size;
         }
+        .detail-save-status {
+          min-height: 22px;
+          margin: 0;
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .detail-save-status.success { color: #27654d; }
+        .detail-save-status.error { color: var(--danger); }
+        .detail-edit-grid > .detail-actions {
+          min-height: 52px;
+          padding-top: 18px;
+          border-top: 1px solid var(--line);
+        }
+        .detail-save-status {
+          flex: 1 1 220px;
+        }
+        .incident-utility-row {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 16px;
+          margin-top: 18px;
+          padding-top: 18px;
+          border-top: 1px solid var(--line);
+        }
+        .incident-utility-row form { margin: 0; }
+        .incident-utility-row .kv-list { flex: 1 1 280px; }
+        .incident-utility-row .kv-item { padding: 10px 14px; }
+        .incident-utility-row .kv-item strong,
+        .incident-utility-row .kv-item span { display: inline; }
+        .incident-utility-row .kv-item strong { margin: 0 8px 0 0; }
+        .incident-danger-zone {
+          margin-top: 18px;
+          padding-top: 18px;
+          border-top: 1px solid var(--line);
+        }
         .detail-toolbar {
           display: flex;
           flex-wrap: wrap;
@@ -2440,6 +2477,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           border-bottom: 1px solid var(--line);
         }
         .activity-item-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #eef1ee; color: #386058; font-size: 18px; }
+        .activity-item-icon.warning { background: #fff3dc; color: #9a5b00; }
         .activity-item-title { color: var(--ink); font-size: 14px; font-weight: 650; line-height: 1.45; }
         .activity-item-context { margin-top: 3px; color: var(--muted); font-size: 13px; line-height: 1.5; }
         .activity-item-context a { color: var(--ink); font-weight: 650; text-decoration: none; }
@@ -2457,6 +2495,7 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .activity-item-meta { display: grid; justify-items: end; gap: 6px; color: var(--muted); font-size: 12px; white-space: nowrap; }
         .activity-origin { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: 999px; background: #eff0ee; color: #565b58; font-size: 11px; font-weight: 700; }
         .activity-origin.admin { background: #edf0f5; color: #4b5971; }
+        .activity-origin.warning { background: #fff3dc; color: #8a5100; }
         .activity-origin.citizen { background: #edf4f0; color: #326353; }
         .activity-empty { display: grid; justify-items: center; gap: 10px; padding: 54px 20px; color: var(--muted); text-align: center; }
         .activity-empty i { font-size: 28px; }
@@ -2654,6 +2693,30 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
         .ops-table td:nth-child(7) {
           width: 104px;
         }
+        .ops-table--moderator th:first-child,
+        .ops-table--moderator td:first-child {
+          width: 72px;
+        }
+        .ops-table--moderator th:nth-child(2),
+        .ops-table--moderator td:nth-child(2) {
+          width: 34%;
+        }
+        .ops-table--moderator th:nth-child(3),
+        .ops-table--moderator td:nth-child(3) {
+          width: 22%;
+        }
+        .ops-table--moderator th:nth-child(4),
+        .ops-table--moderator td:nth-child(4) {
+          width: 112px;
+        }
+        .ops-table--moderator th:nth-child(5),
+        .ops-table--moderator td:nth-child(5) {
+          width: 124px;
+        }
+        .ops-table--moderator th:nth-child(6),
+        .ops-table--moderator td:nth-child(6) {
+          width: 104px;
+        }
         .external-report-table {
           min-width: 0;
         }
@@ -2791,6 +2854,9 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           align-items: start;
           padding: 12px 0;
           border-top: 1px solid var(--line);
+        }
+        .ops-mobile-list--moderator .ops-mobile-item {
+          grid-template-columns: 44px minmax(0, 1fr);
         }
         .ops-mobile-item:first-child {
           border-top: 0;
@@ -3567,6 +3633,24 @@ function renderLayout({ title, body, currentAdmin, notice, csrfToken }) {
           .ops-table.admin-list-table th:nth-child(8),
           .ops-table.admin-list-table th:nth-child(7) .ops-sort,
           .ops-table.admin-list-table th:nth-child(8) .ops-sort { white-space: normal; line-height: 1.25; }
+          .ops-table.admin-list-table.ops-table--moderator { min-width: 1200px; }
+          .ops-table.admin-list-table.ops-table--moderator th { white-space: normal; line-height: 1.25; }
+          .ops-table.admin-list-table.ops-table--moderator th:first-child,
+          .ops-table.admin-list-table.ops-table--moderator td:first-child { width: 72px; }
+          .ops-table.admin-list-table.ops-table--moderator th:nth-child(2),
+          .ops-table.admin-list-table.ops-table--moderator td:nth-child(2) { width: 320px; }
+          .ops-table.admin-list-table.ops-table--moderator th:nth-child(3),
+          .ops-table.admin-list-table.ops-table--moderator td:nth-child(3) { width: 190px; }
+          .ops-table.admin-list-table.ops-table--moderator th:nth-child(4),
+          .ops-table.admin-list-table.ops-table--moderator td:nth-child(4) { width: 112px; }
+          .ops-table.admin-list-table.ops-table--moderator th:nth-child(5),
+          .ops-table.admin-list-table.ops-table--moderator td:nth-child(5) { width: 150px; }
+          .ops-table.admin-list-table.ops-table--moderator th:nth-child(6),
+          .ops-table.admin-list-table.ops-table--moderator td:nth-child(6) { width: 140px; }
+          .ops-table.admin-list-table.ops-table--moderator th:nth-child(7),
+          .ops-table.admin-list-table.ops-table--moderator td:nth-child(7) { width: 148px; }
+          .ops-table.admin-list-table.ops-table--moderator th:nth-child(8),
+          .ops-table.admin-list-table.ops-table--moderator td:nth-child(8) { width: 104px; }
         }
         @media (max-width: 980px) and (min-width: 769px) {
           .ops-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3995,7 +4079,13 @@ function renderLoginPage({ notice, csrfToken }) {
   });
 }
 
+function getExternalReportLabel(currentAdmin = {}) {
+  const recipient = String(currentAdmin.externalReportRecipientName || 'Ayuntamiento').trim() || 'Ayuntamiento';
+  return `Avisos a ${recipient}`;
+}
+
 function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, csrfToken }) {
+  const externalReportLabel = getExternalReportLabel(currentAdmin);
   const images = incidencia.images || [];
   const solutionReports = incidencia.solutionReports || [];
   const inadequateReports = incidencia.inadequateReports || [];
@@ -4047,7 +4137,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
       <link rel="stylesheet" href="/admin-assets/leaflet/leaflet.css">
       <section class="dashboard-shell">
         <aside class="dashboard-sidebar">
-          ${renderAdminNavigation('incidencias')}
+          ${renderAdminNavigation('incidencias', currentAdmin)}
         </aside>
         <div class="dashboard-main">
       <div class="detail-header">
@@ -4074,7 +4164,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
             <span class="detail-stat"><i class="mdi mdi-check-decagram-outline" aria-hidden="true"></i>${escapeHtml(incidencia.estado || 'Sin estado')}</span>
             <span class="detail-stat"><i class="mdi mdi-check-circle-outline" aria-hidden="true"></i>${incidencia.reportes_solucion || 0}</span>
             <span class="detail-stat"><i class="mdi mdi-alert-circle-outline" aria-hidden="true"></i>${incidencia.reportes_inadecuado || 0}</span>
-            <span class="detail-stat" title="Avisos al ayuntamiento"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i>${incidencia.avisos_ayuntamiento || 0}</span>
+            <span class="detail-stat" title="${escapeAttr(externalReportLabel)}"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i>${incidencia.avisos_ayuntamiento || 0}</span>
           </div>
         </div>
       </div>
@@ -4094,7 +4184,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
         </div>
         <div class="subtle-panel">
           <h2>Editar incidencia</h2>
-          <form method="post" action="/admin/incidencias/${incidencia.id}" class="detail-edit-grid">
+          <form method="post" action="/admin/incidencias/${incidencia.id}" class="detail-edit-grid" data-incidencia-save-form>
             <div class="detail-edit-fields">
               <label class="full">Descripcion
                 <textarea name="descripcion" required>${escapeHtml(incidencia.descripcion || '')}</textarea>
@@ -4139,27 +4229,30 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
                 </label>
                 <div class="location-picker-actions">
                   <button type="button" class="button-ghost" id="incidencia-location-edit-toggle" aria-pressed="false">Ajustar punto en el mapa</button>
-                  <span class="small" id="incidencia-location-edit-status">El mapa es solo de consulta.</span>
+                  <span class="small" id="incidencia-location-edit-status">Activa el ajuste para mover el marcador.</span>
                 </div>
                 <div id="incidencia-location-map" class="location-picker-map" aria-label="Mapa para ajustar la ubicación"></div>
                 <p class="small">Busca una dirección o activa el ajuste para mover el marcador. Al guardar se normalizan dirección y barrio.</p>
               </div>
             </div>
             <div class="detail-actions">
-              <button type="submit">Guardar cambios</button>
+              <button type="submit" data-incidencia-save>Guardar cambios</button>
+              <p class="detail-save-status" data-incidencia-save-status role="status" aria-live="polite"></p>
             </div>
           </form>
-          ${incidencia.reportes_solucion
-            ? `
-              <form method="post" action="/admin/incidencias/${incidencia.id}/clear-solution-reports" style="margin-top:10px" data-confirm="Se eliminaran los reportes de solucion y la incidencia se reabrira si estaba solucionada. ¿Continuar?">
-                <button class="button-ghost detail-mini-button" type="submit">Limpiar solucion</button>
-              </form>
-            `
-            : ''}
-          <div class="kv-list" style="margin-top:18px">
-            <div class="kv-item"><strong>Coords</strong><span>${incidencia.latitud != null && incidencia.longitud != null ? `${escapeHtml(incidencia.latitud)}, ${escapeHtml(incidencia.longitud)}` : '-'}</span></div>
+          <div class="incident-utility-row">
+            ${incidencia.reportes_solucion
+              ? `
+                <form method="post" action="/admin/incidencias/${incidencia.id}/clear-solution-reports" data-confirm="Se eliminaran los reportes de solucion y la incidencia se reabrira si estaba solucionada. ¿Continuar?">
+                  <button class="button-ghost detail-mini-button" type="submit">Limpiar solución</button>
+                </form>
+              `
+              : ''}
+            <div class="kv-list">
+              <div class="kv-item"><strong>Coordenadas</strong><span>${incidencia.latitud != null && incidencia.longitud != null ? `${escapeHtml(incidencia.latitud)}, ${escapeHtml(incidencia.longitud)}` : '-'}</span></div>
+            </div>
           </div>
-          <div class="detail-actions" style="margin-top:18px">
+          <div class="incident-danger-zone">
             <button type="button" class="button-ghost detail-mini-button" data-open-delete-modal style="color: var(--danger); border-color: #efc8c0;">Eliminar incidencia</button>
           </div>
         </div>
@@ -4207,7 +4300,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
         </div>
       </section>
       <details class="subtle-panel" style="margin-top:18px">
-        <summary><span>Avisos al ayuntamiento</span><span class="small"><strong>${incidencia.avisos_ayuntamiento || 0}</strong> en total</span></summary>
+        <summary><span>${escapeHtml(externalReportLabel)}</span><span class="small"><strong>${incidencia.avisos_ayuntamiento || 0}</strong> en total</span></summary>
         <p class="small">Cada fila corresponde a una persona distinta. La huella se muestra recortada y solo sirve para identificar el aviso al moderarlo.</p>
         ${externalReports.length
           ? `<div class="table-scroll" style="margin-top:16px">
@@ -4327,6 +4420,45 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
             };
             return acc;
           }, {}))};
+          const incidenciaSaveForm = document.querySelector('[data-incidencia-save-form]');
+          const incidenciaSaveButton = incidenciaSaveForm?.querySelector('[data-incidencia-save]');
+          const incidenciaSaveStatus = incidenciaSaveForm?.querySelector('[data-incidencia-save-status]');
+          incidenciaSaveForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!incidenciaSaveButton || incidenciaSaveForm.dataset.saving === 'true') return;
+            if (!incidenciaSaveForm.reportValidity()) return;
+            const csrfToken = incidenciaSaveForm.querySelector('input[name="_csrf"]')?.value;
+            if (!csrfToken) return;
+            const originalText = incidenciaSaveButton.textContent;
+            incidenciaSaveForm.dataset.saving = 'true';
+            incidenciaSaveButton.disabled = true;
+            incidenciaSaveButton.textContent = 'Guardando…';
+            incidenciaSaveStatus.className = 'detail-save-status';
+            incidenciaSaveStatus.textContent = 'Guardando cambios…';
+            try {
+              const response = await fetch(incidenciaSaveForm.action, {
+                method: 'POST',
+                headers: {
+                  accept: 'application/json',
+                  'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                  'x-csrf-token': csrfToken
+                },
+                body: new URLSearchParams(new FormData(incidenciaSaveForm)).toString(),
+                credentials: 'same-origin'
+              });
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || 'No se ha podido guardar la incidencia.');
+              incidenciaSaveStatus.className = 'detail-save-status success';
+              incidenciaSaveStatus.textContent = result.message;
+            } catch (error) {
+              incidenciaSaveStatus.className = 'detail-save-status error';
+              incidenciaSaveStatus.textContent = error.message || 'No se ha podido guardar la incidencia.';
+            } finally {
+              incidenciaSaveForm.dataset.saving = 'false';
+              incidenciaSaveButton.disabled = false;
+              incidenciaSaveButton.textContent = originalText;
+            }
+          });
           const openModal = () => {
             if (!deleteModal) return;
             deleteModal.classList.add('open');
@@ -4443,18 +4575,20 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
           const updateEditingState = () => {
             editToggle?.setAttribute('aria-pressed', String(editingMap));
             if (editToggle) editToggle.textContent = editingMap ? 'Terminar ajuste en el mapa' : 'Ajustar punto en el mapa';
-            if (editStatus) editStatus.textContent = editingMap ? 'Pulsa o arrastra el marcador para cambiar el punto.' : 'El mapa es solo de consulta.';
+            if (editStatus) editStatus.textContent = editingMap ? 'Pulsa o arrastra el marcador para cambiar el punto.' : 'Activa el ajuste para mover el marcador.';
             if (marker?.dragging) editingMap ? marker.dragging.enable() : marker.dragging.disable();
           };
-          const setLocation = (lat, lng, pan = true) => {
-            latitude.value = Number(lat).toFixed(6);
-            longitude.value = Number(lng).toFixed(6);
+          const setLocation = (lat, lng, pan = true, updateInputs = true) => {
+            if (updateInputs) {
+              latitude.value = Number(lat).toFixed(6);
+              longitude.value = Number(lng).toFixed(6);
+            }
             if (!marker) marker = L.marker([lat, lng], { draggable: false }).addTo(map);
             else marker.setLatLng([lat, lng]);
             if (pan) map.setView([lat, lng], 16);
             marker.off('dragend').on('dragend', () => { const point = marker.getLatLng(); setLocation(point.lat, point.lng, false); });
           };
-          setLocation(start[0], start[1], false);
+          setLocation(start[0], start[1], false, false);
           map.on('click', (event) => { if (editingMap) setLocation(event.latlng.lat, event.latlng.lng); });
           editToggle?.addEventListener('click', () => { editingMap = !editingMap; updateEditingState(); });
           updateEditingState();
@@ -4492,7 +4626,10 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
   });
 }
 
-function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, filters, csrfToken }) {
+function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, filters, isExternalReportingEnabled = false, csrfToken }) {
+  const canRunBulk = currentAdmin.role === 'administrator';
+  const externalReportLabel = getExternalReportLabel(currentAdmin);
+  const tableColumnCount = (canRunBulk ? 1 : 0) + 7 + (isExternalReportingEnabled ? 1 : 0);
   const buildSortUrl = (sortBy) => {
     const nextDir = filters.sortBy === sortBy && filters.sortDir === 'asc' ? 'desc' : 'asc';
     const params = new URLSearchParams();
@@ -4512,7 +4649,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
   const rows = incidencias.length
     ? incidencias.map((incidencia) => `
       <tr>
-        <td class="ops-checkbox"><input type="checkbox" class="row-check" name="selectedIds" value="${incidencia.id}"></td>
+        ${canRunBulk ? `<td class="ops-checkbox"><input type="checkbox" class="row-check" name="selectedIds" value="${incidencia.id}"></td>` : ''}
         <td>${incidencia.imageUrl ? `<a href="/admin/incidencias/${incidencia.id}"><img class="ops-thumb" src="${escapeAttr(incidencia.imageUrl)}" alt="Foto de la incidencia ${incidencia.id}"></a>` : '<div class="ops-thumb"></div>'}</td>
         <td>
           <div class="ops-title">
@@ -4524,19 +4661,19 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
         <td>${renderTipoBadge(incidencia.tipo, incidencia.tipo_icono, true)}</td>
         <td><span class="status-chip">${escapeHtml(incidencia.estado || 'Sin estado')}</span></td>
         <td>${escapeHtml(incidencia.barrio || 'Sin barrio')}</td>
-        <td>${incidencia.avisos_ayuntamiento || 0}</td>
+        ${isExternalReportingEnabled ? `<td>${incidencia.avisos_ayuntamiento || 0}</td>` : ''}
         <td>${incidencia.reportes_solucion || 0}</td>
         <td>${formatDate(incidencia.fecha)}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="9">No hay incidencias que coincidan con los filtros actuales.</td></tr>';
+    : `<tr><td colspan="${tableColumnCount}">No hay incidencias que coincidan con los filtros actuales.</td></tr>`;
 
   const cards = incidencias.length
     ? incidencias.map((incidencia) => `
       <article class="ops-mobile-item">
-        <label class="ops-mobile-check-target" aria-label="Seleccionar incidencia ${incidencia.id}">
+        ${canRunBulk ? `<label class="ops-mobile-check-target" aria-label="Seleccionar incidencia ${incidencia.id}">
           <input class="ops-mobile-check" type="checkbox" name="selectedIds" value="${incidencia.id}">
-        </label>
+        </label>` : ''}
         ${incidencia.imageUrl ? `<img class="ops-mobile-thumb" src="${escapeAttr(incidencia.imageUrl)}" alt="Foto de la incidencia ${incidencia.id}">` : '<div class="ops-mobile-thumb"></div>'}
         <div class="ops-mobile-body">
           <div class="ops-mobile-topline">
@@ -4546,7 +4683,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
           <div class="ops-mobile-meta">
             <span>${renderTipoBadge(incidencia.tipo, incidencia.tipo_icono, true)}</span>
             <span class="status-chip">${escapeHtml(incidencia.estado || 'Sin estado')}</span>
-            <span class="small"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i> ${incidencia.avisos_ayuntamiento || 0}</span>
+            ${isExternalReportingEnabled ? `<span class="small"><i class="mdi mdi-account-group-outline" aria-hidden="true"></i> ${incidencia.avisos_ayuntamiento || 0}</span>` : ''}
             <span class="small"><i class="mdi mdi-check-circle-outline" aria-hidden="true"></i> ${incidencia.reportes_solucion || 0}</span>
           </div>
           <span class="ops-mobile-subline">${escapeHtml(incidencia.direccion || incidencia.barrio || 'Sin ubicacion')}</span>
@@ -4607,7 +4744,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
         </form>
         <section class="ops-surface">
           <form method="post" action="/admin/incidencias/bulk" class="bulk-bar" data-bulk-form>
-            <div class="ops-bulk">
+            ${canRunBulk ? `<div class="ops-bulk">
               <label>Accion masiva
                 <select name="bulkAction" required>
                   <option value="">Selecciona una accion</option>
@@ -4628,18 +4765,18 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
                 })}
               </label>
               <button type="submit">Aplicar a seleccionadas</button>
-            </div>
+            </div>` : ''}
             <div class="ops-table-wrap">
-              <table class="responsive-table admin-list-table ops-table">
+              <table class="responsive-table admin-list-table ops-table${canRunBulk ? '' : ' ops-table--moderator'}">
                 <thead>
                   <tr>
-                    <th><input class="select-all" type="checkbox" aria-label="Seleccionar todas"></th>
+                    ${canRunBulk ? '<th><input class="select-all" type="checkbox" aria-label="Seleccionar todas"></th>' : ''}
                     <th>Foto</th>
                     <th><a class="ops-sort${filters.sortBy === 'id' ? ' active' : ''}" href="${buildSortUrl('id')}">Incidencia ${sortIndicator('id')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'tipo' ? ' active' : ''}" href="${buildSortUrl('tipo')}">Categoria ${sortIndicator('tipo')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'estado' ? ' active' : ''}" href="${buildSortUrl('estado')}">Estado ${sortIndicator('estado')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'barrio' ? ' active' : ''}" href="${buildSortUrl('barrio')}">Barrio ${sortIndicator('barrio')}</a></th>
-                    <th><a class="ops-sort${filters.sortBy === 'avisos' ? ' active' : ''}" href="${buildSortUrl('avisos')}">Avisos al ayuntamiento ${sortIndicator('avisos')}</a></th>
+                    ${isExternalReportingEnabled ? `<th><a class="ops-sort${filters.sortBy === 'avisos' ? ' active' : ''}" href="${buildSortUrl('avisos')}">${escapeHtml(externalReportLabel)} ${sortIndicator('avisos')}</a></th>` : ''}
                     <th><a class="ops-sort${filters.sortBy === 'reportesSolucion' ? ' active' : ''}" href="${buildSortUrl('reportesSolucion')}">Reportes solución ${sortIndicator('reportesSolucion')}</a></th>
                     <th><a class="ops-sort${filters.sortBy === 'fecha' ? ' active' : ''}" href="${buildSortUrl('fecha')}">Fecha ${sortIndicator('fecha')}</a></th>
                   </tr>
@@ -4647,7 +4784,8 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
                 <tbody>${rows}</tbody>
               </table>
             </div>
-            <div class="ops-mobile-list">${cards}</div>
+            ${canRunBulk ? '' : '<p class="small" style="margin:12px 0 0">Desplaza la tabla horizontalmente para consultar todos los contadores.</p>'}
+            <div class="ops-mobile-list${canRunBulk ? '' : ' ops-mobile-list--moderator'}">${cards}</div>
           </form>
         </section>
       </div>
@@ -4703,6 +4841,7 @@ function renderIncidenciasListPage({ currentAdmin, notice, incidencias, tipos, f
 }
 
 function renderExternalReportsPage({ currentAdmin, notice, reports, tipos, filters, csrfToken }) {
+  const externalReportLabel = getExternalReportLabel(currentAdmin);
   const buildSortUrl = (sortBy) => {
     const nextDir = filters.sortBy === sortBy && filters.sortDir === 'asc' ? 'desc' : 'asc';
     const params = new URLSearchParams();
@@ -4755,12 +4894,12 @@ function renderExternalReportsPage({ currentAdmin, notice, reports, tipos, filte
     : '<div class="empty-state">No hay avisos al ayuntamiento que coincidan con los filtros actuales.</div>';
 
   return renderAdminSectionLayout({
-    title: 'Avisos al ayuntamiento',
+    title: externalReportLabel,
     currentAdmin,
     notice,
     csrfToken,
     eyebrow: 'Participación',
-    intro: 'Explora las incidencias cuyo botón de WhatsApp se ha abierto. Cada persona solo cuenta una vez por incidencia; el dato no confirma el envío del mensaje.',
+    intro: `Explora las incidencias cuyo botón de WhatsApp para ${String(currentAdmin.externalReportRecipientName || 'Ayuntamiento').trim() || 'Ayuntamiento'} se ha abierto. Cada persona solo cuenta una vez por incidencia; el dato no confirma el envío del mensaje.`,
     activeNav: 'avisos-ayuntamiento',
     content: `
       <div class="ops-page">
@@ -4801,7 +4940,7 @@ function renderExternalReportsPage({ currentAdmin, notice, reports, tipos, filte
                   <th><a class="ops-sort${filters.sortBy === 'tipo' ? ' active' : ''}" href="${buildSortUrl('tipo')}">Categoría ${sortIndicator('tipo')}</a></th>
                   <th><a class="ops-sort${filters.sortBy === 'estado' ? ' active' : ''}" href="${buildSortUrl('estado')}">Estado ${sortIndicator('estado')}</a></th>
                   <th><a class="ops-sort${filters.sortBy === 'barrio' ? ' active' : ''}" href="${buildSortUrl('barrio')}">Barrio ${sortIndicator('barrio')}</a></th>
-                  <th><a class="ops-sort${filters.sortBy === 'avisos' ? ' active' : ''}" href="${buildSortUrl('avisos')}" title="Avisos al ayuntamiento">Avisos ${sortIndicator('avisos')}</a></th>
+                  <th><a class="ops-sort${filters.sortBy === 'avisos' ? ' active' : ''}" href="${buildSortUrl('avisos')}" title="${escapeAttr(externalReportLabel)}">Avisos ${sortIndicator('avisos')}</a></th>
                   <th><a class="ops-sort${filters.sortBy === 'fecha' ? ' active' : ''}" href="${buildSortUrl('fecha')}">Fecha ${sortIndicator('fecha')}</a></th>
                 </tr>
               </thead>
@@ -4847,6 +4986,9 @@ function renderChangePasswordPage({ currentAdmin, notice, minLength, csrfToken }
 }
 
 function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, csrfToken }) {
+  const isModerator = currentAdmin.role === 'moderator';
+  const externalReportLabel = getExternalReportLabel(currentAdmin);
+  const showExternalReports = !isModerator && currentAdmin.externalReportsAvailable;
   const { stats, recentWithPhoto, byTipo, externalReports = [], trend = { period: 'week', points: [] } } = dashboard;
   const updateRelease = updateStatus?.updateAvailable ? updateStatus.release : null;
   const updateHeading = updateStatus?.channel === 'beta'
@@ -4865,10 +5007,10 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
         <td data-label="Categoria">${renderTipoBadge(item.tipo || '-', item.tipo_icono, true)}</td>
         <td data-label="Estado"><span class="status-chip">${escapeHtml(item.estado || '-')}</span></td>
         <td data-label="Zona">${escapeHtml(item.barrio || item.direccion || '-')}</td>
-        <td data-label="Avisos al ayuntamiento">${item.avisos_ayuntamiento || 0}</td>
+        ${showExternalReports ? `<td data-label="${escapeAttr(externalReportLabel)}">${item.avisos_ayuntamiento || 0}</td>` : ''}
       </tr>
     `).join('')
-    : '<tr><td colspan="5">Todavia no hay incidencias recientes disponibles.</td></tr>';
+    : `<tr><td colspan="${showExternalReports ? 6 : 5}">Todavia no hay incidencias recientes disponibles.</td></tr>`;
   const tipoRows = byTipo.length
     ? byTipo.map((tipo) => `
       <div class="dashboard-mini-row">
@@ -4882,7 +5024,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
     ? externalReports.map((report) => `
       <tr>
         <td data-label="Incidencia"><a href="/admin/incidencias/${report.incidenciaId}">#${report.incidenciaId} · ${escapeHtml(report.descripcion || 'Sin descripcion')}</a></td>
-        <td data-label="Avisos al ayuntamiento">${report.total}</td>
+        <td data-label="${escapeAttr(externalReportLabel)}">${report.total}</td>
         <td data-label="Estado"><span class="status-chip">${escapeHtml(report.estado || '-')}</span></td>
       </tr>
     `).join('')
@@ -4938,7 +5080,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
     body: `
       <section class="dashboard-shell">
         <aside class="dashboard-sidebar">
-          ${renderAdminNavigation('dashboard')}
+          ${renderAdminNavigation('dashboard', currentAdmin)}
         </aside>
         <div class="dashboard-main">
           <section class="dashboard-header">
@@ -4951,7 +5093,7 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
             </div>
           </section>
 
-          ${updateRelease ? `
+          ${!isModerator && updateRelease ? `
             <section class="dashboard-update" role="status" aria-label="Actualizacion disponible">
               <div class="dashboard-update-icon" aria-hidden="true"><i class="mdi mdi-update"></i></div>
               <div class="dashboard-update-copy">
@@ -5007,17 +5149,17 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
                   <th>Categoria</th>
                   <th>Estado</th>
                   <th>Zona</th>
-                  <th>Avisos al ayuntamiento</th>
+                  ${showExternalReports ? `<th>${escapeHtml(externalReportLabel)}</th>` : ''}
                 </tr>
               </thead>
               <tbody>${recentRows}</tbody>
             </table>
           </section>
 
-          <section class="dashboard-section">
+          ${showExternalReports ? `<section class="dashboard-section">
             <div class="dashboard-section-header">
               <div>
-                <h2 style="margin-bottom:6px">Avisos al ayuntamiento</h2>
+                <h2 style="margin-bottom:6px">${escapeHtml(externalReportLabel)}</h2>
                 <p class="small">Una muestra de las incidencias con más aperturas únicas; no confirma que el mensaje se haya enviado.</p>
               </div>
               <a class="dashboard-muted-link" href="/admin/avisos-ayuntamiento">Ver todos</a>
@@ -5026,16 +5168,16 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
               <thead><tr><th>Incidencia</th><th>Avisos</th><th>Estado</th></tr></thead>
               <tbody>${externalReportRows}</tbody>
             </table>
-          </section>
+          </section>` : ''}
 
-          <section class="grid two">
+          <section class="grid two"${isModerator ? ' hidden' : ''}>
             <div class="dashboard-section">
               <div class="dashboard-section-header">
                     <div>
                       <h2 style="margin-bottom:6px">Categorias</h2>
                       <p class="small">Donde se concentra la carga.</p>
                     </div>
-                    <a class="dashboard-muted-link" href="/admin/categorias">Gestionar</a>
+                    ${isModerator ? '' : '<a class="dashboard-muted-link" href="/admin/categorias">Gestionar</a>'}
                   </div>
               <div class="dashboard-mini-list">${tipoRows}</div>
             </div>
@@ -5052,16 +5194,16 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
                   <span class="small">Filtros y estados</span>
                   <a class="dashboard-muted-link" href="/admin/incidencias">Abrir</a>
                 </div>
-                <div class="dashboard-mini-row">
+                ${!isModerator ? `<div class="dashboard-mini-row">
                   <strong>Mantenimiento</strong>
                   <span class="small">Revision y limpieza</span>
                   <a class="dashboard-muted-link" href="/admin/maintenance">Abrir</a>
                 </div>
                     <div class="dashboard-mini-row">
-                      <strong>Administradores</strong>
+                      <strong>Usuarios y roles</strong>
                       <span class="small">Accesos</span>
                       <a class="dashboard-muted-link" href="/admin/administradores">Abrir</a>
-                    </div>
+                    </div>` : ''}
                   </div>
                 </div>
               </section>
@@ -5071,19 +5213,33 @@ function renderDashboardPage({ currentAdmin, notice, dashboard, updateStatus, cs
   });
 }
 
-function renderAdminNavigation(activeNav) {
-  const groups = [
+function renderAdminNavigation(activeNav, currentAdmin = {}) {
+  const isModerator = currentAdmin.role === 'moderator';
+  const externalReportLabel = getExternalReportLabel(currentAdmin);
+  const externalReportLink = currentAdmin.externalReportsAvailable
+    ? [['/admin/avisos-ayuntamiento', externalReportLabel, 'avisos-ayuntamiento', 'mdi-message-text-outline']]
+    : [];
+  const groups = isModerator ? [
     ['Gestión', [
       ['/admin', 'Vista general', 'dashboard', 'mdi-view-dashboard-outline'],
       ['/admin/incidencias', 'Incidencias', 'incidencias', 'mdi-alert-circle-outline'],
-      ['/admin/avisos-ayuntamiento', 'Avisos al ayuntamiento', 'avisos-ayuntamiento', 'mdi-message-text-outline']
+      ...externalReportLink
+    ]],
+    ['Seguimiento', [
+      ['/admin/auditoria', 'Actividad del sistema', 'auditoria', 'mdi-clipboard-text-clock-outline']
+    ]]
+  ] : [
+    ['Gestión', [
+      ['/admin', 'Vista general', 'dashboard', 'mdi-view-dashboard-outline'],
+      ['/admin/incidencias', 'Incidencias', 'incidencias', 'mdi-alert-circle-outline'],
+      ...externalReportLink
     ]],
     ['Configuración', [
       ['/admin/configuracion', 'Configuración', 'configuracion', 'mdi-tune-variant'],
       ['/admin/categorias', 'Categorías', 'categorias', 'mdi-tag-outline']
     ]],
     ['Administración', [
-      ['/admin/administradores', 'Administradores', 'administradores', 'mdi-account-multiple-outline'],
+      ['/admin/administradores', 'Usuarios y roles', 'administradores', 'mdi-account-multiple-outline'],
       ['/admin/auditoria', 'Actividad', 'auditoria', 'mdi-clipboard-text-clock-outline']
     ]],
     ['Sistema', [
@@ -5135,7 +5291,7 @@ function renderAdminSectionLayout({ currentAdmin, notice, title, eyebrow, intro,
     body: `
       <section class="dashboard-shell">
         <aside class="dashboard-sidebar">
-          ${renderAdminNavigation(activeNav)}
+          ${renderAdminNavigation(activeNav, currentAdmin)}
         </aside>
         <div class="dashboard-main">
           <section class="dashboard-header ${intro ? 'has-intro' : 'no-intro'}">
@@ -5497,6 +5653,7 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
                 <input name="WHATSAPP_SHARE_PHONE" type="tel" inputmode="numeric" autocomplete="tel" maxlength="15" value="${escapeAttr(settings.WHATSAPP_SHARE_PHONE)}" placeholder="34600100100" aria-describedby="whatsapp-phone-help">
                 <span class="small" id="whatsapp-phone-help">Incluye el prefijo del país y escribe solo números.</span>
               </label>
+              ${field('WHATSAPP_SHARE_RECIPIENT_NAME', 'Nombre del organismo o persona destinataria', { maxLength: 80 })}
               ${selectField('WHATSAPP_REQUIRE_ACTIVATION', 'Antes de enviar la incidencia', [['false', 'Enviar la incidencia directamente'], ['true', 'Enviar un mensaje para iniciar el bot']])}
               <div class="settings-service field-wide" aria-live="polite">
                 <strong id="whatsapp-mode-title"></strong>
@@ -5898,35 +6055,38 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
 }
 
 function renderAdminUsersPage({ currentAdmin, notice, admins, csrfToken }) {
-  const adminCountLabel = `${admins.length} ${admins.length === 1 ? 'administrador registrado' : 'administradores registrados'}`;
+  const adminCountLabel = `${admins.length} ${admins.length === 1 ? 'usuario registrado' : 'usuarios registrados'}`;
+  const roleLabel = (role) => role === 'moderator' ? 'Moderador' : 'Administrador';
   const rows = admins.length
     ? admins.map((admin) => `
       <tr>
         <td class="admin-user-edit-cell">
           <div class="admin-user-actions">
-            <button type="button" class="admin-user-action" data-open-admin-edit="${admin.id}" aria-label="Editar ${escapeAttr(admin.username)}" title="Editar administrador"><i class="mdi mdi-pencil-outline" aria-hidden="true"></i></button>
+            <button type="button" class="admin-user-action" data-open-admin-edit="${admin.id}" aria-label="Editar ${escapeAttr(admin.username)}" title="Editar usuario"><i class="mdi mdi-pencil-outline" aria-hidden="true"></i></button>
           </div>
         </td>
         <td>${escapeHtml(admin.username)}</td>
+        <td><span class="status-chip">${roleLabel(admin.role)}</span></td>
         <td><span class="status-chip">${admin.is_active ? 'activo' : 'inactivo'}</span></td>
         <td>${formatDate(admin.last_login_at)}</td>
         <td>${formatDate(admin.created_at)}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="5">Todavia no hay administradores.</td></tr>';
+    : '<tr><td colspan="6">Todavia no hay usuarios.</td></tr>';
   const editModals = admins.map((admin) => `
     <div class="modal-backdrop" id="admin-edit-modal-${admin.id}" aria-hidden="true">
       <div class="modal-card admin-edit-modal-card" role="dialog" aria-modal="true" aria-labelledby="admin-edit-title-${admin.id}">
         <div class="modal-header">
           <div>
-            <div class="eyebrow">Administrador</div>
+            <div class="eyebrow">${roleLabel(admin.role)}</div>
             <h2 id="admin-edit-title-${admin.id}">Editar ${escapeHtml(admin.username)}</h2>
           </div>
           <button type="button" class="modal-close" data-close-admin-edit="${admin.id}" aria-label="Cerrar"><i class="mdi mdi-close" aria-hidden="true"></i></button>
         </div>
-        <p class="small">Actualiza el nombre de acceso o cambia el estado de esta cuenta.</p>
-        <form method="post" action="/admin/administradores/${admin.id}/update" class="admin-edit-form" data-confirm="Vas a actualizar esta cuenta de administrador. Si la desactivas, perderá el acceso al panel. ¿Continuar?">
+        <p class="small">Actualiza el nombre, el rol o el estado de esta cuenta.</p>
+        <form method="post" action="/admin/administradores/${admin.id}/update" class="admin-edit-form" data-confirm="Vas a actualizar esta cuenta. Si cambias su rol o la desactivas, se cerrarán sus sesiones activas. ¿Continuar?">
           <label>Usuario<input type="text" name="username" value="${escapeAttr(admin.username)}" autocomplete="username" required></label>
+          <label>Rol<select name="role"><option value="administrator"${admin.role === 'administrator' ? ' selected' : ''}>Administrador — acceso completo</option><option value="moderator"${admin.role === 'moderator' ? ' selected' : ''}>Moderador — solo incidencias</option></select></label>
           <label>Estado<select name="isActive"${Number(admin.id) === Number(currentAdmin.id) ? ' disabled' : ''}><option value="1"${admin.is_active ? ' selected' : ''}>Activo</option><option value="0"${!admin.is_active ? ' selected' : ''}>Inactivo</option></select></label>
           ${Number(admin.id) === Number(currentAdmin.id) ? '<input type="hidden" name="isActive" value="1"><p class="admin-edit-note">Tu propia cuenta no puede desactivarse.</p>' : ''}
           <div class="detail-actions"><button type="submit">Guardar cambios</button><button type="button" class="button-ghost" data-close-admin-edit="${admin.id}">Cancelar</button></div>
@@ -5966,7 +6126,7 @@ function renderAdminUsersPage({ currentAdmin, notice, admins, csrfToken }) {
     currentAdmin,
     notice,
     csrfToken,
-    title: 'Administradores',
+    title: 'Usuarios y roles',
     eyebrow: 'Seguridad',
     intro: null,
     activeNav: 'administradores',
@@ -5974,10 +6134,10 @@ function renderAdminUsersPage({ currentAdmin, notice, admins, csrfToken }) {
       <section class="dashboard-section">
         <div class="dashboard-section-header">
           <div>
-            <h2 style="margin-bottom:6px">Administradores registrados</h2>
-            <p class="small">${adminCountLabel}. Se muestran todas las cuentas de esta instancia.</p>
+            <h2 style="margin-bottom:6px">Usuarios registrados</h2>
+            <p class="small">${adminCountLabel}. Los administradores tienen acceso completo; los moderadores solo gestionan incidencias.</p>
           </div>
-          <button type="button" class="detail-mini-button" data-open-admin-create><i class="mdi mdi-account-plus-outline" aria-hidden="true"></i> Nuevo administrador</button>
+          <button type="button" class="detail-mini-button" data-open-admin-create><i class="mdi mdi-account-plus-outline" aria-hidden="true"></i> Nuevo usuario</button>
         </div>
         <div class="table-wrap">
           <table class="mobile-scroll-table admin-users-table">
@@ -5985,6 +6145,7 @@ function renderAdminUsersPage({ currentAdmin, notice, admins, csrfToken }) {
               <tr>
                 <th class="admin-user-edit-cell"><span class="sr-only">Editar</span></th>
                 <th>Usuario</th>
+                <th>Rol</th>
                 <th>Estado</th>
                 <th>Ultimo acceso</th>
                 <th>Alta</th>
@@ -6015,17 +6176,18 @@ function renderAdminUsersPage({ currentAdmin, notice, admins, csrfToken }) {
         <div class="modal-card admin-create-modal-card" role="dialog" aria-modal="true" aria-labelledby="admin-create-title">
           <div class="modal-header">
             <div>
-              <div class="eyebrow">Administración</div>
-              <h2 id="admin-create-title">Nuevo administrador</h2>
+              <div class="eyebrow">Equipo</div>
+              <h2 id="admin-create-title">Nuevo usuario</h2>
             </div>
             <button type="button" class="modal-close" data-close-modal aria-label="Cerrar"><i class="mdi mdi-close" aria-hidden="true"></i></button>
           </div>
           <p class="small">Define una contraseña inicial y, si procede, exige su cambio al primer acceso.</p>
           <form method="post" action="/admin/administradores/create" class="admin-create-form">
             <label>Usuario<input type="text" name="username" autocomplete="username" required></label>
+            <label>Rol<select name="role"><option value="administrator">Administrador — acceso completo</option><option value="moderator">Moderador — solo incidencias</option></select></label>
             <label>Contraseña inicial<input type="password" name="password" autocomplete="new-password" required></label>
             <label><span>Cambio obligatorio</span><select name="mustChangePassword"><option value="1">Sí</option><option value="0">No</option></select></label>
-            <div class="detail-actions"><button type="submit">Crear administrador</button><button type="button" class="button-ghost" data-close-modal>Cancelar</button></div>
+            <div class="detail-actions"><button type="submit">Crear usuario</button><button type="button" class="button-ghost" data-close-modal>Cancelar</button></div>
           </form>
         </div>
       </div>
@@ -6417,8 +6579,22 @@ function renderAuditPage({ currentAdmin, notice, entries, eventTypes = [], filte
     delete_incidencia_image: 'Eliminó una foto de la incidencia',
     delete_incidencia: 'Eliminó una incidencia',
     bootstrap_admin_created: 'Creó el administrador inicial',
-    create_admin_user: 'Creó un administrador',
-    update_admin_user: 'Actualizó un administrador'
+    create_admin_user: 'Creó un usuario del panel',
+    update_admin_user: 'Actualizó un usuario del panel',
+    delete_admin_user: 'Eliminó un usuario del panel',
+    change_password: 'Cambió su contraseña',
+    force_password_reset: 'Obligó a cambiar una contraseña',
+    create_tipo: 'Creó una categoría',
+    rename_tipo: 'Renombró una categoría',
+    delete_tipo: 'Eliminó una categoría',
+    merge_tipo: 'Fusionó categorías',
+    delete_solution_report: 'Eliminó un reporte de solución',
+    delete_inadequate_report: 'Eliminó un reporte inadecuado',
+    delete_external_report_event: 'Eliminó un aviso externo',
+    auto_solve_old_incidencia: 'Marcó una incidencia antigua como solucionada',
+    hydrate_location_data: 'Completó la ubicación de una incidencia',
+    admin_login: 'Inició sesión',
+    admin_login_failed: 'Intentó iniciar sesión sin éxito'
   };
   const icons = {
     incidencias: 'mdi-plus-circle-outline',
@@ -6427,8 +6603,11 @@ function renderAuditPage({ currentAdmin, notice, entries, eventTypes = [], filte
     administracion: 'mdi-shield-account-outline'
   };
   const isAdmins = filters.tab === 'admins';
-  const labelFor = (entry) => labels[entry.event_type]
-    || String(entry.event_type || '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+  const canViewAdminActivity = currentAdmin?.role !== 'moderator';
+  const canViewLoginOrigin = currentAdmin?.role === 'administrator';
+  const eventLabel = (eventType) => labels[eventType]
+    || String(eventType || '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+  const labelFor = (entry) => eventLabel(entry.event_type);
   const fieldLabels = { estado: 'Estado', tipo_id: 'Categoría', descripcion: 'Descripción', direccion: 'Dirección', barrio: 'Barrio', nombre: 'Nombre', isActive: 'Acceso', is_active: 'Acceso', username: 'Usuario', reportes_solucion: 'Votos de resolución' };
   const formatValue = (value) => {
     if (value === null || value === undefined || value === '') return 'Sin valor';
@@ -6459,6 +6638,23 @@ function renderAuditPage({ currentAdmin, notice, entries, eventTypes = [], filte
     return `<details class="activity-change"><summary>Ver cambio</summary><dl>${keys.map((key) => `<div><dt>${escapeHtml(fieldLabels[key] || key)}</dt><dd><span>${escapeHtml(formatValue(before?.[key]))}</span><i class="mdi mdi-arrow-right" aria-hidden="true"></i><strong>${escapeHtml(formatValue(after?.[key]))}</strong></dd></div>`).join('')}</dl></details>`;
   };
   const contextFor = (entry) => {
+    if (entry.event_type === 'admin_login' || entry.event_type === 'admin_login_failed') {
+      let metadata = {};
+      try { metadata = entry.metadata_json ? JSON.parse(entry.metadata_json) : {}; } catch (_error) { metadata = {}; }
+      if (!canViewLoginOrigin) return 'Actividad de acceso administrativo';
+      const ip = String(metadata.ip || '').trim();
+      const country = String(metadata.country || '').trim();
+      const location = `IP ${escapeHtml(ip || 'no disponible')} · ${escapeHtml(country || 'País no disponible')}`;
+      if (entry.event_type === 'admin_login_failed') {
+        const account = metadata.accountRole === 'administrator'
+          ? 'Cuenta de administrador'
+          : metadata.accountRole === 'moderator'
+            ? 'Cuenta de moderador'
+            : 'Cuenta no reconocida';
+        return `${account} · ${location}`;
+      }
+      return location;
+    }
     if (entry.incidencia_id) {
       const shortDescription = entry.incidencia_descripcion
         ? ` · ${String(entry.incidencia_descripcion).slice(0, 88)}${String(entry.incidencia_descripcion).length > 88 ? '…' : ''}`
@@ -6470,21 +6666,24 @@ function renderAuditPage({ currentAdmin, notice, entries, eventTypes = [], filte
   const entriesMarkup = entries.length
     ? entries.map((entry) => `
       <article class="activity-item">
-        <div class="activity-item-icon"><i class="mdi ${icons[entry.event_group] || 'mdi-history'}" aria-hidden="true"></i></div>
+        <div class="activity-item-icon${entry.event_type === 'admin_login_failed' ? ' warning' : ''}"><i class="mdi ${entry.event_type === 'admin_login_failed' ? 'mdi-alert-outline' : icons[entry.event_group] || 'mdi-history'}" aria-hidden="true"></i></div>
         <div class="activity-item-main">
           <div class="activity-item-title">${escapeHtml(labelFor(entry))}</div>
           <div class="activity-item-context">${contextFor(entry)}</div>
           ${isAdmins ? changeDetails(entry) : ''}
         </div>
         <div class="activity-item-meta">
-          <span class="activity-origin ${escapeAttr(entry.actor_type)}">${escapeHtml(entry.actor_type === 'admin' ? entry.admin_username || 'Administrador' : entry.actor_type === 'citizen' ? 'Vecindario' : 'Sistema')}</span>
-          <time datetime="${escapeAttr(entry.created_at)}">${formatDate(entry.created_at)}</time>
+          <span class="activity-origin ${escapeAttr(entry.event_type === 'admin_login_failed' ? 'warning' : entry.actor_type)}">${escapeHtml(entry.event_type === 'admin_login_failed' ? 'Intento fallido' : entry.actor_type === 'admin' ? `${entry.actor_role === 'moderator' ? 'Moderador' : 'Administrador'} · ${entry.admin_username || 'cuenta eliminada'}` : entry.actor_type === 'citizen' ? 'Vecindario' : 'Sistema')}</span>
+          <time datetime="${escapeAttr(entry.created_at)}">${formatDateTime(entry.created_at)}</time>
         </div>
       </article>
     `).join('')
     : `<div class="activity-empty"><i class="mdi mdi-history" aria-hidden="true"></i><p>No hay actividad que coincida con estos filtros.</p></div>`;
 
-  const eventOptions = eventTypes.map((eventType) => `<option value="${escapeAttr(eventType)}"${filters.eventType === eventType ? ' selected' : ''}>${escapeHtml(labels[eventType] || eventType.replaceAll('_', ' '))}</option>`).join('');
+  const eventOptions = [...eventTypes]
+    .sort((left, right) => eventLabel(left).localeCompare(eventLabel(right), 'es', { sensitivity: 'base' }))
+    .map((eventType) => `<option value="${escapeAttr(eventType)}"${filters.eventType === eventType ? ' selected' : ''}>${escapeHtml(eventLabel(eventType))}</option>`)
+    .join('');
   const queryForTab = (tab) => {
     const params = new URLSearchParams();
     params.set('tab', tab);
@@ -6512,7 +6711,7 @@ function renderAuditPage({ currentAdmin, notice, entries, eventTypes = [], filte
         </div>
         <nav class="activity-tabs" aria-label="Tipo de actividad">
           <a class="${!isAdmins ? 'active' : ''}" href="/admin/auditoria?${escapeAttr(queryForTab('system'))}"${!isAdmins ? ' aria-current="page"' : ''}><i class="mdi mdi-pulse" aria-hidden="true"></i>Actividad del sistema</a>
-          <a class="${isAdmins ? 'active' : ''}" href="/admin/auditoria?${escapeAttr(queryForTab('admins'))}"${isAdmins ? ' aria-current="page"' : ''}><i class="mdi mdi-shield-account-outline" aria-hidden="true"></i>Actividad de administradores</a>
+          ${canViewAdminActivity ? `<a class="${isAdmins ? 'active' : ''}" href="/admin/auditoria?${escapeAttr(queryForTab('admins'))}"${isAdmins ? ' aria-current="page"' : ''}><i class="mdi mdi-shield-account-outline" aria-hidden="true"></i>Actividad de administradores</a>` : ''}
         </nav>
         <form class="activity-filters" method="get" action="/admin/auditoria">
           <input type="hidden" name="tab" value="${isAdmins ? 'admins' : 'system'}">

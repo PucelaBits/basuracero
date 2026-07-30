@@ -6,7 +6,7 @@
   "main": "src/server/server.js",
   "scripts": {
     "start": "node scripts/prepareAdminActivation.js && npm run migrate && node src/server/server.js",
-    "dev:server": "node scripts/prepareAdminActivation.js && nodemon src/server/server.js",
+    "dev:server": "node scripts/prepareAdminActivation.js && npm run migrate && nodemon src/server/server.js",
     "dev:client": "node scripts/generateManifest.js public && vite",
     "build": "vite build && node scripts/generateManifest.js dist && npm run copy-index",
     "copy-index": "cp dist/index.html dist/200.html",
@@ -38,6 +38,7 @@
     "express-session": "^1.19.0",
     "feed": "^4.2.2",
     "friendly-challenge": "^0.9.20",
+    "geoip-country": "^5.0.202607290104",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "multer": "^2.2.0",

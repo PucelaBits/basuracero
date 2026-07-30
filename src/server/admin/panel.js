@@ -6,6 +6,8 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const sharp = require('sharp');
+const net = require('net');
+const geoip = require('geoip-country');
 const { all, get, run } = require('../utils/dbAsync');
 const {
   PASSWORD_MIN_LENGTH,
@@ -29,8 +31,12 @@ const {
   getActivityEntries,
   getAdminDashboardData,
   getAdminById,
+  getAdminByUsername,
   getAdminIncidenciasList,
+  recordAdminLogin,
+  recordFailedAdminLogin,
   getAdminExternalReportsList,
+  hasExternalReports,
   getAdminUsersList,
   getIncidenciaDetail,
   getInadequateReportedIncidencias,
@@ -74,6 +80,7 @@ const allowedBrandImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']
 // La cookie se renueva con cada petición autenticada: 30 días es el máximo de
 // inactividad, no un límite absoluto desde el inicio de sesión.
 const DEFAULT_ADMIN_SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+const countryNames = new Intl.DisplayNames(['es'], { type: 'region' });
 const uploadBrandImage = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 1, parts: 3 },
@@ -187,6 +194,36 @@ function getSessionSecret(logger = console) {
   return 'dev-admin-session-secret';
 }
 
+function isPrivateOrLocalIp(ip) {
+  if (!ip) return true;
+  if (ip.includes(':')) {
+    const normalized = ip.toLowerCase();
+    return normalized === '::1' || normalized.startsWith('fc') || normalized.startsWith('fd') || normalized.startsWith('fe80:');
+  }
+  const parts = ip.split('.').map(Number);
+  return parts[0] === 0 || parts[0] === 10 || parts[0] === 127 ||
+    (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) ||
+    (parts[0] === 169 && parts[1] === 254) ||
+    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+    (parts[0] === 192 && parts[1] === 168);
+}
+
+function getAdminLoginOrigin(req) {
+  const rawIp = String(req.ip || req.socket?.remoteAddress || '').trim();
+  const ip = rawIp.startsWith('::ffff:') ? rawIp.slice(7) : rawIp;
+  if (net.isIP(ip) === 0 || isPrivateOrLocalIp(ip)) {
+    return { ip: null, country: null, countryCode: null };
+  }
+
+  const location = geoip.lookup(ip);
+  const countryCode = /^[A-Z]{2}$/.test(location?.country || '') ? location.country : null;
+  return {
+    ip,
+    countryCode,
+    country: countryCode ? countryNames.of(countryCode) || countryCode : null
+  };
+}
+
 function parseBoolean(value) {
   if (typeof value === 'boolean') {
     return value;
@@ -217,6 +254,23 @@ function buildForbiddenPage({ currentAdmin = null, csrfToken = '', message }) {
       <p>No hemos podido verificar esta accion. Recarga la pagina y vuelve a intentarlo.</p>
     `
   });
+}
+
+function moderatorCanAccessRequest(req) {
+  if (req.method === 'GET') {
+    return req.path === '/' || req.path === '/home' || req.path === '/incidencias' ||
+      req.path === '/avisos-ayuntamiento' ||
+      (req.path === '/auditoria' && req.query.tab !== 'admins') ||
+      /^\/incidencias\/\d+$/.test(req.path) ||
+      req.path === '/geocode/search';
+  }
+
+  if (req.method === 'POST') {
+    return req.path === '/logout' || req.path === '/change-password' ||
+      /^\/incidencias\/\d+(?:\/(?:state|tipo|clear-solution-reports|delete|imagenes(?:\/add|\/\d+\/(?:delete|replace))|reportes-solucion\/\d+\/delete|reportes-inadecuados\/\d+\/delete|avisos-ayuntamiento\/\d+\/delete))?$/.test(req.path);
+  }
+
+  return false;
 }
 
 function ensureCsrfToken(req) {
@@ -313,7 +367,10 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       const admin = req.session?.adminUserId
         ? await getAdminById(req.session.adminUserId)
         : null;
-      res.json({ authenticated: Boolean(admin?.isActive) });
+      res.json({
+        authenticated: Boolean(admin?.isActive),
+        canEditIncidents: Boolean(admin?.isActive && ['administrator', 'moderator'].includes(admin.role))
+      });
     } catch (error) {
       next(error);
     }
@@ -462,10 +519,25 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     try {
       const username = String(req.body.username || '').slice(0, 128);
       const password = String(req.body.password || '').slice(0, 256);
+      const account = username ? await getAdminByUsername(username) : null;
       const admin = await authenticateAdmin(username, password);
       if (!admin) {
+        try {
+          await recordFailedAdminLogin({
+            ...getAdminLoginOrigin(req),
+            accountRole: account?.role || null
+          });
+        } catch (auditError) {
+          logger.error('No se pudo registrar el intento de inicio de sesión fallido:', auditError);
+        }
         res.redirect('/admin/login?error=1');
         return;
+      }
+
+      try {
+        await recordAdminLogin(admin, getAdminLoginOrigin(req));
+      } catch (auditError) {
+        logger.error('No se pudo registrar el inicio de sesión administrativo:', auditError);
       }
 
       await regenerateSession(req);
@@ -553,8 +625,39 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     next();
   });
 
+  router.use((req, res, next) => {
+    if (req.currentAdmin.role !== 'moderator' || moderatorCanAccessRequest(req)) {
+      next();
+      return;
+    }
+    res.status(403).send(buildForbiddenPage({
+      currentAdmin: req.currentAdmin,
+      csrfToken: req.session.csrfToken,
+      message: 'Tu cuenta de moderador solo puede gestionar incidencias individuales.'
+    }));
+  });
+
+  router.use(async (req, _res, next) => {
+    try {
+      const settings = await getAppSettings();
+      const externalReportsAvailable = settings.WHATSAPP_SHARE_ENABLED === 'true' && await hasExternalReports();
+      req.currentAdmin = {
+        ...req.currentAdmin,
+        externalReportsAvailable,
+        externalReportRecipientName: settings.WHATSAPP_SHARE_RECIPIENT_NAME
+      };
+      next();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.use(async (req, _res, next) => {
     if (req.method !== 'GET') {
+      next();
+      return;
+    }
+    if (req.currentAdmin.role === 'moderator') {
       next();
       return;
     }
@@ -574,10 +677,10 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
   async function renderAdminHome(req, res, next) {
     try {
       const settings = await getAppSettings();
-      const [dashboard, updateStatus] = await Promise.all([
-        getAdminDashboardData(req.query.period),
-        getUpdateStatus({ logger, channel: settings.UPDATE_CHANNEL })
-      ]);
+      const dashboard = await getAdminDashboardData(req.query.period);
+      const updateStatus = req.currentAdmin.role === 'administrator'
+        ? await getUpdateStatus({ logger, channel: settings.UPDATE_CHANNEL })
+        : { checked: false, updateAvailable: false };
       res.send(renderDashboardPage({
         currentAdmin: req.currentAdmin,
         notice: req.query.credentialsChanged
@@ -753,6 +856,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
       await createAdminUser({
         username: req.body.username,
         password: req.body.password,
+        role: req.body.role,
         mustChangePassword: parseBoolean(req.body.mustChangePassword),
         isActive: true
       }, req.currentAdmin.id);
@@ -772,6 +876,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
     try {
       await updateAdminUser(req.params.id, {
         username: req.body.username,
+        role: req.body.role,
         ...(req.body.isActive === undefined ? {} : { isActive: parseBoolean(req.body.isActive) })
       }, req.currentAdmin.id);
       res.redirect('/admin/administradores?message=' + encodeURIComponent('Administrador actualizado'));
@@ -910,7 +1015,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
   router.get('/auditoria', async (req, res, next) => {
     try {
       const filters = {
-        tab: req.query.tab === 'admins' ? 'admins' : 'system',
+        tab: req.currentAdmin.role === 'moderator' ? 'system' : (req.query.tab === 'admins' ? 'admins' : 'system'),
         eventType: String(req.query.eventType || '').trim(),
         incidenciaId: String(req.query.incidenciaId || '').trim(),
         dateFrom: String(req.query.dateFrom || '').trim(),
@@ -939,9 +1044,10 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
         sortBy: String(req.query.sortBy || 'fecha').trim(),
         sortDir: String(req.query.sortDir || 'desc').trim()
       };
-      const [incidencias, tipos] = await Promise.all([
+      const [incidencias, tipos, settings] = await Promise.all([
         getAdminIncidenciasList(filters),
-        all('SELECT id, nombre, icono FROM tipos_incidencias ORDER BY nombre COLLATE NOCASE ASC')
+        all('SELECT id, nombre, icono FROM tipos_incidencias ORDER BY nombre COLLATE NOCASE ASC'),
+        getAppSettings()
       ]);
 
       res.send(renderIncidenciasListPage({
@@ -950,6 +1056,7 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
         incidencias,
         tipos,
         filters,
+        isExternalReportingEnabled: settings.WHATSAPP_SHARE_ENABLED === 'true',
         csrfToken: req.session.csrfToken
       }));
     } catch (error) {
@@ -959,6 +1066,10 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
   router.get('/avisos-ayuntamiento', async (req, res, next) => {
     try {
+      if (!req.currentAdmin.externalReportsAvailable) {
+        res.status(404).send('Not found');
+        return;
+      }
       const filters = {
         search: String(req.query.search || '').trim(),
         estado: String(req.query.estado || '').trim(),
@@ -1105,9 +1216,19 @@ function createAdminAuthRouter(logger = console, { baseUrl } = {}) {
 
   router.post('/incidencias/:id', async (req, res) => {
     try {
-      await updateIncidencia(req.params.id, req.body, req.currentAdmin.id);
-      res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent('Incidencia actualizada correctamente')}`);
+      const result = await updateIncidencia(req.params.id, req.body, req.currentAdmin.id);
+      const message = result.unchanged ? 'No había cambios que guardar' : 'Incidencia actualizada correctamente';
+      const expectsJson = req.get('accept')?.includes('application/json');
+      if (expectsJson) {
+        res.json({ ok: true, unchanged: Boolean(result.unchanged), message });
+        return;
+      }
+      res.redirect(`/admin/incidencias/${req.params.id}?message=${encodeURIComponent(message)}`);
     } catch (error) {
+      if (req.get('accept')?.includes('application/json')) {
+        res.status(400).json({ ok: false, error: error.message || 'No se ha podido guardar la incidencia.' });
+        return;
+      }
       const incidencia = await getIncidenciaDetail(req.params.id);
       const tipos = await all('SELECT id, nombre, icono FROM tipos_incidencias ORDER BY nombre COLLATE NOCASE ASC');
       res.status(400).send(renderIncidenciaDetailPage({

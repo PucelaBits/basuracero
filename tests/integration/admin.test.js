@@ -140,7 +140,7 @@ describe('Panel admin', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['cache-control']).toBe('no-store');
-    expect(response.body).toEqual({ authenticated: false });
+    expect(response.body).toEqual({ authenticated: false, canEditIncidents: false });
     expect(response.headers['set-cookie']).toBeUndefined();
   });
 
@@ -153,6 +153,19 @@ describe('Panel admin', () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe('/admin/login?error=1');
+    const failedAttempt = await dbAsync.get(
+      `SELECT event_type, admin_user_id, metadata_json
+       FROM activity_log
+       WHERE event_type = 'admin_login_failed'
+       ORDER BY id DESC
+       LIMIT 1`
+    );
+    expect(failedAttempt.event_type).toBe('admin_login_failed');
+    expect(failedAttempt.admin_user_id).toBeNull();
+    expect(JSON.parse(failedAttempt.metadata_json)).toEqual(expect.objectContaining({
+      accountRole: 'administrator', ip: null, country: null, countryCode: null
+    }));
+    expect(JSON.parse(failedAttempt.metadata_json).username).toBeUndefined();
   });
 
   it('obliga a cambiar la contraseña temporal tras el login', async () => {
@@ -168,6 +181,19 @@ describe('Panel admin', () => {
     expect(loginResponse.headers.location).toBe('/admin/change-password');
     const authenticatedSessionId = getSessionIdFromCookie(getSessionCookie(loginResponse));
     expect(authenticatedSessionId).not.toBe(initialSessionId);
+    const loginActivity = await dbAsync.get(
+      `SELECT event_type, actor_role, admin_user_id, metadata_json
+       FROM activity_log
+       WHERE event_type = 'admin_login'
+       ORDER BY id DESC
+       LIMIT 1`
+    );
+    expect(loginActivity).toEqual(expect.objectContaining({
+      event_type: 'admin_login', actor_role: 'administrator', admin_user_id: 1
+    }));
+    expect(JSON.parse(loginActivity.metadata_json)).toEqual(expect.objectContaining({
+      ip: null, country: null, countryCode: null
+    }));
 
     const changeForm = await agent.get('/admin/change-password');
     expect(changeForm.status).toBe(200);
@@ -196,13 +222,19 @@ describe('Panel admin', () => {
     expect(panelResponse.text).toContain('Evolución de incidencias');
     expect(panelResponse.text).toContain('dashboard-trend-bar');
     expect(panelResponse.text).toContain('href="/admin?period=month"');
+
+    const auditResponse = await agent.get('/admin/auditoria?tab=admins');
+    expect(auditResponse.status).toBe(200);
+    expect(auditResponse.text).toContain('Inició sesión');
+    expect(auditResponse.text).toContain('Intentó iniciar sesión sin éxito');
+    expect(auditResponse.text).toContain('IP no disponible · País no disponible');
   });
 
   it('informa al frontend publico cuando existe una sesion administrativa', async () => {
     const response = await agent.get('/admin/session-status');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ authenticated: true });
+    expect(response.body).toEqual({ authenticated: true, canEditIncidents: true });
   });
 
   it('muestra fotos recientes y accesos amigables en la portada del panel', async () => {
@@ -249,10 +281,10 @@ describe('Panel admin', () => {
   it('muestra paginas propias de administradores, categorias y auditoria en espanol', async () => {
     const adminPage = await agent.get('/admin/administradores');
     expect(adminPage.status).toBe(200);
-    expect(adminPage.text).toContain('Administradores');
-    expect(adminPage.text).toContain('Nuevo administrador');
-    expect(adminPage.text).toContain('Administradores registrados');
-    expect(adminPage.text).toContain('Editar administrador');
+    expect(adminPage.text).toContain('Usuarios y roles');
+    expect(adminPage.text).toContain('Nuevo usuario');
+    expect(adminPage.text).toContain('Usuarios registrados');
+    expect(adminPage.text).toContain('Editar usuario');
     expect(adminPage.text).toContain('Cambiar mi contraseña');
     expect(adminPage.text).not.toContain('AdminJS');
 
@@ -318,6 +350,73 @@ describe('Panel admin', () => {
     await expect(service.deleteAdminUser(1, 1)).rejects.toThrow('No puedes borrar tu propia cuenta.');
     await service.deleteAdminUser(created.id, 1);
     expect(await dbAsync.get('SELECT id FROM admin_users WHERE id = ?', [created.id])).toBeUndefined();
+  });
+
+  it('permite moderar incidencias sin acceso a la administración del sitio', async () => {
+    await loadFreshApp();
+    const loginPage = await agent.get('/admin/login');
+    await agent.post('/admin/login').type('form').send({
+      username: 'admin', password: tempPassword, _csrf: extractCsrfToken(loginPage.text)
+    });
+    const passwordPage = await agent.get('/admin/change-password');
+    await agent.post('/admin/change-password').type('form').send({
+      password: 'ContrasenaAdminSegura123', passwordConfirm: 'ContrasenaAdminSegura123', _csrf: extractCsrfToken(passwordPage.text)
+    });
+
+    const moderator = await service.createAdminUser({
+      username: 'moderador-prueba',
+      password: 'ContrasenaModeradorSegura123',
+      role: 'moderator'
+    }, 1);
+    const incidencia = await dbAsync.run(
+      `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, estado)
+       VALUES (1, 'Incidencia para moderar', 41.65, -4.72, 'Vecino', datetime('now', 'localtime'), 'activa')`
+    );
+
+    const moderatorAgent = request.agent(app);
+    const moderatorLogin = await moderatorAgent.get('/admin/login');
+    const moderatorResponse = await moderatorAgent.post('/admin/login').type('form').send({
+      username: 'moderador-prueba', password: 'ContrasenaModeradorSegura123', _csrf: extractCsrfToken(moderatorLogin.text)
+    });
+    expect(moderatorResponse.status).toBe(302);
+    expect((await moderatorAgent.get('/admin/session-status')).body).toMatchObject({ authenticated: true, canEditIncidents: true });
+
+    const dashboard = await moderatorAgent.get('/admin');
+    expect(dashboard.status).toBe(200);
+    expect(dashboard.text).toContain('Incidencias');
+    expect(dashboard.text).not.toContain('href="/admin/maintenance"');
+    expect(dashboard.text).toContain('href="/admin/auditoria"');
+
+    const detail = await moderatorAgent.get(`/admin/incidencias/${incidencia.lastID}`);
+    const csrf = extractCsrfToken(detail.text);
+    const update = await moderatorAgent.post(`/admin/incidencias/${incidencia.lastID}/state`).type('form').send({ state: 'spam', _csrf: csrf });
+    expect(update.status).toBe(302);
+    expect((await dbAsync.get('SELECT estado FROM incidencias WHERE id = ?', [incidencia.lastID])).estado).toBe('spam');
+
+    const externalReports = await moderatorAgent.get('/admin/avisos-ayuntamiento');
+    expect(externalReports.status).toBe(404);
+    expect(dashboard.text).not.toContain('href="/admin/avisos-ayuntamiento"');
+
+    const systemActivity = await moderatorAgent.get('/admin/auditoria');
+    expect(systemActivity.status).toBe(200);
+    expect(systemActivity.text).toContain('Actividad del sistema');
+    expect(systemActivity.text).not.toContain('Actividad de administradores');
+    expect((await moderatorAgent.get('/admin/auditoria?tab=admins')).status).toBe(403);
+
+    for (const pathname of ['/admin/configuracion', '/admin/administradores', '/admin/maintenance', '/admin/updates']) {
+      const response = await moderatorAgent.get(pathname);
+      expect(response.status).toBe(403);
+    }
+    const bulk = await moderatorAgent.post('/admin/incidencias/bulk').type('form').send({
+      selectedIds: String(incidencia.lastID), bulkAction: 'activa', _csrf: extractCsrfToken((await moderatorAgent.get('/admin/incidencias')).text)
+    });
+    expect(bulk.status).toBe(403);
+
+    const activity = await dbAsync.get(
+      `SELECT actor_role FROM activity_log WHERE event_type = 'set_incidencia_spam' AND admin_user_id = ? ORDER BY id DESC LIMIT 1`,
+      [moderator.id]
+    );
+    expect(activity.actor_role).toBe('moderator');
   });
 
   it('permite crear, actualizar icono, renombrar y borrar categorias sin incidencias desde el panel propio', async () => {
@@ -453,6 +552,7 @@ describe('Panel admin', () => {
         REPORTES_PARA_SOLUCIONAR_ANTIGUA: '2',
         WHATSAPP_SHARE_ENABLED: 'true',
         WHATSAPP_SHARE_PHONE: '34600100100',
+        WHATSAPP_SHARE_RECIPIENT_NAME: 'Servicio municipal',
         WHATSAPP_REQUIRE_ACTIVATION: 'false',
         WHATSAPP_SHARE_BUTTON_TEXT: 'Informar por WhatsApp',
         WHATSAPP_SHARE_REPORT_COUNT_TEXT_SINGULAR: '1 persona informó al servicio municipal',
@@ -823,6 +923,54 @@ describe('Panel admin', () => {
     expect(updated.fecha_solucion).toBeTruthy();
   });
 
+  it('no registra auditoría al guardar una incidencia sin cambios', async () => {
+    const incidencia = await dbAsync.run(
+      `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, estado, barrio, direccion)
+       VALUES (1, 'Sin cambios', 41.65, -4.72, 'Avisante', '2026-06-12 00:00:00', 'activa', 'Centro', 'Calle Inicial 1')`
+    );
+    const beforeAudit = await dbAsync.get(
+      `SELECT COUNT(*) AS total FROM admin_audit_log WHERE action = 'update_incidencia' AND entity_id = ?`,
+      [String(incidencia.lastID)]
+    );
+
+    const response = await postWithCsrf(`/admin/incidencias/${incidencia.lastID}`, {
+      descripcion: 'Sin cambios',
+      tipoId: '1',
+      estado: 'activa',
+      nombre: 'Avisante',
+      fecha: '2026-06-12',
+      barrio: 'Centro',
+      direccion: 'Calle Inicial 1'
+    }, `/admin/incidencias/${incidencia.lastID}`);
+
+    expect(response.status).toBe(302);
+    expect(decodeURIComponent(response.headers.location)).toContain('No había cambios que guardar');
+    const afterAudit = await dbAsync.get(
+      `SELECT COUNT(*) AS total FROM admin_audit_log WHERE action = 'update_incidencia' AND entity_id = ?`,
+      [String(incidencia.lastID)]
+    );
+    expect(afterAudit.total).toBe(beforeAudit.total);
+  });
+
+  it('guarda una incidencia mediante JSON sin redirigir la vista', async () => {
+    const incidencia = await dbAsync.run(
+      `INSERT INTO incidencias (tipo_id, descripcion, fecha, estado)
+       VALUES (1, 'Guardado en segundo plano', '2026-06-12 00:00:00', 'activa')`
+    );
+    const page = await agent.get(`/admin/incidencias/${incidencia.lastID}`);
+    const response = await agent.post(`/admin/incidencias/${incidencia.lastID}`)
+      .set('Accept', 'application/json')
+      .type('form')
+      .send({
+        _csrf: extractCsrfToken(page.text),
+        descripcion: 'Guardado confirmado', tipoId: '1', estado: 'activa', fecha: '2026-06-12',
+        nombre: '', barrio: '', direccion: ''
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(expect.objectContaining({ ok: true, message: 'Incidencia actualizada correctamente' }));
+  });
+
   it('permite borrar fotos individuales desde la ficha', async () => {
     const incidencia = await dbAsync.run(
       `INSERT INTO incidencias (
@@ -935,7 +1083,7 @@ describe('Panel admin', () => {
 
     const detail = await agent.get(`/admin/incidencias/${incidencia.lastID}`);
     expect(detail.status).toBe(200);
-    expect(detail.text).toContain('Avisos al ayuntamiento');
+    expect(detail.text).toContain('Avisos a Servicio municipal');
     expect(detail.text).toContain('>0123456789…</td>');
     expect(detail.text).toContain('Historial de la incidencia');
     expect(detail.text).toContain('Abrió el aviso por WhatsApp');
@@ -1542,6 +1690,37 @@ describe('Panel admin', () => {
     expect(loginPage.headers['x-frame-options']).toBe('DENY');
     expect(logger.warn.mock.calls.flat().join(' ')).not.toContain('BootstrapProduccionSegura123');
 
+    await loadFreshApp();
+  });
+
+  it('registra la IP y el país de un inicio de sesión administrativo desde un proxy de confianza', async () => {
+    await loadFreshApp({ nodeEnv: 'production' });
+    const loginPage = await agent.get('/admin/login').set('X-Forwarded-Proto', 'https');
+    const cookie = getSessionCookie(loginPage)?.split(';')[0];
+    const response = await request(app)
+      .post('/admin/login')
+      .set('X-Forwarded-Proto', 'https')
+      .set('X-Forwarded-For', '8.8.8.8')
+      .set('Cookie', cookie)
+      .type('form')
+      .send({
+        username: 'admin',
+        password: tempPassword,
+        _csrf: extractCsrfToken(loginPage.text)
+      });
+
+    expect(response.status).toBe(302);
+    const entry = await dbAsync.get(
+      `SELECT actor_role, metadata_json
+       FROM activity_log
+       WHERE event_type = 'admin_login'
+       ORDER BY id DESC
+       LIMIT 1`
+    );
+    expect(entry.actor_role).toBe('administrator');
+    expect(JSON.parse(entry.metadata_json)).toEqual(expect.objectContaining({
+      ip: '8.8.8.8', countryCode: 'US', country: 'Estados Unidos'
+    }));
     await loadFreshApp();
   });
 

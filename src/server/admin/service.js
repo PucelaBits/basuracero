@@ -8,6 +8,7 @@ const { DEFAULT_TIPO_ICON, normalizeTipoIcon } = require('./iconCatalog');
 
 const PASSWORD_MIN_LENGTH = 12;
 const PASSWORD_MAX_BYTES = 72;
+const ADMIN_ROLES = new Set(['administrator', 'moderator']);
 const uploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.join(__dirname, '..', '..', '..', 'uploads');
@@ -41,6 +42,14 @@ function normalizeUsername(username) {
   const value = String(username || '').trim();
   if (!/^[A-Za-z0-9._-]{3,64}$/.test(value)) {
     throw new Error('El usuario debe tener entre 3 y 64 caracteres y solo puede incluir letras, numeros, punto, guion y guion bajo.');
+  }
+  return value;
+}
+
+function normalizeAdminRole(role = 'administrator') {
+  const value = String(role || '').trim();
+  if (!ADMIN_ROLES.has(value)) {
+    throw new Error('El rol seleccionado no es válido.');
   }
   return value;
 }
@@ -146,6 +155,7 @@ function sanitizeAdmin(row) {
   return {
     id: row.id,
     username: row.username,
+    role: row.role || 'administrator',
     mustChangePassword: Boolean(row.must_change_password),
     isActive: Boolean(row.is_active),
     lastLoginAt: row.last_login_at,
@@ -155,18 +165,22 @@ function sanitizeAdmin(row) {
 }
 
 async function createAuditLog(adminUserId, action, entityType, entityId, beforeState, afterState) {
+  const actor = adminUserId ? await getAdminById(adminUserId) : null;
+  const actorRole = actor?.role || null;
   await run(
     `INSERT INTO admin_audit_log (
       admin_user_id,
+      actor_role,
       action,
       entity_type,
       entity_id,
       before_json,
       after_json,
       created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
     [
       adminUserId || null,
+      actorRole,
       action,
       entityType,
       entityId != null ? String(entityId) : null,
@@ -181,6 +195,7 @@ async function createAuditLog(adminUserId, action, entityType, entityId, beforeS
     eventType: action,
     eventGroup: 'administracion',
     actorType: 'admin',
+    actorRole,
     adminUserId,
     incidenciaId: Number.isInteger(incidenciaId) ? incidenciaId : null,
     metadata: {
@@ -194,7 +209,7 @@ async function createAuditLog(adminUserId, action, entityType, entityId, beforeS
 
 async function getAdminById(adminId, { includePasswordHash = false } = {}) {
   const row = await get(
-    `SELECT id, username, password_hash, must_change_password, is_active, last_login_at, created_at, updated_at
+    `SELECT id, username, password_hash, role, must_change_password, is_active, last_login_at, created_at, updated_at
      FROM admin_users
      WHERE id = ?`,
     [adminId]
@@ -213,7 +228,7 @@ async function getAdminById(adminId, { includePasswordHash = false } = {}) {
 
 async function getAdminByUsername(username, { includePasswordHash = false } = {}) {
   const row = await get(
-    `SELECT id, username, password_hash, must_change_password, is_active, last_login_at, created_at, updated_at
+    `SELECT id, username, password_hash, role, must_change_password, is_active, last_login_at, created_at, updated_at
      FROM admin_users
      WHERE lower(username) = lower(?)`,
     [username]
@@ -231,12 +246,12 @@ async function getAdminByUsername(username, { includePasswordHash = false } = {}
 }
 
 async function countActiveAdmins() {
-  const row = await get('SELECT COUNT(*) AS total FROM admin_users WHERE is_active = 1');
+  const row = await get("SELECT COUNT(*) AS total FROM admin_users WHERE is_active = 1 AND role = 'administrator'");
   return row ? row.total : 0;
 }
 
 async function bootstrapAdminIfNeeded(logger = console) {
-  const row = await get('SELECT COUNT(*) AS total FROM admin_users WHERE is_active = 1');
+  const row = await get("SELECT COUNT(*) AS total FROM admin_users WHERE is_active = 1 AND role = 'administrator'");
 
   if (row && row.total > 0) {
     return { created: false };
@@ -255,11 +270,12 @@ async function bootstrapAdminIfNeeded(logger = console) {
     `INSERT INTO admin_users (
       username,
       password_hash,
+      role,
       must_change_password,
       is_active,
       created_at,
       updated_at
-    ) VALUES (?, ?, 1, 1, datetime('now', 'localtime'), datetime('now', 'localtime'))`,
+    ) VALUES (?, ?, 'administrator', 1, 1, datetime('now', 'localtime'), datetime('now', 'localtime'))`,
     [username, passwordHash]
   );
 
@@ -273,6 +289,7 @@ async function bootstrapAdminIfNeeded(logger = console) {
 
   await createAuditLog(result.lastID, 'bootstrap_admin_created', 'admin_user', result.lastID, null, {
     username,
+    role: 'administrator',
     mustChangePassword: true,
     isActive: true
   });
@@ -308,6 +325,53 @@ async function authenticateAdmin(username, password) {
   );
 
   return sanitizeAdmin(admin);
+}
+
+async function recordAdminLogin(admin, { ip = null, country = null, countryCode = null } = {}) {
+  if (!admin?.id || !ADMIN_ROLES.has(admin.role || '')) {
+    return;
+  }
+
+  // Las IP de acceso solo se conservan el tiempo imprescindible para investigar
+  // un posible acceso no autorizado.
+  await run(
+    `DELETE FROM activity_log
+     WHERE event_type IN ('admin_login', 'admin_login_failed')
+       AND datetime(created_at) < datetime('now', 'localtime', '-30 days')`
+  );
+
+  await recordActivity({
+    eventType: 'admin_login',
+    eventGroup: 'administracion',
+    actorType: 'admin',
+    actorRole: admin.role,
+    adminUserId: admin.id,
+    metadata: {
+      ip: ip || null,
+      country: country || null,
+      countryCode: countryCode || null
+    }
+  });
+}
+
+async function recordFailedAdminLogin({ accountRole = null, ip = null, country = null, countryCode = null } = {}) {
+  await run(
+    `DELETE FROM activity_log
+     WHERE event_type IN ('admin_login', 'admin_login_failed')
+       AND datetime(created_at) < datetime('now', 'localtime', '-30 days')`
+  );
+
+  await recordActivity({
+    eventType: 'admin_login_failed',
+    eventGroup: 'administracion',
+    actorType: 'admin',
+    metadata: {
+      accountRole: ADMIN_ROLES.has(accountRole) ? accountRole : null,
+      ip: ip || null,
+      country: country || null,
+      countryCode: countryCode || null
+    }
+  });
 }
 
 async function changeAdminPassword(adminId, nextPassword, actingAdminId = adminId) {
@@ -362,9 +426,10 @@ async function invalidateAdminSessions(adminId) {
   return matchingSessionIds.length;
 }
 
-async function createAdminUser({ username, password, mustChangePassword = false, isActive = true }, actingAdminId) {
+async function createAdminUser({ username, password, role = 'administrator', mustChangePassword = false, isActive = true }, actingAdminId) {
   validatePassword(password);
   const nextUsername = normalizeUsername(username);
+  const nextRole = normalizeAdminRole(role);
 
   const existing = await getAdminByUsername(nextUsername, { includePasswordHash: true });
   if (existing) {
@@ -376,12 +441,13 @@ async function createAdminUser({ username, password, mustChangePassword = false,
     `INSERT INTO admin_users (
       username,
       password_hash,
+      role,
       must_change_password,
       is_active,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))`,
-    [nextUsername, passwordHash, normalizeFlag(mustChangePassword), normalizeFlag(isActive)]
+    ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))`,
+    [nextUsername, passwordHash, nextRole, normalizeFlag(mustChangePassword), normalizeFlag(isActive)]
   );
 
   const created = await getAdminById(result.lastID);
@@ -399,7 +465,7 @@ async function deleteAdminUser(adminId, actingAdminId) {
   }
 
   const activeCount = await countActiveAdmins();
-  if (activeCount <= (current.is_active ? 1 : 0)) {
+  if (current.role === 'administrator' && activeCount <= (current.is_active ? 1 : 0)) {
     throw new Error('Debe permanecer al menos un administrador activo.');
   }
 
@@ -435,8 +501,9 @@ async function updateAdminUser(adminId, updates, actingAdminId) {
 
   const hasActiveStateUpdate = updates.isActive !== undefined;
   const nextIsActive = hasActiveStateUpdate ? normalizeFlag(updates.isActive) : current.is_active;
+  const nextRole = updates.role === undefined ? current.role : normalizeAdminRole(updates.role);
 
-  if (!nextIsActive && current.is_active) {
+  if (current.role === 'administrator' && current.is_active && (!nextIsActive || nextRole !== 'administrator')) {
     if (Number(current.id) === Number(actingAdminId)) {
       throw new Error('No puedes desactivar tu propia cuenta.');
     }
@@ -449,13 +516,14 @@ async function updateAdminUser(adminId, updates, actingAdminId) {
   await run(
     `UPDATE admin_users
      SET username = ?,
+         role = ?,
          is_active = ?,
          updated_at = datetime('now', 'localtime')
      WHERE id = ?`,
-    [nextUsername, nextIsActive, adminId]
+    [nextUsername, nextRole, nextIsActive, adminId]
   );
 
-  if (!nextIsActive && current.is_active) {
+  if ((!nextIsActive && current.is_active) || nextRole !== current.role) {
     await invalidateAdminSessions(adminId);
   }
 
@@ -478,7 +546,7 @@ async function setAdminActiveState(adminId, isActive, actingAdminId) {
     throw new Error('Administrador no encontrado.');
   }
 
-  if (!isActive) {
+  if (!isActive && current.role === 'administrator') {
     if (Number(current.id) === Number(actingAdminId)) {
       throw new Error('No puedes desactivar tu propia cuenta.');
     }
@@ -669,6 +737,25 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
   const resolvedDireccion = geocoded?.direccion || nextDireccion || null;
   const resolvedBarrio = geocoded?.barrio || nextBarrio || null;
   const resolvedDireccionJson = geocoded?.direccion_json || current.direccion_json || null;
+  const nextIncidencia = {
+    tipo_id: Number(nextTipoId),
+    descripcion: nextDescripcion,
+    nombre: nextNombre || null,
+    fecha: nextFecha,
+    latitud: nextLatitud,
+    longitud: nextLongitud,
+    direccion: resolvedDireccion,
+    direccion_json: resolvedDireccionJson,
+    barrio: resolvedBarrio,
+    estado: nextEstado,
+    fecha_solucion: fechaSolucion,
+    fecha_spam: fechaSpam
+  };
+  const changed = Object.entries(nextIncidencia).some(([field, value]) => current[field] !== value);
+
+  if (!changed) {
+    return { ...current, unchanged: true };
+  }
 
   await run(
     `UPDATE incidencias
@@ -1344,6 +1431,17 @@ async function getAdminIncidenciasList({ search = '', estado = '', tipoId = '', 
   })));
 }
 
+async function hasExternalReports() {
+  const row = await get(
+    `SELECT EXISTS(
+       SELECT 1 FROM external_report_events
+       UNION ALL
+       SELECT 1 FROM external_report_imports
+     ) AS has_reports`
+  );
+  return Boolean(row?.has_reports);
+}
+
 async function getAdminExternalReportsList({ search = '', estado = '', tipoId = '', sortBy = 'avisos', sortDir = 'desc' } = {}) {
   const clauses = ['COALESCE(r.total, 0) > 0'];
   const params = [];
@@ -1680,6 +1778,7 @@ async function getAdminUsersList() {
     `SELECT
        id,
        username,
+       role,
        is_active,
        must_change_password,
        last_login_at,
@@ -1721,10 +1820,10 @@ async function getActivityEntries(filters = {}) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) { clauses.push('datetime(l.created_at) <= datetime(?)'); params.push(`${dateTo} 23:59:59`); }
 
   const source = tab === 'admins'
-    ? `SELECT id, event_type, event_group, actor_type, admin_user_id, incidencia_id, metadata_json, NULL AS before_json, NULL AS after_json, created_at
+    ? `SELECT id, event_type, event_group, actor_type, actor_role, admin_user_id, incidencia_id, metadata_json, NULL AS before_json, NULL AS after_json, created_at
          FROM activity_log
         UNION ALL
-       SELECT -a.id AS id, a.action AS event_type, 'administracion' AS event_group, 'admin' AS actor_type,
+       SELECT -a.id AS id, a.action AS event_type, 'administracion' AS event_group, 'admin' AS actor_type, a.actor_role,
               a.admin_user_id, CASE WHEN a.entity_type = 'incidencia' THEN CAST(a.entity_id AS INTEGER) ELSE NULL END,
               NULL AS metadata_json, a.before_json, a.after_json, a.created_at
          FROM admin_audit_log a
@@ -1735,10 +1834,10 @@ async function getActivityEntries(filters = {}) {
              AND current.admin_user_id IS a.admin_user_id
              AND datetime(current.created_at) = datetime(a.created_at)
         )`
-    : `SELECT id, event_type, event_group, actor_type, admin_user_id, incidencia_id, metadata_json, NULL AS before_json, NULL AS after_json, created_at
+    : `SELECT id, event_type, event_group, actor_type, actor_role, admin_user_id, incidencia_id, metadata_json, NULL AS before_json, NULL AS after_json, created_at
          FROM activity_log`;
   const entries = await all(
-    `SELECT l.id, l.event_type, l.event_group, l.actor_type, l.incidencia_id, l.metadata_json, l.before_json, l.after_json, l.created_at,
+    `SELECT l.id, l.event_type, l.event_group, l.actor_type, l.actor_role, l.incidencia_id, l.metadata_json, l.before_json, l.after_json, l.created_at,
             u.username AS admin_username, i.descripcion AS incidencia_descripcion
        FROM (${source}) l
        LEFT JOIN admin_users u ON u.id = l.admin_user_id
@@ -1843,6 +1942,8 @@ async function renameTipo(tipoId, nombre, icono, actingAdminId) {
 module.exports = {
   PASSWORD_MIN_LENGTH,
   authenticateAdmin,
+  recordAdminLogin,
+  recordFailedAdminLogin,
   bootstrapAdminIfNeeded,
   changeAdminPassword,
   changeIncidenciaTipo,
@@ -1868,6 +1969,7 @@ module.exports = {
   getAdminById,
   getAdminIncidenciasList,
   getAdminExternalReportsList,
+  hasExternalReports,
   getAdminUsersList,
   getIncidenciaDetail,
   getInadequateReportedIncidencias,
