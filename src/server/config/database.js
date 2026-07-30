@@ -105,6 +105,7 @@ function ensureIndexes(done) {
     CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_activity_incidencia_created ON activity_log(incidencia_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_activity_actor_created ON activity_log(actor_type, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_activity_login_retention ON activity_log(event_type, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_admin_sessions_expired ON admin_sessions(expired);
   `, (indexError) => {
     if (indexError) {
@@ -205,6 +206,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'administrator' CHECK (role IN ('administrator', 'moderator')),
         must_change_password INTEGER NOT NULL DEFAULT 0,
         is_active INTEGER NOT NULL DEFAULT 1,
         last_login_at DATETIME,
@@ -215,6 +217,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       db.run(`CREATE TABLE IF NOT EXISTS admin_audit_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         admin_user_id INTEGER,
+        actor_role TEXT,
         action TEXT NOT NULL,
         entity_type TEXT NOT NULL,
         entity_id TEXT,
@@ -229,6 +232,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         event_type TEXT NOT NULL,
         event_group TEXT NOT NULL,
         actor_type TEXT NOT NULL CHECK (actor_type IN ('system', 'citizen', 'admin')),
+        actor_role TEXT,
         admin_user_id INTEGER,
         incidencia_id INTEGER,
         metadata_json TEXT,

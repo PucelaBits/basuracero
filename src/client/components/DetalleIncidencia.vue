@@ -61,7 +61,7 @@
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <v-btn
-          v-if="isAdminAuthenticated"
+          v-if="canEditIncidents"
           icon
           :href="`/admin/incidencias/${incidencia.id}`"
           class="admin-edit-header-btn"
@@ -442,7 +442,7 @@ export default {
     const snackbar = ref(false);
     const snackbarText = ref('');
     const añadirAFavoritas = ref(true);
-    const isAdminAuthenticated = ref(false);
+    const canEditIncidents = ref(false);
 
     const captchaEnabled = runtimeConfig.FRIENDLYCAPTCHA_ENABLED === 'true';
 
@@ -693,10 +693,10 @@ export default {
       try {
         const response = await axios.get('/admin/session-status', { withCredentials: true });
         if (isComponentMounted.value) {
-          isAdminAuthenticated.value = response.data?.authenticated === true;
+          canEditIncidents.value = response.data?.canEditIncidents === true;
         }
       } catch (_error) {
-        isAdminAuthenticated.value = false;
+        canEditIncidents.value = false;
       }
     };
 
@@ -928,7 +928,7 @@ export default {
       incidenciaConIcono,
       textoBotonResolver,
       textoEstadoSolucionado,
-      isAdminAuthenticated,
+      canEditIncidents,
     };
   }
 };
