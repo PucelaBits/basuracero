@@ -108,6 +108,31 @@ function parseTiposQuery(tipoQuery) {
     .filter(value => Number.isInteger(value) && value > 0);
 }
 
+function parseEtiquetaQuery(etiquetaQuery) {
+  if (typeof etiquetaQuery !== 'string') return null;
+
+  const etiqueta = etiquetaQuery.trim().replace(/^#/, '').toLocaleLowerCase('es');
+  return /^[\p{L}\p{N}][\p{L}\p{N}_-]{0,49}$/u.test(etiqueta) ? etiqueta : null;
+}
+
+function addEtiquetaFilter(whereClause, params, etiqueta) {
+  if (!etiqueta) return whereClause;
+
+  // GLOB evita que #recogida incluya, por ejemplo, #recogidas. La etiqueta ya
+  // está validada y los patrones se pasan como parámetros SQL.
+  whereClause += ` AND (
+    LOWER(i.descripcion) GLOB ? OR LOWER(i.descripcion) GLOB ?
+    OR LOWER(i.descripcion) GLOB ? OR LOWER(i.descripcion) GLOB ?
+  )`;
+  params.push(
+    `#${etiqueta}`,
+    `#${etiqueta}[^a-z0-9_-]*`,
+    `*[^a-z0-9_-]#${etiqueta}`,
+    `*[^a-z0-9_-]#${etiqueta}[^a-z0-9_-]*`
+  );
+  return whereClause;
+}
+
 // Función para validar el nombre
 function validarNombre(nombre) {
   if (!nombre || typeof nombre !== 'string') {
@@ -390,6 +415,7 @@ router.get('/', publicReadLimiter, (req, res) => {
   const offset = (page - 1) * limit;
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
   const tipos = parseTiposQuery(req.query.tipo);
+  const etiqueta = parseEtiquetaQuery(req.query.etiqueta);
 
   let whereClause = 'WHERE i.estado != ?';
   let params = ['spam'];
@@ -401,6 +427,7 @@ router.get('/', publicReadLimiter, (req, res) => {
     whereClause += ` AND i.tipo_id IN (${tipos.map(() => '?').join(', ')})`;
     params.push(...tipos);
   }
+  whereClause = addEtiquetaFilter(whereClause, params, etiqueta);
 
   const countSql = `SELECT COUNT(*) as total FROM incidencias i ${whereClause}`;
   const dataSql = `
@@ -495,6 +522,7 @@ router.get('/todas', publicReadLimiter, (req, res) => {
   const format = req.query.format?.toLowerCase();
   const incluirSolucionadas = req.query.incluirSolucionadas === 'true';
   const tipos = parseTiposQuery(req.query.tipo);
+  const etiqueta = parseEtiquetaQuery(req.query.etiqueta);
 
   let whereClause = 'WHERE i.estado != "spam"';
   let params = [];
@@ -505,6 +533,7 @@ router.get('/todas', publicReadLimiter, (req, res) => {
     whereClause += ` AND i.tipo_id IN (${tipos.map(() => '?').join(', ')})`;
     params.push(...tipos);
   }
+  whereClause = addEtiquetaFilter(whereClause, params, etiqueta);
 
   const sql = `
     SELECT i.id, i.tipo_id, t.nombre as tipo, t.icono as icono, i.descripcion, i.latitud, i.longitud, i.nombre, i.fecha, i.estado, i.fecha_solucion,

@@ -129,7 +129,7 @@
         <div class="mapa-wrapper">
           <MapaIncidencias 
             :incidencias="todasLasIncidencias" 
-            :incluirSolucionadas="incluirSolucionadas"
+            :incluirSolucionadas="mostrarSolucionadas"
             :tipoSeleccionado="tipoSeleccionado"
             :agrupadoPortada="true"
             :seguirUsuario="false"
@@ -273,6 +273,22 @@
               </div>
             </section>
 
+            <section
+              v-if="etiquetaSeleccionada"
+              class="mb-4 filtro-categoria-banda"
+              aria-label="Filtro de etiqueta activo"
+            >
+              <div class="filtro-categoria-contenido">
+                <div class="filtro-categoria-copy">
+                  <span class="filtro-categoria-eyebrow">Mostrando incidencias con</span>
+                  <div class="filtro-categoria-resumen">
+                    <strong class="filtro-categoria-nombre">#{{ etiquetaSeleccionada }}</strong>
+                  </div>
+                </div>
+                <RouterLink to="/" class="ver-todas-link">Ver todas las incidencias</RouterLink>
+              </div>
+            </section>
+
             <v-select
               v-if="!isCategoryRoute"
               v-model="tipoSeleccionado"
@@ -323,7 +339,7 @@
                 </v-chip>
               </template>
             </v-select>
-            <v-row justify="center" class="mb-0">
+            <v-row v-if="!etiquetaSeleccionada" justify="center" class="mb-0">
               <v-col cols="auto">
                 <v-btn-toggle
                   v-model="filtroEstado"
@@ -375,7 +391,7 @@
         <ListaIncidencias 
           :incidencias="todasLasIncidencias"
           :tipo-seleccionado="tipoSeleccionado"
-          :incluir-solucionadas="incluirSolucionadas"
+          :incluir-solucionadas="mostrarSolucionadas"
           @incidencia-seleccionada="abrirDetalleIncidencia"
         />
       </v-container>
@@ -540,6 +556,7 @@ import MaratonGuide from './components/MaratonGuide.vue'
 import PendientesValidar from './components/PendientesValidar.vue'
 import { buildCategoryMeta, buildTipoRoute, parseTipoId, sortTiposByConfiguredOrder } from './utils/tipoRoutes'
 import { getRuntimeConfig } from './utils/runtimeConfig'
+import { normalizeHashtag } from './utils/hashtags'
 
 export default {
   name: 'App',
@@ -585,10 +602,12 @@ export default {
     const tiposIncidencias = ref([])
     const isCategoryRoute = computed(() => route.name === 'TipoCategoria')
     const routeCategoryId = computed(() => parseTipoId(route.params.id))
+    const etiquetaSeleccionada = computed(() => normalizeHashtag(route.params.etiqueta))
+    const mostrarSolucionadas = computed(() => incluirSolucionadas.value || Boolean(etiquetaSeleccionada.value))
     const baseUrl = computed(() => import.meta.env.VITE_BASE_URL || window.location.origin)
 
     const textoTotalIncidencias = computed(() => {
-      if (incluirSolucionadas.value) {
+      if (mostrarSolucionadas.value) {
         return `${totalIncidencias.value} incidencias reportadas`
       } else {
         return `${totalIncidencias.value} incidencias abiertas`
@@ -667,10 +686,13 @@ export default {
         const params = {
           page: page,
           limit: itemsPerPage,
-          incluirSolucionadas: incluirSolucionadas.value,
+          incluirSolucionadas: mostrarSolucionadas.value,
         };
         if (activeTipoParam.value) {
           params.tipo = activeTipoParam.value;
+        }
+        if (etiquetaSeleccionada.value) {
+          params.etiqueta = etiquetaSeleccionada.value;
         }
         
         if (forzarActualizacion || cargaInicial.value) {
@@ -706,6 +728,9 @@ export default {
         };
         if (activeTipoParam.value) {
           params.tipo = activeTipoParam.value;
+        }
+        if (etiquetaSeleccionada.value) {
+          params.etiqueta = etiquetaSeleccionada.value;
         }
         
         if (forzarActualizacion) {
@@ -1003,7 +1028,7 @@ export default {
     })
 
     watch(
-      () => [route.name, route.params.id, route.params.slug],
+      () => [route.name, route.params.id, route.params.slug, route.params.etiqueta],
       async () => {
         if (tiposIncidencias.value.length === 0) {
           return
@@ -1393,6 +1418,8 @@ export default {
       totalIncidencias,
       textoTotalIncidencias,
       categoriaSeleccionada,
+      etiquetaSeleccionada,
+      mostrarSolucionadas,
       incluirSolucionadas,
       obtenerIncidencias,
       abrirDetalleIncidencia,

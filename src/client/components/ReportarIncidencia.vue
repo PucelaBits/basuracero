@@ -59,6 +59,8 @@
             <v-textarea
               v-model="incidencia.descripcion"
               label="Descripción"
+              hint="Puedes añadir una etiqueta para una campaña, por ejemplo #LimpiezaBarrio o #recogida-otoño."
+              persistent-hint
               :rules="[
                 v => !!v || 'La descripción es necesaria',
                 v => !v || v.length <= 500 || 'La descripción es muy larga. Máximo 500 caracteres.'

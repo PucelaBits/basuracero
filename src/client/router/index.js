@@ -21,6 +21,11 @@ const routes = [
     component: App
   },
   {
+    path: '/e/:etiqueta',
+    name: 'Etiqueta',
+    component: App
+  },
+  {
     path: '/i/:id',
     name: 'DetalleIncidencia',
     component: DetalleIncidencia,

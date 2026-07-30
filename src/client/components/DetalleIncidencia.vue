@@ -76,7 +76,7 @@
         <v-container class="px-4 py-6">
           <v-card flat class="mb-6" v-if="incidencia.estado !== 'spam'">
             <v-card-text class="text-body-3">
-              {{ incidencia.descripcion }}
+              <HashtagText :text="incidencia.descripcion" @navigate="cerrarParaNavegacion" />
             </v-card-text>
           </v-card>
 
@@ -398,6 +398,7 @@ import { useFavoritosStore } from '../store/favoritosStore';
 import { useHead } from '@unhead/vue';
 import { useWhatsAppShare } from '../composables/useWhatsAppShare';
 import TipoLink from './TipoLink.vue';
+import HashtagText from './HashtagText.vue';
 import { getRuntimeConfig } from '../utils/runtimeConfig';
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
@@ -405,7 +406,8 @@ const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDE
 export default {
   name: 'DetalleIncidencia',
   components: {
-    TipoLink
+    TipoLink,
+    HashtagText
   },
   props: {
     incidencia: {
