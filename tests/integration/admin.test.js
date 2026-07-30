@@ -928,6 +928,27 @@ describe('Panel admin', () => {
     expect(updated.fecha_solucion).toBeTruthy();
   });
 
+  it('conserva la hora de una incidencia al guardar cambios sin modificar su fecha', async () => {
+    const incidencia = await dbAsync.run(
+      `INSERT INTO incidencias (tipo_id, descripcion, fecha, estado)
+       VALUES (1, 'Hora que debe conservarse', '2026-06-12 14:37:52', 'activa')`
+    );
+
+    const response = await postWithCsrf(`/admin/incidencias/${incidencia.lastID}`, {
+      descripcion: 'Descripción actualizada sin perder la hora',
+      tipoId: '1',
+      estado: 'activa',
+      fecha: '2026-06-12',
+      nombre: '',
+      barrio: '',
+      direccion: ''
+    }, `/admin/incidencias/${incidencia.lastID}`);
+
+    expect(response.status).toBe(302);
+    const updated = await dbAsync.get('SELECT fecha FROM incidencias WHERE id = ?', [incidencia.lastID]);
+    expect(updated.fecha).toBe('2026-06-12 14:37:52');
+  });
+
   it('no registra auditoría al guardar una incidencia sin cambios', async () => {
     const incidencia = await dbAsync.run(
       `INSERT INTO incidencias (tipo_id, descripcion, latitud, longitud, nombre, fecha, estado, barrio, direccion)

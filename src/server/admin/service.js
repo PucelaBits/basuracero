@@ -54,25 +54,26 @@ function normalizeAdminRole(role = 'administrator') {
   return value;
 }
 
-function normalizeEditableDate(value) {
+function normalizeEditableDate(value, currentValue = null) {
   const raw = String(value || '').trim();
   if (!raw) {
     throw new Error('La fecha es obligatoria.');
   }
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    return `${raw} 00:00:00`;
+  let datePart = raw;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new Error('La fecha no es valida.');
+    }
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    datePart = `${year}-${month}-${day}`;
   }
 
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error('La fecha no es valida.');
-  }
-
-  const year = parsed.getFullYear();
-  const month = String(parsed.getMonth() + 1).padStart(2, '0');
-  const day = String(parsed.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day} 00:00:00`;
+  const currentTime = String(currentValue || '').match(/[T\s](\d{2}:\d{2}:\d{2})$/)?.[1] || '00:00:00';
+  return `${datePart} ${currentTime}`;
 }
 
 async function deleteImageFile(filename) {
@@ -691,7 +692,7 @@ async function updateIncidencia(incidenciaId, updates, actingAdminId) {
   const rawLongitud = String(updates.longitud || '').trim();
   const nextEstado = String(updates.estado || '').trim();
   const nextTipoId = String(updates.tipoId || '').trim();
-  const nextFecha = normalizeEditableDate(updates.fecha);
+  const nextFecha = normalizeEditableDate(updates.fecha, current.fecha);
 
   if (!nextDescripcion) {
     throw new Error('La descripcion es obligatoria.');
