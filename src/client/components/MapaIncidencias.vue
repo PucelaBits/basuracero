@@ -378,19 +378,24 @@ export default {
             const direccion = incidencia.direccion_completa 
               ? `${incidencia.direccion_completa.road || incidencia.direccion_completa.neighbourhood || incidencia.direccion_completa.suburb}${incidencia.direccion_completa.house_number ? ` ${incidencia.direccion_completa.house_number}` : ''}`
               : 'Dirección no disponible';
-            const imagePath = safeImagePath(incidencia.imagenes?.[0]?.ruta_imagen)
             const tipo = escapeHtml(incidencia.tipo)
             const descripcion = escapeHtml(truncateText(incidencia.descripcion, 100))
             const nombre = escapeHtml(incidencia.nombre)
             const safeDireccion = escapeHtml(direccion)
             const fecha = escapeHtml(formatDate(incidencia.fecha, true))
             const incidenciaId = Number.parseInt(incidencia.id, 10)
+            const imagePaths = (incidencia.imagenes || [])
+              .map(imagen => safeImagePath(imagen?.ruta_imagen))
+              .filter(Boolean)
+            const hasImages = imagePaths.length > 0
             
             popupContent.innerHTML = `
               <div class="popup-header">
                 <div class="popup-image-container">
-                  <img src="${escapeHtml(imagePath)}" alt="${tipo}" class="popup-image">
-                  ${incidencia.imagenes && incidencia.imagenes.length > 1 ? `
+                  ${hasImages
+                    ? `<img data-src="${escapeHtml(imagePaths[0])}" alt="${tipo}" class="popup-image" loading="lazy" decoding="async">`
+                    : '<div class="popup-no-image" aria-hidden="true"><i class="mdi mdi-image-off"></i></div>'}
+                  ${imagePaths.length > 1 ? `
                     <div class="popup-image-controls">
                       <button class="popup-image-prev"><i class="mdi mdi-chevron-left"></i></button>
                       <button class="popup-image-next"><i class="mdi mdi-chevron-right"></i></button>
@@ -442,30 +447,49 @@ export default {
             // Añadir el marcador al grupo de clusters en lugar de directamente al mapa
             markerClusterGroup.addLayer(marker)
 
+            const popupImageElement = popupContent.querySelector('.popup-image')
+
+            // La imagen solo recibe src cuando el popup está abierto. Crear el HTML
+            // de todos los popups al pintar el mapa no debe disparar descargas para
+            // incidencias que el usuario todavía no ha consultado.
+            const cargarImagenPopup = () => {
+              if (!popupImageElement || !imagePaths.length) return
+
+              const imagePath = imagePaths[currentImageIndex]
+              if (popupImageElement.dataset.loadedSrc !== imagePath) {
+                popupImageElement.dataset.loadedSrc = imagePath
+                popupImageElement.src = imagePath
+              }
+            }
+
+            let currentImageIndex = 0
+
+            marker.on('popupopen', cargarImagenPopup)
+
             // Añadir funcionalidad al carrusel
-            if (incidencia.imagenes && incidencia.imagenes.length > 1) {
-              let currentImageIndex = 0
-              const popupImageElement = popupContent.querySelector('.popup-image')
+            if (imagePaths.length > 1) {
               const prevButton = popupContent.querySelector('.popup-image-prev')
               const nextButton = popupContent.querySelector('.popup-image-next')
 
               prevButton.addEventListener('click', (e) => {
                 e.stopPropagation()
-                currentImageIndex = (currentImageIndex - 1 + incidencia.imagenes.length) % incidencia.imagenes.length
-                popupImageElement.src = safeImagePath(incidencia.imagenes[currentImageIndex].ruta_imagen)
+                currentImageIndex = (currentImageIndex - 1 + imagePaths.length) % imagePaths.length
+                cargarImagenPopup()
               })
 
               nextButton.addEventListener('click', (e) => {
                 e.stopPropagation()
-                currentImageIndex = (currentImageIndex + 1) % incidencia.imagenes.length
-                popupImageElement.src = safeImagePath(incidencia.imagenes[currentImageIndex].ruta_imagen)
+                currentImageIndex = (currentImageIndex + 1) % imagePaths.length
+                cargarImagenPopup()
               })
             }
 
-            L.DomEvent.on(popupContent.querySelector('.popup-image'), 'click', (e) => {
-              L.DomEvent.stopPropagation(e)
-              abrirDetalle(incidencia)
-            })
+            if (popupImageElement) {
+              L.DomEvent.on(popupImageElement, 'click', (e) => {
+                L.DomEvent.stopPropagation(e)
+                abrirDetalle(incidencia)
+              })
+            }
 
             if (props.esCercanas && !incidencia.ocultarVerificacion) {
               const verificationButtons = popupContent.querySelectorAll('.verify-btn')
@@ -856,6 +880,17 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.popup-no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f3f2;
+  color: #9aa5a0;
+  font-size: 2rem;
 }
 
 .popup-image-controls {
