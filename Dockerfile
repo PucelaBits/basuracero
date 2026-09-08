@@ -1,4 +1,6 @@
-FROM node:24-slim AS build
+# La imagen trixie incluye una glibc compatible con el binario precompilado
+# de sqlite3 descargado por npm ci, evitando una compilacion nativa local.
+FROM node:24-trixie-slim AS build
 
 WORKDIR /app
 
@@ -22,7 +24,7 @@ ENV LEGACY_ORIGIN=$LEGACY_ORIGIN
 RUN npm run build
 RUN npm prune --omit=dev
 
-FROM node:24-slim
+FROM node:24-trixie-slim
 
 WORKDIR /app
 
