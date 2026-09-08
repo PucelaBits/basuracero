@@ -40,6 +40,7 @@ function buildDefaults() {
     MAPA_CENTRO_LAT: import.meta.env.VITE_MAPA_CENTRO_LAT || '41.652251',
     MAPA_CENTRO_LON: import.meta.env.VITE_MAPA_CENTRO_LON || '-4.724532',
     MAPA_ZOOM_INICIAL: import.meta.env.VITE_MAPA_ZOOM_INICIAL || '13',
+    CARTO_API_KEY: import.meta.env.VITE_CARTO_API_KEY || '',
     SEARCH_REGION_LIMIT_ENABLED: import.meta.env.VITE_SEARCH_REGION_LIMIT_ENABLED || 'true',
     SEARCH_REGION_QUERY: import.meta.env.VITE_SEARCH_REGION_QUERY || '',
     DISTANCIA_MAXIMA_CERCANAS: import.meta.env.VITE_DISTANCIA_MAXIMA_CERCANAS || '1000'

@@ -12,9 +12,8 @@ COPY package*.json ./
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 RUN npm ci
-# sqlite3 es nativo: se compila una vez en la capa de dependencias cacheada.
-# No mover esta instrucción después de COPY . . ni eliminarla.
-RUN npm rebuild sqlite3 --build-from-source
+# sqlite3 descarga su binario precompilado durante npm ci cuando existe para
+# la plataforma; no fuerces una recompilación nativa en cada despliegue.
 
 COPY . .
 

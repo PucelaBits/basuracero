@@ -400,6 +400,7 @@ import { useWhatsAppShare } from '../composables/useWhatsAppShare';
 import TipoLink from './TipoLink.vue';
 import HashtagText from './HashtagText.vue';
 import { getRuntimeConfig } from '../utils/runtimeConfig';
+import { getCartoTileUrl } from '../utils/mapTiles';
 
 const TIPOS_INCIDENCIAS_INICIALES = JSON.parse(import.meta.env.VITE_TIPOS_INCIDENCIAS_INICIALES || '[]')
 
@@ -715,7 +716,7 @@ export default {
           tap: false
         }).setView([props.incidencia.latitud, props.incidencia.longitud], 15);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        L.tileLayer(getCartoTileUrl(), {
           attribution: '© OpenStreetMap contributors © CARTO',
           maxZoom: 19
         }).addTo(map.value);

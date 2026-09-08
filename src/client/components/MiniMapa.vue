@@ -7,6 +7,7 @@
 <script>
 import { ref, onMounted, watch, onUnmounted } from 'vue';
 import L from 'leaflet';
+import { getCartoTileUrl } from '../utils/mapTiles';
 
 export default {
   name: 'MiniMapa',
@@ -35,7 +36,7 @@ export default {
           doubleClickZoom: true
         }).setView([props.latitud, props.longitud], 16);
         
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        L.tileLayer(getCartoTileUrl(), {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
           maxZoom: 20

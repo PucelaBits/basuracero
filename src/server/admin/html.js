@@ -37,6 +37,12 @@ function escapeAttr(value) {
   return escapeHtml(value);
 }
 
+function getCartoTileUrl() {
+  const key = String(process.env.CARTO_API_KEY || process.env.VITE_CARTO_API_KEY || '').trim();
+  const query = key ? `?key=${encodeURIComponent(key)}` : '';
+  return `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${query}`;
+}
+
 function formatDate(value) {
   if (!value) {
     return 'Sin fecha';
@@ -4123,6 +4129,7 @@ function getExternalReportLabel(currentAdmin = {}) {
 
 function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, csrfToken }) {
   const externalReportLabel = getExternalReportLabel(currentAdmin);
+  const cartoTileUrl = JSON.stringify(getCartoTileUrl());
   const images = incidencia.images || [];
   const solutionReports = incidencia.solutionReports || [];
   const inadequateReports = incidencia.inadequateReports || [];
@@ -4602,7 +4609,7 @@ function renderIncidenciaDetailPage({ currentAdmin, notice, incidencia, tipos, c
           const initial = [Number(latitude.value), Number(longitude.value)];
           const start = Number.isFinite(initial[0]) && Number.isFinite(initial[1]) ? initial : fallback;
           const map = L.map(mapElement, { scrollWheelZoom: false }).setView(start, 16);
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          L.tileLayer(${cartoTileUrl}, {
             maxZoom: 20,
             subdomains: 'abcd',
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -5466,6 +5473,7 @@ function renderUpdatesPage({ currentAdmin, notice, channel, installedRelease, up
 }
 
 function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
+  const cartoTileUrl = JSON.stringify(getCartoTileUrl());
   let socialLinks = [];
   try {
     const parsedLinks = JSON.parse(settings.APP_SOCIAL_LINKS || '[]');
@@ -6026,7 +6034,7 @@ function renderSettingsPage({ currentAdmin, notice, settings, csrfToken }) {
               [readNumber('CIUDAD_LAT_MAX'), readNumber('CIUDAD_LON_MAX')]
             );
             const map = window.L.map(mapElement, { scrollWheelZoom: false });
-            window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            window.L.tileLayer(${cartoTileUrl}, {
               maxZoom: 19,
               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             }).addTo(map);

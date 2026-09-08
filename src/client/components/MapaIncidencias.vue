@@ -27,6 +27,7 @@ import 'leaflet.markercluster' // Asegúrate de importar el plugin
 import { useRouter } from 'vue-router'
 import { enviarEventoMatomo } from '../utils/analytics'
 import { getRuntimeConfig } from '../utils/runtimeConfig'
+import { getCartoTileUrl } from '../utils/mapTiles'
 
 // Extensión para animación suave de marcadores
 L.Marker.include({
@@ -214,7 +215,7 @@ export default {
           Number(runtimeConfig.MAPA_CENTRO_LAT),
           Number(runtimeConfig.MAPA_CENTRO_LON)
         ], props.zoomForzado || Number(runtimeConfig.MAPA_ZOOM_INICIAL))
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        L.tileLayer(getCartoTileUrl(), {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
           maxZoom: 20

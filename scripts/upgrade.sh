@@ -144,7 +144,7 @@ else
 fi
 
 echo "Construyendo y arrancando la nueva version (${deployed_revision:0:7})..."
-docker compose build basuracero-app
+docker compose build --pull=false basuracero-app
 docker compose up -d basuracero-app
 
 container_id="$(docker compose ps -q basuracero-app)"
