@@ -41,9 +41,9 @@
     "geoip-country": "^5.0.202607290104",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
-    "multer": "^2.2.0",
+    "multer": "^2.3.0",
     "papaparse": "^5.5.4",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.4",
     "sqlite3": "^6.0.1",
     "vue": "^3.5.39",
     "vue-router": "^4.4.5",
@@ -70,10 +70,10 @@
     "minimatch": "^10.2.1",
     "path-to-regexp": "0.1.13",
     "@eslint/eslintrc": {
-      "js-yaml": "4.3.1"
+      "js-yaml": "4.3.2"
     },
     "@istanbuljs/load-nyc-config": {
-      "js-yaml": "3.15.1"
+      "js-yaml": "3.15.2"
     }
   }
 }
