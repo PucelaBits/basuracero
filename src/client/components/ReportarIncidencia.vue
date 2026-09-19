@@ -343,6 +343,9 @@
       :mensaje="notificacionMensaje"
       :tipo="notificacionTipo"
       :duracion="6000"
+      :accion="notificacionAccion"
+      :accion-deshabilitada="enviando || procesandoImagenes"
+      @accion="reintentarEnvio"
     />
   </div>
 </template>
@@ -429,6 +432,7 @@ export default {
     const mostrarNotificacion = ref(false)
     const notificacionTipo = ref('error')
     const notificacionMensaje = ref('')
+    const notificacionAccion = ref('')
     const obteniendoUbicacion = ref(false)
     const incidenciasCercanas = ref([])
     const mostrarDialogoIncidenciasCercanas = ref(false)
@@ -561,6 +565,7 @@ export default {
         if (fallidas) {
           notificacionMensaje.value = 'No se pudo preparar una foto. Prueba con otra imagen en formato JPG, PNG o WebP.'
           notificacionTipo.value = 'error'
+          notificacionAccion.value = ''
           mostrarNotificacion.value = true
         }
       } finally {
@@ -683,9 +688,7 @@ export default {
         formData.append('direccion', direccion.value)
         formData.append('frc-captcha-solution', captchaSolution.value)
 
-        const response = await axios.post('/api/incidencias', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await axios.post('/api/incidencias', formData);
         const { id, codigoUnico } = response.data;
         
         // Usar el store para añadir la incidencia del usuario
@@ -708,10 +711,16 @@ export default {
         const mensajeAmigable = getClientErrorMessage(error);
         notificacionMensaje.value = mensajeAmigable;
         notificacionTipo.value = 'error';
+        notificacionAccion.value = 'Reintentar';
         mostrarNotificacion.value = true;
       } finally {
         enviando.value = false
       }
+    }
+
+    const reintentarEnvio = () => {
+      mostrarNotificacion.value = false
+      void enviarIncidencia()
     }
 
     const resetForm = () => {
@@ -812,6 +821,7 @@ export default {
           reconocimientoVozActivo.value = false
           notificacionMensaje.value = 'No se pudo activar el reconocimiento de voz. Por favor, escribe tu descripción.';
           notificacionTipo.value = 'warning';
+          notificacionAccion.value = '';
           mostrarNotificacion.value = true;
         }
 
@@ -937,6 +947,8 @@ export default {
       mostrarNotificacion,
       notificacionMensaje,
       notificacionTipo,
+      notificacionAccion,
+      reintentarEnvio,
       obteniendoUbicacion,
       incidenciasCercanas,
       mostrarDialogoIncidenciasCercanas,

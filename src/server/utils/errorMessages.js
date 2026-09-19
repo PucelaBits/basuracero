@@ -28,6 +28,7 @@ const errorMessages = {
     tooLarge: 'La imagen seleccionada es demasiado grande. Por favor, elige una imagen más pequeña.',
     invalidType: 'El tipo de archivo no es válido. Por favor, selecciona una imagen (JPG, PNG).',
     processingError: 'No pudimos procesar la imagen. Por favor, inténtalo con otra imagen.',
+    upload: 'No se ha podido completar la subida de la imagen. Comprueba tu conexión y vuelve a intentarlo.',
     uploadError: 'Hubo un problema al subir la imagen. Por favor, inténtalo de nuevo.',
     noFiles: 'No se han seleccionado archivos.',
     noImage: 'Por favor, añade al menos una imagen para reportar la incidencia.'
